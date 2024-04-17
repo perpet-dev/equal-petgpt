@@ -32,7 +32,7 @@ SUBJECT_JSON = """
             "no": 12,
             "ver": "V2-01",
             "sn": "DG012V2-01",
-            "subject": "subject_12",
+            "subject": "{petName}에게 즐거움을 주는 방법은?",
             "curations": [
                 {
                     "doc_id": 99,
@@ -53,7 +53,7 @@ SUBJECT_JSON = """
             "no": 1,
             "ver": "V2-01",
             "sn": "CT001V2-01",
-            "subject": "subject_1",
+            "subject": "{petName}의 건강검진은 언제 해야 할까요?",
             "curations": [
                 {
                     "doc_id": 17,
@@ -74,16 +74,16 @@ SUBJECT_JSON = """
             "no": 2,
             "ver": "V2-01",
             "sn": "CT002V2-01",
-            "subject": "subject_2",
+            "subject": "{petName}의 건강을 위한 비법은?",
             "curations": [
                 {
-                    "doc_id": 19,
+                    "doc_id": 97,
                     "title": "title_19",
                     "use_filter":true,
                     "filter": []
                 }, 
                 {
-                    "doc_id": 29,
+                    "doc_id": 156,
                     "title": "title_29",
                     "use_filter":false,
                     "filter": []

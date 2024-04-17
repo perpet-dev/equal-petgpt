@@ -30,72 +30,36 @@ spec = ServerlessSpec(cloud='aws', region='us-west-2')
 
 
 class EqualContentRetriever():
-    def __init__(self, index_name=INDEX_NAME, db_host=DB_HOST, db_port=DB_PORT, db_user=DB_USER, db_password = DB_PASSWORD, db_database=DB_DATABASE):
-        print('EqualContentRetriever')
-        # Establishing a connection to MariaDB
-        self.connection = mysql.connector.connect(
-                        host=db_host,
-                        user=db_user,
-                        password=db_password,
-                        database=db_database, 
-                        port=db_port
-                    )
-        # Creating a cursor object
-        self.cursor = self.connection.cursor()
+    def __init__(self, index_name=INDEX_NAME):
         self.index_name = index_name
+        self.category_dict = json.loads(SUBJECT_JSON)
+        self.contents_cache = []
+        self.__category_content_cache()
 
-    def build_index(self):
-        sql = "select perpet.mcard.top as category, perpet.mcard.id as id, perpet.mcard.tag, perpet.mcard.image as image , perpet.mcard.main_title as title, perpet.mcard.summary as summary,  GROUP_CONCAT(perpet.mcard_sub.sub_title SEPARATOR ' ') as sub_title,  GROUP_CONCAT(perpet.mcard_sub.text SEPARATOR ' ') as sub_text FROM perpet.mcard, perpet.mcard_sub where perpet.mcard.id = perpet.mcard_sub.mcard_id GROUP BY perpet.mcard_sub.mcard_id"
-        self.cursor.execute(sql)
-        result = self.cursor.fetchall()
-        categories, ids, tags, titles, images, contents, sources = [], [], [], [], [], [], []
-
-        for row in result:
-            categories.append(row[0])
-            ids.append(str(row[1]))
-            tags.append([x for x in row[2].split(',') if x])
-            images.append(row[3])
-            titles.append(row[4])
-            contents.append(' '.join(row[4:]).replace('\n',' '))
-            sources.append('https://equal.pet/content/View/{}'.format(row[1]))
-
-        data_dict = {'category':categories, 'id': ids, 'tag':tags, 'title':titles, 'content':contents, 'source_url':sources, 'image_url':images}
-        text_dataset = Dataset.from_dict(data_dict)
-        self.pinecone_index(text_dataset=text_dataset)
-
-    def __breeds2type(self, breeds):
-        if breeds == BREEDS_DOG_TAG: 
-            return 'dog'
-        elif breeds == BREEDS_CAT_TAG: 
-            return 'cat'
-        else: 
-            return ''
-         
-
-    def get_categories2(self, pet_type:str, pet_name:str=''):
-        categories = []
-
-        input_dict = json.loads(SUBJECT_JSON)
-        #pet_str = self.__breeds2type(pet_type)
-
-        # filter
-        for x in input_dict:
-            if pet_type == x['type']:
-                subject = x['subject']
-                subject = subject.replace('{petName}', pet_name)
-                categories.append({'sn':x['sn'], 'subject':subject})        
-        return categories # json.dumps({'category':categories}, ensure_ascii=False)
-
-    def get_categories(self):
-        categories = []
-        sql = "select top from perpet.mcard group by top"
-        self.cursor.execute(sql)
-        result = self.cursor.fetchall()
-        for row in result:
-            categories.append(row[0].strip())
-        return json.dumps({'category':categories}, ensure_ascii=False)
-
-    def pinecone_index(self, text_dataset:Dataset, dimension=OPENAI_EMBEDDING_DIMENSION, incremental=True):   
+    def __category_content_cache(self):
+        # make content cache for performance
+        index = pc.Index(INDEX_NAME)
+        for x in self.category_dict:
+            if x['type'] == 'dog' or x['type'] == 'cat':
+                elements = []
+                for y in x['curations']:
+                    doc_id = y['doc_id']
+                    ret = index.query(
+                            id=str(doc_id),
+                            top_k=1, 
+                            include_metadata=True)
+                    if len(ret['matches']) > 0:
+                        elements.append({
+                                        'doc_id':ret['matches'][0]['id'],
+                                        'title':ret['matches'][0]['metadata']['title'], 
+                                        'content':ret['matches'][0]['metadata']['content'],
+                                        'image_url':ret['matches'][0]['metadata']['image_url'],
+                                        'link_url':ret['matches'][0]['metadata']['source_url'],
+                                        'tag':ret['matches'][0]['metadata']['tag']
+                                    })
+                self.contents_cache.append({'pet_type':x['type'],'category_sn':x['sn'], 'category_title':x['subject'] ,'content':elements})
+                
+    def __pinecone_index(self, text_dataset:Dataset, dimension=OPENAI_EMBEDDING_DIMENSION, incremental=True):   
         existing_indexes = [ index_info['name']  for index_info in pc.list_indexes() ]
 
         if incremental == False:
@@ -140,7 +104,7 @@ class EqualContentRetriever():
             to_upsert = zip(ids_batch, embeds, meta)
             index.upsert(vectors=list(to_upsert)) # upsert to Pinecone
 
-    def pinecone_search(self, index_name, query, filter=None, top_k=5, include_metadata=True):
+    def __pinecone_search(self, index_name, query, filter=None, top_k=5, include_metadata=True):
         result = []
         filter_only = False
         if query == '': 
@@ -155,7 +119,6 @@ class EqualContentRetriever():
             filter=filter, 
             top_k=top_k, include_metadata=include_metadata)
         ###
-        #print(res)
         #if filter_only:
             # sort by filter 
             # 빠르게 정렬할 방법 찾아야 함.
@@ -172,38 +135,61 @@ class EqualContentRetriever():
                             'tag':res['metadata']['tag']})
         return result
 
-    def __get_content_by_id(self, id):
-        sql = 'select id, '
+    def build_index(self, db_host=DB_HOST, db_port=DB_PORT, db_user=DB_USER, db_password = DB_PASSWORD, db_database=DB_DATABASE):
+        # Establishing a connection to MariaDB
+        self.connection = mysql.connector.connect(
+                        host=db_host,
+                        user=db_user,
+                        password=db_password,
+                        database=db_database, 
+                        port=db_port
+                    )
+        # Creating a cursor object
+        self.cursor = self.connection.cursor()
 
-    def get_contents2(self, pet_type:str, sn:str, tags:list=[int]):
-        contents = []
-        input_dict = json.loads(SUBJECT_JSON)
-        index = pc.Index(INDEX_NAME)
-       
-        for x in input_dict:
+        sql = "select perpet.mcard.top as category, perpet.mcard.id as id, perpet.mcard.tag, perpet.mcard.image as image , perpet.mcard.main_title as title, perpet.mcard.summary as summary,  GROUP_CONCAT(perpet.mcard_sub.sub_title SEPARATOR ' ') as sub_title,  GROUP_CONCAT(perpet.mcard_sub.text SEPARATOR ' ') as sub_text FROM perpet.mcard, perpet.mcard_sub where perpet.mcard.id = perpet.mcard_sub.mcard_id GROUP BY perpet.mcard_sub.mcard_id"
+        self.cursor.execute(sql)
+        result = self.cursor.fetchall()
+        categories, ids, tags, titles, images, contents, sources = [], [], [], [], [], [], []
+
+        for row in result:
+            categories.append(row[0])
+            ids.append(str(row[1]))
+            tags.append([x for x in row[2].split(',') if x])
+            images.append(row[3])
+            titles.append(row[4])
+            contents.append(' '.join(row[4:]).replace('\n',' '))
+            sources.append('https://equal.pet/content/View/{}'.format(row[1]))
+
+        data_dict = {'category':categories, 'id': ids, 'tag':tags, 'title':titles, 'content':contents, 'source_url':sources, 'image_url':images}
+        text_dataset = Dataset.from_dict(data_dict)
+        self.__pinecone_index(text_dataset=text_dataset)
+
+    def get_categories(self, pet_type:str, pet_name:str):
+        categories = []
+        for x in self.category_dict:
             if pet_type == x['type']:
-                for y in x['curations']:
-                    doc_id = y['doc_id']
-                    ret = index.query(
-                            id=str(doc_id),
-                            top_k=1, 
-                            include_metadata=True)
-                    ##########################
-                    # TODO : Tag mapping 
-                    ##########################
-                    contents.append({
-                                        #'category_sn':sn,
-                                        #'category_title':category_title,
-                                        'doc_id':ret['matches'][0]['id'],
-                                        'title':ret['matches'][0]['metadata']['title'], 
-                                        'content':ret['matches'][0]['metadata']['content'],
-                                        'image_url':ret['matches'][0]['metadata']['image_url'],
-                                        'link_url':ret['matches'][0]['metadata']['source_url'],
-                                        'tag':ret['matches'][0]['metadata']['tag']
-                                    })        
-        return contents #json.dumps(contents, ensure_ascii=False)
+                subject = x['subject']
+                subject = subject.replace('{petName}', pet_name)
+                categories.append({'sn':x['sn'], 'subject':subject})        
+        return categories 
 
-    def get_contents(self, query, pet_type:str='', tags:list=[]):
+    # def get_categories(self):
+    #     categories = []
+    #     sql = "select top from perpet.mcard group by top"
+    #     self.cursor.execute(sql)
+    #     result = self.cursor.fetchall()
+    #     for row in result:
+    #         categories.append(row[0].strip())
+    #     return json.dumps({'category':categories}, ensure_ascii=False)
+
+
+    def get_category_contents(self, pet_type:str, sn:str, tags:list=[int]):    
+        for x in self.contents_cache:
+            if x['pet_type'] == pet_type and x['category_sn'] == sn:
+                return x['content']
+    
+    def get_query_contents(self, query:str, pet_type:str='', tags:list=[]):
         # Pinecone search
         tag_filter = []
         filter_elem = []
@@ -224,38 +210,38 @@ class EqualContentRetriever():
             filter = {
                 "$and": filter_elem
             }
-            result = self.pinecone_search(self.index_name, query, filter)            
+            result = self.__pinecone_search(self.index_name, query, filter)            
         elif filter_elem_cnt == 1:
             filter = filter_elem[0]
-            result = self.pinecone_search(self.index_name, query, filter)
+            result = self.__pinecone_search(self.index_name, query, filter)
         else:
-            result = self.pinecone_search(self.index_name, query)
+            result = self.__pinecone_search(self.index_name, query)
         return result    
 
 if __name__ == "__main__":
     contentRetriever = EqualContentRetriever()
     
    
-    ret = contentRetriever.get_categories2(breeds=BREEDS_DOG_TAG, pet_name='뽀삐')
-    pprint.pprint(ret, indent=4)
+    # ret = contentRetriever.get_categories2(breeds=BREEDS_DOG_TAG, pet_name='뽀삐')
+    # pprint.pprint(ret, indent=4)
         
-    print('-'* 80)
+    # print('-'* 80)
     
-    ret = contentRetriever.get_contents2(breeds=BREEDS_DOG_TAG, sn='DG011V2-01', tags=[])
-    # ret = contentRetriever.get_contents(query='', category='의학 정보', tags=['276', '65'])
-    print(ret)
+    # ret = contentRetriever.get_contents2(breeds=BREEDS_DOG_TAG, sn='DG011V2-01', tags=[])
+    # # ret = contentRetriever.get_contents(query='', category='의학 정보', tags=['276', '65'])
+    # print(ret)
     
-    ret = contentRetriever.get_contents(query='', breeds= BREEDS_DOG_TAG, category='반려 생활')
-    pprint.pprint(ret, indent=4)
-    print('-'* 80)
+    # ret = contentRetriever.get_contents(query='', breeds= BREEDS_DOG_TAG, category='반려 생활')
+    # pprint.pprint(ret, indent=4)
+    # print('-'* 80)
 
-    ret = contentRetriever.get_contents(query='', breeds= BREEDS_CAT_TAG, category='반려 생활')
-    pprint.pprint(ret, indent=4)
-    print('-'* 80)
+    # ret = contentRetriever.get_contents(query='', breeds= BREEDS_CAT_TAG, category='반려 생활')
+    # pprint.pprint(ret, indent=4)
+    # print('-'* 80)
 
-    ret = contentRetriever.get_contents(query='예방접종 어떻게 해요?', breeds=BREEDS_DOG_TAG)
-    pprint.pprint(ret)
+    # ret = contentRetriever.get_contents(query='예방접종 어떻게 해요?', breeds=BREEDS_DOG_TAG)
+    # pprint.pprint(ret)
    
-    #contentRetriever.build_index()
-    #ret = contentRetriever.get_contents2(breeds=BREEDS_DOG_TAG, sn='DG011V2-01', tags=[])
-    #print(ret)
+    # #contentRetriever.build_index()
+    # #ret = contentRetriever.get_contents2(breeds=BREEDS_DOG_TAG, sn='DG011V2-01', tags=[])
+    # #print(ret)
