@@ -62,8 +62,8 @@ logger.setLevel(LOG_LEVEL)
 
 #prefix="/petgpt-service"
 prefix = "/"
-app = FastAPI(root_path=prefix)
-
+#app = FastAPI(root_path=prefix)
+app = FastAPI()
 # # Allow all origins
 # app.add_middleware(
 #     CORSMiddleware,
@@ -83,14 +83,16 @@ async def healthreport(request: Request):
 # Models for input validation and serialization
 
 class ContentItem(BaseModel):
-    image_url: HttpUrl
+    doc_id:str
     title: str
+    content: str
+    image_url: HttpUrl
     link_url: HttpUrl
-    category: str  
     tag: List[str] = []
 
 class CategoryItem(BaseModel):
-    category: str
+    category_sn: str
+    category_title: str
     content: List[ContentItem]
 
 class ContentRequest(BaseModel):
@@ -504,55 +506,23 @@ async def extract_questions(request: ContentRequest):
 # API Endpoints
 @app.get("/pet-knowledge-list/{pet_id}", response_model=ApiResponse[List[CategoryItem]])
 async def pet_knowledge_list(pet_id: str, page: int = Query(1, ge=1), items_per_page: int = Query(10, ge=1)):
-    # Simulated data fetching
-    list = [
-        CategoryItem(
-            category="의학 정보",
-            content=[
-                    ContentItem(
-                        
-                        title="기초 예방 접종에 관한 모든 것",
-                        image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/tFABLIkar4ofzzv.png",
-                        link_url="https://equal.pet/content/View/77",
-                        category="의학 정보"
-                    ),
-                    ContentItem(
-                        title="심장사상충 왜 예방하는 걸까요?",
-                        image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/tNuXJoxbJKmsnZD.png",
-                        link_url="https://equal.pet/content/View/79",
-                        category="의학 정보"
-                    ),
-                    ContentItem(
-                        title="사바나 고양이의 혈변 문제",
-                        image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/12/01/t39xZnNhVGmNMge.png",
-                        link_url="https://equal.pet/content/View/86",
-                        category="의학 정보"
-                    )
-            ]),
-        CategoryItem(
-            category="반려 생활",
-            content=[
-                    ContentItem(
-                        title="우리 아이의 비만 관리 지금부터 입니다!",
-                        image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/12/04/tHukjPHuTMJLrWr.png",
-                        link_url="https://equal.pet/content/View/89",
-                        category="반려 생활"
-                    ),
-                    ContentItem(
-                        title="겨울철 말티즈 함께 산책하기",
-                        image_url= "https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/12/22/t77h7ir7nDFFsKj.jpeg",
-                        link_url= "https://equal.pet/content/View/98",
-                        category="반려 생활"
-                    ),
-                    ContentItem(
-                        title= "기본 홈케어! 안전하게 집에서 귀 세정하는 방법",
-                        image_url= "https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2024/01/16/tWSflnm0OjmwFJM.png",
-                        link_url= "https://equal.pet/content/View/103",
-                        category="반려 생활"
-                    )
-                ]
-            )
-    ]
+
+    list = []
+    retriever = PetProfileRetriever()
+    pet_profile = retriever.get_pet_profile(pet_id)
+    retriever.close()
+
+    pet_name = pet_profile.pet_name
+    pet_type = pet_profile.pet_type
+    pet_tag_id = pet_profile.tag_id
+
+    categories = contentRetriever.get_categories2(pet_type=pet_type, pet_name=pet_name)
+
+    for category in categories:
+        sn = category['sn']
+        subject = category['subject']
+        category_items = contentRetriever.get_contents2(pet_type=pet_type, sn=sn,  tags=pet_tag_id.split(','))
+        list.append(CategoryItem(category_sn=sn, category_title=subject, content=category_items))
     
     # Pagination logic (assuming fixed total items for simulation)
     total_items = len(list)
@@ -789,10 +759,18 @@ from petprofile import PetProfileRetriever
 petProfileRetriever = PetProfileRetriever()
 
 
-@app.get("/categories/", response_model=ApiResponse[List[str]])
-async def get_categories(page: int = Query(0, ge=0), size: int = Query(3, ge=1)):
+@app.get("/categories/", response_model=ApiResponse[List[dict]])
+async def get_categories(pet_id: int, page: int = Query(0, ge=0), size: int = Query(3, ge=1)):
     try:
-        categories = contentRetriever.get_categories()  # Assume this returns all categories as List[str]
+        retriever = PetProfileRetriever()
+        pet_profile = retriever.get_pet_profile(pet_id)
+        retriever.close()
+
+        pet_name = pet_profile.pet_name
+        pet_type = pet_profile.pet_type
+
+        categories = contentRetriever.get_categories2(pet_type=pet_type, pet_name=pet_name)  # Assume this returns all categories as List[str]
+        
         total_items = len(categories)
         total_pages = (total_items + size - 1) // size
         start = page * size
@@ -821,7 +799,7 @@ async def get_categories(page: int = Query(0, ge=0), size: int = Query(3, ge=1))
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/contents/", response_model=ApiResponse[List[ContentItem]])
-async def get_contents(query: Optional[str] = '', category: Optional[str] = None, tags: Optional[List[str]] = Query(None), pet_type: Optional[str] = None, page: int = 0, size: int = 3):
+async def get_contents(query: str, tags: Optional[List[str]] = Query(None), pet_type: Optional[str] = None, page: int = 0, size: int = 3):
     # Assuming the 'tags' parameter can accept a list of strings
     # Convert query params to the format expected by your content retriever
     tags_list = []
@@ -831,15 +809,11 @@ async def get_contents(query: Optional[str] = '', category: Optional[str] = None
                 tags_list.append(tag)
         
     logger.info(f"tags_list: {tags_list}")
-    # if category == '반려 생활' and pet_type:
-    if category is None:
-        category = ''
-    if pet_type == 'dog':
-        breeds_tag = BREEDS_DOG_TAG
-    elif pet_type == 'cat':
-        breeds_tag = BREEDS_CAT_TAG
     
-    content_items = contentRetriever.get_contents(query=query, breeds=breeds_tag, category=category, tags=tags_list)
+    content_items = contentRetriever.get_contents(query=query, pet_type=pet_type, tags=tags_list)
+
+    if len(content_items) < 2 and pet_type != None: # No result or One result
+        content_items = contentRetriever.get_contents(query=query) # Query without pet_type, tags
 
     # Calculate total number of items and pages
     total_items = len(content_items)

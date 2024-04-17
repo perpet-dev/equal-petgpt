@@ -28,11 +28,12 @@ class PetProfile(BaseModel):
     breed: str
     weight: float
     body_weight: str
+    tag_id: Optional[str] = None
     disease: Optional[str] = None  # Modify to allow None
     allergy: Optional[str] = None  # Modify to allow None
     tag: Optional[str] = None  # Allow None as a value
-    diagnoses: Optional[List[Diagnosis]] # Adding diagnoses to the pet profile
-    supplements: Optional[List[Supplement]] # Adding supplements to the pet profile
+    diagnoses: Optional[List[Diagnosis]] = [] # Adding diagnoses to the pet profile
+    supplements: Optional[List[Supplement]] = [] # Adding supplements to the pet profile
     
 from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE
 class PetProfileRetriever():
@@ -70,6 +71,7 @@ class PetProfileRetriever():
                 p.gender,
                 b.name AS breed_name,
                 pp.weight,
+                p.tag AS pet_tag_id,
                 pp.body_form_code,
                 GROUP_CONCAT(DISTINCT d.name) AS disease_names,
                 GROUP_CONCAT(DISTINCT a.name) AS allergy_names,
@@ -119,7 +121,7 @@ class PetProfileRetriever():
             '4': "고도비만"
         }
         # Directly fetch the body form code from the tuple
-        body_form_code = pet_profile[8]  
+        body_form_code = pet_profile[9]  
         body_weight = body_form_codes.get(body_form_code, "Unknown condition")
 
         # Directly return the new instance without modifying the original tuple
@@ -132,8 +134,9 @@ class PetProfileRetriever():
             gender=pet_profile[5],
             breed=pet_profile[6],
             weight=pet_profile[7],
+            tag_id=pet_profile[8],
             body_weight=body_weight,
-            disease=pet_profile[9],
-            allergy=pet_profile[10],
-            tag=pet_profile[11]
+            disease=pet_profile[10],
+            allergy=pet_profile[11],
+            tag=pet_profile[12]
         )
