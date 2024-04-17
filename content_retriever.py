@@ -9,15 +9,16 @@ import json
 import pprint
 from subject_json import SUBJECT_JSON
 
-OPENAI_API_KEY = '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'
-OPENAI_EMBEDDING_MODEL_NAME = 'text-embedding-3-small'
-OPENAI_EMBEDDING_DIMENSION = 1536
-PINECONE_API_KEY =  'dcce7d00-5f7f-48bf-8b19-33480e74ad12'
-DB_HOST =  "127.0.0.1" # "dev.promptinsight.ai"  
-DB_USER = "perpetapi" # "perpetdev" #  
-DB_PASSWORD = "O7dOQFXQ1PYY" #"perpet1234!" #  # 
-DB_DATABASE = "perpet"
-DB_PORT = 3307
+# DB_HOST =  "127.0.0.1" # "dev.promptinsight.ai"  
+# DB_USER = "perpetapi" # "perpetdev" #  
+# DB_PASSWORD = "O7dOQFXQ1PYY" #"perpet1234!" #  # 
+# DB_HOST = "dev.promptinsight.ai"  
+# DB_USER = "perpetdev" #  
+# DB_PASSWORD = "perpet1234!" #  # 
+# DB_DATABASE = "perpet"
+# DB_PORT = 3307
+from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE, OPENAI_API_KEY, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX
+
 INDEX_NAME = 'equalapp2'
 BREEDS_DOG_TAG = '62'
 BREEDS_CAT_TAG = '276'

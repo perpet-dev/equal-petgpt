@@ -5,10 +5,15 @@ LOGGING_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG')
 PORT = int(os.getenv('PORT', 9090))
 EUREKA = os.getenv('EUREKA_CLIENT_SERVICEURL_DEFAULTZONE', "http://dev.promptinsight.ai:10001/eureka") 
 # OPENAI_API_KEY = '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'
+#OPENAI_EMBEDDING_MODEL_NAME = 'text-embedding-3-small'
+#OPENAI_EMBEDDING_DIMENSION = 1536
+#PINECONE_API_KEY =  'dcce7d00-5f7f-48bf-8b19-33480e74ad12'
+OPENAI_API_KEY = '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'
 OPENAI_EMBEDDING_MODEL_NAME = 'text-embedding-3-small'
 OPENAI_EMBEDDING_DIMENSION = 1536
 PINECONE_API_KEY =  'dcce7d00-5f7f-48bf-8b19-33480e74ad12'
 PINECONE_INDEX =  'test-index-0325'
+
 # Set pymongo's OCSP support logger to INFO level
 ocsp_logger = logging.getLogger('pymongo.ocsp_support')
 ocsp_logger.setLevel(logging.INFO)

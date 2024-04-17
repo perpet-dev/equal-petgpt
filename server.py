@@ -60,10 +60,10 @@ logging.basicConfig(level=LOG_LEVEL)
 logger = logging.getLogger("uvicorn")
 logger.setLevel(LOG_LEVEL)
 
-#prefix="/petgpt-service"
-prefix = "/"
-#app = FastAPI(root_path=prefix)
-app = FastAPI()
+prefix="/petgpt-service"
+#prefix = "/"
+app = FastAPI(root_path=prefix)
+#app = FastAPI()
 # # Allow all origins
 # app.add_middleware(
 #     CORSMiddleware,
