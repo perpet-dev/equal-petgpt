@@ -9,11 +9,14 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc python3-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy the current directory contents into the container at /app
-COPY . /app
+# Copy only the requirements.txt initially
+COPY requirements.txt .
 
 # Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+#RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
+# Copy the current directory contents into the container at /app
+COPY . .
 
 # Make port 80 available to the world outside this container
 EXPOSE 10080
@@ -21,6 +24,5 @@ EXPOSE 10080
 # Define environment variable
 ENV PORT 10080
 
-# Run server.py when the container launches, using shell form to allow variable substitution
-# CMD echo "Port: $PORT, Log Level: $(echo $LOG_LEVEL | tr '[:upper:]' '[:lower:]')" && uvicorn server:app --host 0.0.0.0 --port $PORT --log-level $(echo $LOG_LEVEL | tr '[:upper:]' '[:lower:]')
+# CMD can still use variable substitution in the shell form
 CMD ["python", "server.py"]

@@ -12,15 +12,12 @@ OPENAI_API_KEY = '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'
 OPENAI_EMBEDDING_MODEL_NAME = 'text-embedding-3-small'
 OPENAI_EMBEDDING_DIMENSION = 1536
 PINECONE_API_KEY =  'dcce7d00-5f7f-48bf-8b19-33480e74ad12'
-DB_HOST = "dev.promptinsight.ai" # "127.0.0.1" # 
-DB_USER = "perpetdev" # "perpetapi" # 
-DB_PASSWORD = "perpet1234!" # "O7dOQFXQ1PYY" # 
-DB_DATABASE = "perpet"
-DB_PORT = 3306 # 3307
 INDEX_NAME = 'equalapp2'
 BREEDS_DOG_TAG = '62'
 BREEDS_CAT_TAG = '276'
 BREEDS_NONE = ''
+
+from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE
 
 client = OpenAI(api_key = OPENAI_API_KEY)
 pc = Pinecone(PINECONE_API_KEY)
@@ -63,12 +60,12 @@ class EqualContentRetriever():
 
     def get_categories(self):
         categories = []
-        sql = "select top from perpet.mcard group by top"
+        sql = "select `top` from perpet.mcard group by top"
         self.cursor.execute(sql)
         result = self.cursor.fetchall()
         for row in result:
             categories.append(row[0].strip())
-        return json.dumps({'category':categories}, ensure_ascii=False)
+        return categories #json.dumps({'category':categories}, ensure_ascii=False)
 
     def pinecone_index(self, text_dataset:Dataset, dimension=OPENAI_EMBEDDING_DIMENSION, incremental=True):   
         existing_indexes = [ index_info['name']  for index_info in pc.list_indexes() ]
@@ -115,7 +112,7 @@ class EqualContentRetriever():
             to_upsert = zip(ids_batch, embeds, meta)
             index.upsert(vectors=list(to_upsert)) # upsert to Pinecone
 
-    def pinecone_search(self, index_name, query, filter=None, top_k=20, include_metadata=True):
+    def pinecone_search(self, index_name, query, filter=None, top_k=10, include_metadata=True):
         result = []
         filter_only = False
         if query == '': 
@@ -138,7 +135,7 @@ class EqualContentRetriever():
         ###
         for res in ret['matches']:
             result.append({'category':res['metadata']['category'], 'title':res['metadata']['title'], 'image_url':res['metadata']['image_url'], 'link_url':res['metadata']['source_url'], 'tag':res['metadata']['tag']})
-        return json.dumps(result, ensure_ascii=False)
+        return result #json.dumps(result, ensure_ascii=False)
 
     def get_contents(self, query, breeds:str=BREEDS_NONE, category:str='', tags:list=[]):
         # Pinecone search
@@ -146,13 +143,16 @@ class EqualContentRetriever():
         filter_elem = []
         
         if category != '':
+            print('category:', category)
             filter_elem.append({"category": {"$eq":category}})
         
         if breeds == BREEDS_DOG_TAG or breeds == BREEDS_CAT_TAG:
+            print('pet_type:', breeds)
             filter_elem.append({"tag":{"$in":[breeds]}})
     
-        if len(tags) > 0:
+        if tags is not None and len(tags) > 0:
             for tag in tags:
+                print('tag:', tag)
                 tag_filter.append({"tag":tag})
             filter_elem.append({"$or":tag_filter})
 
@@ -174,19 +174,19 @@ class EqualContentRetriever():
 if __name__ == "__main__":
     contentRetriever = EqualContentRetriever()
     ret = contentRetriever.get_categories()
-    pprint.pprint(ret, indent=4)
-    print('-'* 80)
+    # pprint.pprint(ret, indent=4)
+    # print('-'* 80)
     # ret = contentRetriever.get_contents(query='', category='의학 정보', tags=['276', '65'])
     # print(ret)
-    ret = contentRetriever.get_contents(query='', breeds= BREEDS_DOG_TAG, category='반려 생활')
+    ret = contentRetriever.get_contents(query='', breeds= BREEDS_DOG_TAG, category='반려 생활', tags=['276'])
     pprint.pprint(ret, indent=4)
     print('-'* 80)
 
     ret = contentRetriever.get_contents(query='', breeds= BREEDS_CAT_TAG, category='반려 생활')
-    pprint.pprint(ret, indent=4)
-    print('-'* 80)
+    # pprint.pprint(ret, indent=4)
+    # print('-'* 80)
 
-    ret = contentRetriever.get_contents(query='예방접종 어떻게 해요?')
+    ret = contentRetriever.get_contents(query='예방접종 어떻게 해요?', breeds= BREEDS_CAT_TAG)
     pprint.pprint(ret)
     
     #contentRetriever.build_index()
