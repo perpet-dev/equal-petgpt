@@ -171,7 +171,7 @@ class EqualContentRetriever():
         for x in self.category_dict:
             if pet_type == x['type']:
                 subject = x['subject']
-                subject = subject.replace('{petName}', pet_name)
+                subject = subject.replace('{petName}', "{{{}}}".format(pet_name))
                 categories.append({'sn':x['sn'], 'subject':subject})        
         return categories 
 

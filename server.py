@@ -505,7 +505,7 @@ async def extract_questions(request: ContentRequest):
 
 # API Endpoints
 @app.get("/pet-knowledge-list/{pet_id}", response_model=ApiResponse[List[CategoryItem]])
-async def pet_knowledge_list(pet_id: str, page: int = Query(1, ge=1), items_per_page: int = Query(10, ge=1)):
+async def pet_knowledge_list(pet_id: str, page: int = Query(0, ge=0), items_per_page: int = Query(10, ge=1)):
 
     list = []
     retriever = PetProfileRetriever()
