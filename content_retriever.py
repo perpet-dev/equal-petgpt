@@ -7,16 +7,17 @@ from datasets import Dataset
 import numpy as np
 import json
 import pprint
+from subject_json import SUBJECT_JSON
 
 OPENAI_API_KEY = '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'
 OPENAI_EMBEDDING_MODEL_NAME = 'text-embedding-3-small'
 OPENAI_EMBEDDING_DIMENSION = 1536
 PINECONE_API_KEY =  'dcce7d00-5f7f-48bf-8b19-33480e74ad12'
-DB_HOST = "dev.promptinsight.ai" # "127.0.0.1" # 
-DB_USER = "perpetdev" # "perpetapi" # 
-DB_PASSWORD = "perpet1234!" # "O7dOQFXQ1PYY" # 
+DB_HOST =  "127.0.0.1" # "dev.promptinsight.ai"  
+DB_USER = "perpetapi" # "perpetdev" #  
+DB_PASSWORD = "O7dOQFXQ1PYY" #"perpet1234!" #  # 
 DB_DATABASE = "perpet"
-DB_PORT = 3306 # 3307
+DB_PORT = 3307
 INDEX_NAME = 'equalapp2'
 BREEDS_DOG_TAG = '62'
 BREEDS_CAT_TAG = '276'
@@ -25,6 +26,7 @@ BREEDS_NONE = ''
 client = OpenAI(api_key = OPENAI_API_KEY)
 pc = Pinecone(PINECONE_API_KEY)
 spec = ServerlessSpec(cloud='aws', region='us-west-2')  
+
 
 class EqualContentRetriever():
     def __init__(self, index_name=INDEX_NAME, db_host=DB_HOST, db_port=DB_PORT, db_user=DB_USER, db_password = DB_PASSWORD, db_database=DB_DATABASE):
@@ -49,7 +51,7 @@ class EqualContentRetriever():
 
         for row in result:
             categories.append(row[0])
-            ids.append(row[1])
+            ids.append(str(row[1]))
             tags.append([x for x in row[2].split(',') if x])
             images.append(row[3])
             titles.append(row[4])
@@ -60,6 +62,28 @@ class EqualContentRetriever():
         text_dataset = Dataset.from_dict(data_dict)
         self.pinecone_index(text_dataset=text_dataset)
 
+    def __breeds2type(self, breeds):
+        if breeds == BREEDS_DOG_TAG: 
+            return 'dog'
+        elif breeds == BREEDS_CAT_TAG: 
+            return 'cat'
+        else: 
+            return ''
+         
+
+    def get_categories2(self, breeds, pet_name:str=''):
+        categories = []
+
+        input_dict = json.loads(SUBJECT_JSON)
+        pet_str = self.__breeds2type(breeds)
+
+        # filter
+        for x in input_dict:
+            if pet_str == x['type']:
+                subject = x['subject']
+                subject = subject.replace('{petName}', pet_name)
+                categories.append({'sn':x['sn'], 'subject':subject})        
+        return json.dumps({'category':categories}, ensure_ascii=False)
 
     def get_categories(self):
         categories = []
@@ -103,7 +127,7 @@ class EqualContentRetriever():
             i_end = min(i+batch_size, len(text_dataset['content']))
             # get batch of lines and IDs
             lines_batch = text_dataset['content'][i: i+batch_size]
-            ids_batch = [str(n) for n in range(i, i_end)]
+            ids_batch = text_dataset['id'][i: i+batch_size]
             source_batch = text_dataset['source_url'][i:i+batch_size]
             images_batch = text_dataset['image_url'][i:i+batch_size]
             tags_batch = text_dataset['tag'][i:i+batch_size]
@@ -140,6 +164,34 @@ class EqualContentRetriever():
             result.append({'category':res['metadata']['category'], 'title':res['metadata']['title'], 'image_url':res['metadata']['image_url'], 'link_url':res['metadata']['source_url'], 'tag':res['metadata']['tag']})
         return json.dumps(result, ensure_ascii=False)
 
+    def __get_content_by_id(self, id):
+        sql = 'select id, '
+
+    def get_contents2(self, breeds:str, sn:str, tags:list=[]):
+        contents = []
+        input_dict = json.loads(SUBJECT_JSON)
+        pet_str = self.__breeds2type(breeds)
+        index = pc.Index(INDEX_NAME)
+       
+        for x in input_dict:
+            if pet_str == x['type']:
+                for y in x['curations']:
+                    doc_id = y['doc_id']
+                    ret = index.query(
+                            id=str(doc_id),
+                            top_k=1, 
+                            include_metadata=True)
+                    contents.append({
+                                        'category':sn,
+                                        'id':ret['matches'][0]['id'],
+                                        'title':ret['matches'][0]['metadata']['title'], 
+                                        #'content':ret['matches'][0]['metadata']['content'],
+                                        'image_url':ret['matches'][0]['metadata']['image_url'],
+                                        'link_url':ret['matches'][0]['metadata']['source_url'],
+                                        'tag':ret['matches'][0]['metadata']['tag']
+                                    })        
+        return json.dumps(contents, ensure_ascii=False)
+
     def get_contents(self, query, breeds:str=BREEDS_NONE, category:str='', tags:list=[]):
         # Pinecone search
         tag_filter = []
@@ -173,11 +225,17 @@ class EqualContentRetriever():
 
 if __name__ == "__main__":
     contentRetriever = EqualContentRetriever()
-    ret = contentRetriever.get_categories()
+    
+   
+    ret = contentRetriever.get_categories2(breeds=BREEDS_DOG_TAG, pet_name='뽀삐')
     pprint.pprint(ret, indent=4)
+        
     print('-'* 80)
+    
+    ret = contentRetriever.get_contents2(breeds=BREEDS_DOG_TAG, sn='DG011V2-01', tags=[])
     # ret = contentRetriever.get_contents(query='', category='의학 정보', tags=['276', '65'])
-    # print(ret)
+    print(ret)
+    
     ret = contentRetriever.get_contents(query='', breeds= BREEDS_DOG_TAG, category='반려 생활')
     pprint.pprint(ret, indent=4)
     print('-'* 80)
@@ -186,7 +244,9 @@ if __name__ == "__main__":
     pprint.pprint(ret, indent=4)
     print('-'* 80)
 
-    ret = contentRetriever.get_contents(query='예방접종 어떻게 해요?')
+    ret = contentRetriever.get_contents(query='예방접종 어떻게 해요?', breeds=BREEDS_DOG_TAG)
     pprint.pprint(ret)
-    
+   
     #contentRetriever.build_index()
+    #ret = contentRetriever.get_contents2(breeds=BREEDS_DOG_TAG, sn='DG011V2-01', tags=[])
+    #print(ret)
