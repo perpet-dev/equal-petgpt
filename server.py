@@ -506,47 +506,49 @@ async def extract_questions(request: ContentRequest):
 # API Endpoints
 @app.get("/pet-knowledge-list/{pet_id}", response_model=ApiResponse[List[CategoryItem]])
 async def pet_knowledge_list(pet_id: str, page: int = Query(0, ge=0), items_per_page: int = Query(10, ge=1)):
+    try:
+        list = []
+        retriever = PetProfileRetriever()
+        pet_profile = retriever.get_pet_profile(pet_id)
+        retriever.close()
 
-    list = []
-    retriever = PetProfileRetriever()
-    pet_profile = retriever.get_pet_profile(pet_id)
-    retriever.close()
+        pet_name = pet_profile.pet_name
+        pet_type = pet_profile.pet_type
+        pet_tag_id = pet_profile.tag_id
 
-    pet_name = pet_profile.pet_name
-    pet_type = pet_profile.pet_type
-    pet_tag_id = pet_profile.tag_id
+        categories = contentRetriever.get_categories(pet_type=pet_type, pet_name=pet_name)
 
-    categories = contentRetriever.get_categories(pet_type=pet_type, pet_name=pet_name)
-
-    for category in categories:
-        sn = category['sn']
-        subject = category['subject']
-        category_items = contentRetriever.get_category_contents(pet_type=pet_type,  sn=sn, tags=pet_tag_id.split(','))
-        list.append(CategoryItem(category_sn=sn, category_title=subject, content=category_items))
-    
-    # Pagination logic (assuming fixed total items for simulation)
-    total_items = len(list)
-    total_pages = (total_items + items_per_page - 1) // items_per_page
-    
-    # Create and return the API response
-    response = ApiResponse(
-        success=True,
-        code=200,
-        msg="Success",
-        data=ResponseContent(
-            content=list,
-            # Pagination
-            totalPages=total_pages,
-            last=page >= total_pages,
-            totalElements=total_items,
-            first=page == 1,
-            size=items_per_page,
-            number=page,
-            numberOfElements=len(list),
-            empty=total_items == 0
+        for category in categories:
+            sn = category['sn']
+            subject = category['subject']
+            category_items = contentRetriever.get_category_contents(pet_type=pet_type,  sn=sn, tags=pet_tag_id.split(','))
+            list.append(CategoryItem(category_sn=sn, category_title=subject, content=category_items))
+        
+        # Pagination logic (assuming fixed total items for simulation)
+        total_items = len(list)
+        total_pages = (total_items + items_per_page - 1) // items_per_page
+        
+        # Create and return the API response
+        response = ApiResponse(
+            success=True,
+            code=200,
+            msg="Success",
+            data=ResponseContent(
+                content=list,
+                # Pagination
+                totalPages=total_pages,
+                last=page >= total_pages,
+                totalElements=total_items,
+                first=page == 1,
+                size=items_per_page,
+                number=page,
+                numberOfElements=len(list),
+                empty=total_items == 0
+            )
         )
-    )
-    return response
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 class BannerItem(BaseModel):
     #배너 링크 url
@@ -802,59 +804,62 @@ async def get_categories(pet_id: int, page: int = Query(0, ge=0), size: int = Qu
 async def get_contents(query: str, pet_id: int, tags: Optional[List[str]] = Query(None),  page: int = 0, size: int = 3):
     # Assuming the 'tags' parameter can accept a list of strings
     # Convert query params to the format expected by your content retriever
-    retriever = PetProfileRetriever()
-    pet_profile = retriever.get_pet_profile(pet_id)
-    retriever.close()
+    try:
+        retriever = PetProfileRetriever()
+        pet_profile = retriever.get_pet_profile(pet_id)
+        retriever.close()
 
-    pet_type = pet_profile.pet_type
+        pet_type = pet_profile.pet_type
 
-    tags_list = []
-    if tags:
-        for tag in tags:
-            if len(tag)>0:
-                tags_list.append(tag)
+        tags_list = []
+        if tags:
+            for tag in tags:
+                if len(tag)>0:
+                    tags_list.append(tag)
+            
+        logger.info(f"tags_list: {tags_list}")
         
-    logger.info(f"tags_list: {tags_list}")
-    
-    content_items = contentRetriever.get_query_contents(query=query, pet_type=pet_type, tags=tags_list)
+        content_items = contentRetriever.get_query_contents(query=query, pet_type=pet_type, tags=tags_list)
 
-    #if len(content_items) < 2 and pet_type != None: # No result or One result
-    #    content_items = contentRetriever.get_contents(query=query) # Query without pet_type, tags
+        #if len(content_items) < 2 and pet_type != None: # No result or One result
+        #    content_items = contentRetriever.get_contents(query=query) # Query without pet_type, tags
 
-    # Calculate total number of items and pages
-    total_items = len(content_items)
-    total_pages = (total_items + size - 1) // size  # Compute total number of pages
+        # Calculate total number of items and pages
+        total_items = len(content_items)
+        total_pages = (total_items + size - 1) // size  # Compute total number of pages
 
-    # Calculate the starting and ending index of the items for the current page
-    start_index = page * size
-    end_index = start_index + size
-    page_items = content_items[start_index:end_index]  # Slice the list to get only the items for this page
+        # Calculate the starting and ending index of the items for the current page
+        start_index = page * size
+        end_index = start_index + size
+        page_items = content_items[start_index:end_index]  # Slice the list to get only the items for this page
 
-    # Determine if this is the last page
-    is_last = page == total_pages - 1
-    #sort_info = SortInfo(unsorted=True, sorted=False, empty=True)
+        # Determine if this is the last page
+        is_last = page == total_pages - 1
+        #sort_info = SortInfo(unsorted=True, sorted=False, empty=True)
 
-    response_content = ResponseContent(
-        content=page_items,
-        totalPages=total_pages,
-        last=is_last,
-        totalElements=total_items,
-        first=page == 0,
-        size=size,
-        number=page,
-        numberOfElements=len(page_items),
-        #sort=sort_info,
-        empty=len(page_items) == 0
-    )
+        response_content = ResponseContent(
+            content=page_items,
+            totalPages=total_pages,
+            last=is_last,
+            totalElements=total_items,
+            first=page == 0,
+            size=size,
+            number=page,
+            numberOfElements=len(page_items),
+            #sort=sort_info,
+            empty=len(page_items) == 0
+        )
 
-    response = ApiResponse(
-        success=True,
-        code=200,
-        msg="Success",
-        data=response_content
-    )
-
-    return response
+        response = ApiResponse(
+            success=True,
+            code=200,
+            msg="Success",
+            data=response_content
+        )
+        
+        return response
+    except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/bookmark-content", response_model=BookmarkResponse)
 async def bookmark_content(content_id: str, auth_info: str):
