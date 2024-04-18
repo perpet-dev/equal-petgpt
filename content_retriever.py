@@ -25,20 +25,23 @@ BREEDS_CAT_TAG = '276'
 BREEDS_NONE = ''
 MATCH_SCORE_CUTOFF = 0.4
 
+import logging
+logger = logging.getLogger(__name__)
+
 client = OpenAI(api_key = OPENAI_API_KEY)
 pc = Pinecone(PINECONE_API_KEY)
 spec = ServerlessSpec(cloud='aws', region='us-west-2')  
 
-
 class EqualContentRetriever():
     def __init__(self, index_name=INDEX_NAME):
+        logger.info('EqualContentRetriever::init')
         self.index_name = index_name
         self.category_dict = json.loads(SUBJECT_JSON)
         self.contents_cache = []
         self.__category_content_cache()
 
     def __category_content_cache(self):
-        # make content cache for performance
+        logger.debug('>> Make content cache for performance')
         index = pc.Index(INDEX_NAME)
         for x in self.category_dict:
             if x['type'] == 'dog' or x['type'] == 'cat':
@@ -71,7 +74,7 @@ class EqualContentRetriever():
                 existing_indexes = [ index_info['name']  for index_info in pc.list_indexes() ]
 
         if self.index_name not in existing_indexes: # not found
-            print('Create index : {}'.format(self.index_name))
+            logger.debug('Create index : {}'.format(self.index_name))
             pc.create_index(
                 self.index_name, 
                 dimension = dimension, 
@@ -126,7 +129,6 @@ class EqualContentRetriever():
         #    print('')
         ###
         for res in ret['matches']:
-            #result.append({'category':res['metadata']['category'], 'title':res['metadata']['title'], 'content':res['metadata']['content'], 'image_url':res['metadata']['image_url'], 'link_url':res['metadata']['source_url'], 'tag':res['metadata']['tag']})
             if res['score'] >= MATCH_SCORE_CUTOFF:
                 result.append({'doc_id':res['id'], 
                             'title':res['metadata']['title'], 
@@ -137,6 +139,7 @@ class EqualContentRetriever():
         return result
 
     def build_index(self, db_host=DB_HOST, db_port=DB_PORT, db_user=DB_USER, db_password = DB_PASSWORD, db_database=DB_DATABASE):
+        logger.info("EqualContentRetiever::build_index")
         # Establishing a connection to MariaDB
         self.connection = mysql.connector.connect(
                         host=db_host,
@@ -153,6 +156,8 @@ class EqualContentRetriever():
         result = self.cursor.fetchall()
         categories, ids, tags, titles, images, contents, sources = [], [], [], [], [], [], []
 
+        logger.info(">>> Total row to index : {}".format(len(result)))
+
         for row in result:
             categories.append(row[0])
             ids.append(str(row[1]))
@@ -167,6 +172,7 @@ class EqualContentRetriever():
         self.__pinecone_index(text_dataset=text_dataset)
 
     def get_categories(self, pet_type:str, pet_name:str):
+        logger.debug("EqualContentRetriever::get_categories")
         categories = []
         for x in self.category_dict:
             if pet_type == x['type']:
@@ -175,23 +181,15 @@ class EqualContentRetriever():
                 categories.append({'sn':x['sn'], 'subject':subject})        
         return categories 
 
-    # def get_categories(self):
-    #     categories = []
-    #     sql = "select top from perpet.mcard group by top"
-    #     self.cursor.execute(sql)
-    #     result = self.cursor.fetchall()
-    #     for row in result:
-    #         categories.append(row[0].strip())
-    #     return json.dumps({'category':categories}, ensure_ascii=False)
-
-
     def get_category_contents(self, pet_type:str, sn:str, tags:list=[int]):    
+        logger.debug("EqualContentRetriever::get_category_contents")
         for x in self.contents_cache:
             if x['pet_type'] == pet_type and x['category_sn'] == sn:
                 return x['content']
     
     def get_query_contents(self, query:str, pet_type:str='', tags:list=[]):
         # Pinecone search
+        logger.debug("EqualContentRetriever::get_query_contents, query={}, pet_type={}, tags={}".format(query, pet_type, tags))
         tag_filter = []
         filter_elem = []
                 
@@ -222,7 +220,6 @@ class EqualContentRetriever():
 if __name__ == "__main__":
     contentRetriever = EqualContentRetriever()
     
-   
     # ret = contentRetriever.get_categories2(breeds=BREEDS_DOG_TAG, pet_name='뽀삐')
     # pprint.pprint(ret, indent=4)
         
