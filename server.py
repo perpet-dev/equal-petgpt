@@ -605,7 +605,7 @@ async def pet_gpt_question_list(pet_id: str, page: int = Query(0, ge=0), size: i
     pet_type = pet_profile.pet_type
     pet_breed = pet_profile.breed
 
-    selected_questions = contentRetriever.get_random_questions(pet_type=pet_type, breed=pet_breed)
+    selected_questions = contentRetriever.get_random_questions(pet_type=pet_type, breed=pet_breed, top_n=size)
     questions = []
     question_id = 1
 
