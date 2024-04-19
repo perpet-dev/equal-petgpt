@@ -596,22 +596,23 @@ async def main_banner_list(page: int = Query(0, ge=0), size: int = Query(5, ge=1
 
 @app.get("/pet-gpt-question-list/{pet_id}", response_model=ApiResponse[List[QuestionItem]])
 async def pet_gpt_question_list(pet_id: str, page: int = Query(0, ge=0), size: int = Query(3, ge=1)):
-
     logger.debug(f"PetGPT Service for pet_id: {pet_id}")
-    # Dummy data
-    questions = [
-        QuestionItem(title="How often should I feed my pet?", question_id="Q1"),
-        QuestionItem(title="What is the best diet for a pet like mine?", question_id="Q2"),
-        QuestionItem(title="How to manage my pet's anxiety?", question_id="Q3"),
-        QuestionItem(title="How often should I feed my pet?", question_id="Q4"),
-        QuestionItem(title="What is the best diet for a pet like mine?", question_id="Q5"),
-        QuestionItem(title="How to manage my pet's anxiety?", question_id="Q6"),
-        QuestionItem(title="How often should I feed my pet?", question_id="Q7"),
-        QuestionItem(title="What is the best diet for a pet like mine?", question_id="Q8"),
-        QuestionItem(title="How to manage my pet's anxiety?", question_id="Q9"),
-        QuestionItem(title="How often should I feed my pet?", question_id="Q10")
-    ]
-    
+
+    retriever = PetProfileRetriever()
+    pet_profile = retriever.get_pet_profile(pet_id)
+    retriever.close()
+
+    pet_type = pet_profile.pet_type
+    pet_breed = pet_profile.breed
+
+    selected_questions = contentRetriever.get_random_questions(pet_type=pet_type, breed=pet_breed)
+    questions = []
+    question_id = 1
+
+    for question in selected_questions:
+        questions.append(QuestionItem(title=question, question_id="Q{}".format(question_id)))
+        question_id = question_id + 1
+
     # Pagination logic
     total_items = len(questions)
     total_pages = (total_items + size - 1) // size

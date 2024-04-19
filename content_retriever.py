@@ -7,6 +7,13 @@ from datasets import Dataset
 import numpy as np
 import json
 import pprint
+import openai
+import pandas as pd
+import re
+import jsonlines
+import random
+
+
 from subject_json import SUBJECT_JSON
 
 # DB_HOST =  "127.0.0.1" # "dev.promptinsight.ai"  
@@ -39,6 +46,66 @@ class EqualContentRetriever():
         self.category_dict = json.loads(SUBJECT_JSON)
         self.contents_cache = []
         self.__category_content_cache()
+        self.__load_breed_map()
+        self.question_map = {}
+        self.__load_questions_jsonl()
+
+    def __load_breed_map(self):
+       logger.debug(">> load breed map")
+       self.breed_map = pd.read_csv('breed.tag.map', sep='\t', header=0)
+
+    def __load_questions_jsonl(self):
+        # {"doc_id": 390, "type": "dog", "breed_tag": 489, "breed_id": 74, "breed": "비글", "question": "비글은 고집이 강한 개인가요?"}
+        logger.debug(">> load question jsonl")
+        with jsonlines.open("questions.jsonl") as jsonl_f:
+            for line in jsonl_f.iter():
+                key_ = "{}_{}".format(line['type'], line['breed'].replace(' ', ''))
+                if key_ in self.question_map:
+                    self.question_map[key_] = self.question_map[key_] + '\n' + line['question']
+                else:
+                    self.question_map[key_] = line['question']
+
+    def get_random_questions(self, pet_type:str, breed:str='', top_n=3):
+        breed_question = ''
+        use_breed = False
+        selected_questions = []
+        type_key = "{}_".format(pet_type)
+        type_questions = self.question_map[type_key].split('\n')
+        
+        if breed == '': # no breed
+            if len(type_questions) >= top_n:
+                selected_questions = random.sample(type_questions, top_n)
+            else:
+                logger.critical('Qustion list not enough...')
+                selected_questions = type_questions
+        else: # breed           
+            breed_key = "{}_{}".format(pet_type, breed)
+            breed_questions = self.question_map[breed_key].split('\n')
+            if len(breed_questions) >= 1:
+                breed_question = random.sample(breed_questions, 1) # 질문 1개 (breed 맞춤)
+            selected_questions = breed_question + random.sample(type_questions, top_n - 1) 
+
+        return selected_questions
+
+    def __generate_questions(self, system_question:str, content_to_analyze:str):
+        logger.debug('>> Generate Questions')
+        
+        OPENAI_API_KEY="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"
+        
+        client = OpenAI(
+            api_key = OPENAI_API_KEY,
+            organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
+        )
+        
+        completion = client.chat.completions.create(
+            model="gpt-3.5-turbo",#,"gpt-4", 
+            messages=[
+                {"role": "system", "content": f"{system_question}"},
+                {"role": "user", "content": f"Here is the content: {content_to_analyze}"},
+            ]
+        )
+        logger.debug(completion.choices[0].message)
+        return completion.choices[0].message.content
 
     def __category_content_cache(self):
         logger.debug('>> Make content cache for performance')
@@ -138,10 +205,16 @@ class EqualContentRetriever():
                             'tag':res['metadata']['tag']})
         return result
 
-    def build_index(self, db_host=DB_HOST, db_port=DB_PORT, db_user=DB_USER, db_password = DB_PASSWORD, db_database=DB_DATABASE):
-        logger.info("EqualContentRetiever::build_index")
+    def build_question_jsonl(self, db_host=DB_HOST, db_port=DB_PORT, db_user=DB_USER, db_password=DB_PASSWORD, db_database=DB_DATABASE):
+        logger.info("EqualContentRetiever::build_pinecone_index")
+        # Step 1 : Iterate content db
+        # Step 2 : Extract Question From content
+        # Step 3 : Generate Question JSONL file
+        jsonl_file_name = 'questions.jsonl'
+        sql = "select perpet.mcard.id as id, perpet.mcard.tag as tag, perpet.mcard.main_title as title, perpet.mcard.summary as summary, GROUP_CONCAT(perpet.mcard_sub.sub_title SEPARATOR ' ') as sub_title,  GROUP_CONCAT(perpet.mcard_sub.text SEPARATOR ' ') as sub_text FROM perpet.mcard, perpet.mcard_sub where perpet.mcard.id = perpet.mcard_sub.mcard_id GROUP BY perpet.mcard_sub.mcard_id"
+
         # Establishing a connection to MariaDB
-        self.connection = mysql.connector.connect(
+        connection = mysql.connector.connect(
                         host=db_host,
                         user=db_user,
                         password=db_password,
@@ -149,11 +222,96 @@ class EqualContentRetriever():
                         port=db_port
                     )
         # Creating a cursor object
-        self.cursor = self.connection.cursor()
+        cursor = connection.cursor()
+        cursor.execute(sql)
+        res = cursor.fetchall()
+        system_question = '''Hello, I'm compiling an FAQ section for a pet care website and need to extract potential frequently asked questions \
+        from content written by veterinarians. The content covers a wide range of topics important to pet owners, including but not limited to:\n\
+        Healthcare for pets of all ages (babies, young, and old-aged pets) 
+        Accessories such as strollers, clothes, and toys 
+        Food recommendations and dietary advice 
+        Activities and walks 
+        Medicines and treatments, with a focus on dental, liver, hair care ... 
+        
+        The goal is to identify questions that provide practical, actionable information and advice for pet owners.
+        The questions should be structured and categorized by topic to help pet owners easily find the information they need. 
+        Aim for clarity and directness in each question to make them as helpful as possible.
+        Just output the questions in a list format, with each question as a separate item.
+        Don't put comments or explanations like: "다음은 구강 건강에 관한 잇몸 질환에 대한 잠재적인 FAQ 목록입니다: ..."
+        Output should be in Korean language.    
+        '''
+
+        for row in tqdm(res):
+            id = row[0]
+            tags = []
+            types = []
+            tags_ = row[1].split(',')
+            
+            for tag in tags_:
+                tag = tag.strip()
+                if len(tag) > 0:
+                    if len(tag) > 0 and int(tag) in self.breed_map['tag_id'].values: 
+                        tags.append(int(tag)) 
+                    elif tag == BREEDS_DOG_TAG:
+                        types.append('dog')
+                    elif tag == BREEDS_CAT_TAG:
+                        types.append('cat')
+            
+            if len(types) == 0:
+                types.append('nobreeds')                
+
+            content = "{} {} {} {}".format(row[2], row[3], row[4], row[5])
+            questions = self.__generate_questions(system_question, content)
+            questions = questions.split('\n')
+            # Add original document question
+            questions.append(row[2])
+            # Remove duplicate question
+            questions_key = dict.fromkeys(questions)
+            questions = list(questions_key)
+
+            with open(jsonl_file_name, '+a', encoding='utf-8') as jsonl_file:
+                for question in questions:
+                    # { "doc_id": 2, "type":"dog", "breeds":"234", "questions":""}, 
+                    
+                    question = re.sub('^-', '', question)
+                    question = re.sub('^\d+.', '', question)
+                    question = re.sub('^\d+', '', question)
+                    
+                    question = question.strip()
+
+
+                    if len(question) > 0:
+                        for type in types:
+                            if len(tags) == 0:
+                                element = {'doc_id':id, 'type':type, 'breed_tag':-1, 'breed_id':-1, 'breed': '', 'question': question}
+                                json.dump(element, jsonl_file, ensure_ascii=False)
+                                jsonl_file.write('\n')
+                            else:
+                                for tag_ in tags:
+                                    breed_id = int(self.breed_map.loc[self.breed_map['tag_id'] == tag_]['breed_id'].values[0])
+                                    breed = self.breed_map.loc[self.breed_map['tag_id'] == tag_]['name'].values[0]
+                                    element = {'doc_id':id, 'type':type, 'breed_tag':tag_, 'breed_id':breed_id, 'breed': breed, 'question': question}
+                                    json.dump(element, jsonl_file, ensure_ascii=False)
+                                    jsonl_file.write('\n')
+                jsonl_file.flush()
+            jsonl_file.close()
+
+    def build_pincone_index(self, db_host=DB_HOST, db_port=DB_PORT, db_user=DB_USER, db_password = DB_PASSWORD, db_database=DB_DATABASE):
+        logger.info("EqualContentRetiever::build_pinecone_index")
+        # Establishing a connection to MariaDB
+        connection = mysql.connector.connect(
+                        host=db_host,
+                        user=db_user,
+                        password=db_password,
+                        database=db_database, 
+                        port=db_port
+                    )
+        # Creating a cursor object
+        cursor = connection.cursor()
 
         sql = "select perpet.mcard.top as category, perpet.mcard.id as id, perpet.mcard.tag, perpet.mcard.image as image , perpet.mcard.main_title as title, perpet.mcard.summary as summary,  GROUP_CONCAT(perpet.mcard_sub.sub_title SEPARATOR ' ') as sub_title,  GROUP_CONCAT(perpet.mcard_sub.text SEPARATOR ' ') as sub_text FROM perpet.mcard, perpet.mcard_sub where perpet.mcard.id = perpet.mcard_sub.mcard_id GROUP BY perpet.mcard_sub.mcard_id"
-        self.cursor.execute(sql)
-        result = self.cursor.fetchall()
+        cursor.execute(sql)
+        result = cursor.fetchall()
         categories, ids, tags, titles, images, contents, sources = [], [], [], [], [], [], []
 
         logger.info(">>> Total row to index : {}".format(len(result)))
@@ -218,8 +376,42 @@ class EqualContentRetriever():
         return result    
 
 if __name__ == "__main__":
+    db_host = "127.0.0.1" # 
+    db_user = "perpetapi" # 
+    db_password = "O7dOQFXQ1PYY" # 
+    db_database = "perpet"
+    db_port = 3307
+
     contentRetriever = EqualContentRetriever()
-    
+    #contentRetriever.build_question_jsonl(db_host=db_host, db_port=db_port, db_user=db_user, db_password=db_password, db_database=db_database)
+    result = contentRetriever.get_random_questions('dog', '시츄')
+    print(result)
+    result = contentRetriever.get_random_questions('cat')
+    print(result)
+    result = contentRetriever.get_random_questions('dog')
+    print(result)
+
+    def tag_dump():
+        sql = "select perpet.tag.id, perpet.tag.name as name from perpet.tag order by id"
+
+        # Establishing a connection to MariaDB
+        connection = mysql.connector.connect(
+                        host=db_host,
+                        user=db_user,
+                        password=db_password,
+                        database=db_database, 
+                        port=db_port
+                    )
+        # Creating a cursor object
+        cursor = connection.cursor()
+        cursor.execute(sql)
+        res = cursor.fetchall()
+
+        with open('tags.tsv', 'w', encoding='utf-8') as output_file:
+            for row in res:
+                output_file.write("{}\t{}\n".format(row[0], row[1]))
+                
+
     # ret = contentRetriever.get_categories2(breeds=BREEDS_DOG_TAG, pet_name='뽀삐')
     # pprint.pprint(ret, indent=4)
         
@@ -243,3 +435,4 @@ if __name__ == "__main__":
     # #contentRetriever.build_index()
     # #ret = contentRetriever.get_contents2(breeds=BREEDS_DOG_TAG, sn='DG011V2-01', tags=[])
     # #print(ret)
+    #tag_dump()
