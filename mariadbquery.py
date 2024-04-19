@@ -9,7 +9,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     #name = Column(String(100), nullable=False, comment='이름(암호화)')
     nickname = Column(String(255), nullable=False, comment='닉네임')
-    provider_id = # KAKAO_    3103962026
+    provider_id = "KAKAO_"# KAKAO_    3103962026
     # other fields...
     pets = relationship("Pet", back_populates="owner")
 
