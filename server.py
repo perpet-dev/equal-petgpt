@@ -494,7 +494,7 @@ async def extract_questions(request: ContentRequest):
         organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
     )
     completion = client.chat.completions.create(
-        model="gpt-3.5-turbo",#,"gpt-4", 
+        model="gpt-4",  #"gpt-3.5-turbo",#,"gpt-4", 
         messages=[
             {"role": "system", "content": f"{systemquestion}"},
             {"role": "user", "content": f"Here is the content: {content_to_analyze}"},
