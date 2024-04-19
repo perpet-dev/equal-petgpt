@@ -68,6 +68,7 @@ class EqualContentRetriever():
     def get_random_questions(self, pet_type:str, breed:str='', top_n=3):
         breed_question = ''
         use_breed = False
+        breed = breed.replace(' ', '')
         selected_questions = []
         type_key = "{}_".format(pet_type)
         type_questions = self.question_map[type_key].split('\n')
@@ -80,10 +81,14 @@ class EqualContentRetriever():
                 selected_questions = type_questions
         else: # breed           
             breed_key = "{}_{}".format(pet_type, breed)
-            breed_questions = self.question_map[breed_key].split('\n')
-            if len(breed_questions) >= 1:
-                breed_question = random.sample(breed_questions, 1) # 질문 1개 (breed 맞춤)
-            selected_questions = breed_question + random.sample(type_questions, top_n - 1) 
+            if breed_key in self.question_map:
+                breed_questions = self.question_map[breed_key].split('\n')
+                if len(breed_questions) >= 1:
+                    breed_question = random.sample(breed_questions, 1) # 질문 1개 (breed 맞춤)
+                selected_questions = breed_question + random.sample(type_questions, top_n - 1) 
+            else: 
+                logger.critical("Check Breed Key : {}".format(breed_key))
+                selected_questions = random.sample(type_questions, top_n)
 
         return selected_questions
 
@@ -384,7 +389,7 @@ if __name__ == "__main__":
 
     contentRetriever = EqualContentRetriever()
     #contentRetriever.build_question_jsonl(db_host=db_host, db_port=db_port, db_user=db_user, db_password=db_password, db_database=db_database)
-    result = contentRetriever.get_random_questions('dog', '시츄')
+    result = contentRetriever.get_random_questions('cat', '메인 쿤')
     print(result)
     result = contentRetriever.get_random_questions('cat')
     print(result)
