@@ -47,7 +47,16 @@ class Tag(Base):
     name = Column(String(200), index=True)
     used_count = Column(Integer, default=0, comment='사용횟수')
 
-
+class Banner(Base):
+    __tablename__='banner'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    insert_date = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"), comment='등록일')
+    update_date = Column(DateTime, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"), comment='수정일')
+    insert_user = Column(Integer, nullable=False) 
+    link_url = Column(String(512), index=False)
+    image_url = Column(String(512), index=False)
+    update_user = Column(Integer, nullable=False)
+    use_yn = Column(Boolean, nullable=False, default=False)
 
 DATABASE_URL = "mysql+pymysql://perpetdev:perpet1234!@dev.promptinsight.ai:3306/perpet"
 

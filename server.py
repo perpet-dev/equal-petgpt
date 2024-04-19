@@ -562,12 +562,19 @@ class BannerItem(BaseModel):
 #메인 배너 리스트
 @app.get("/main-banner-list", response_model=ApiResponse[List[BannerItem]])
 async def main_banner_list(page: int = Query(0, ge=0), size: int = Query(5, ge=1)):
+    # link_url: https://equal.pet/content/View/77
+    # image_url: https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t4B9XEt74OltsmP.png
+    
+    # link_url: https://equal.pet/content/View/78
+    # image_url: https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t7kI0C6MomZT0fM.png
+
+    # link_url: https://equal.pet/content/View/79
+    # image_url: https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t1cSnF0N8xlW4Fj.png
+
     banners = [
-        BannerItem(link_url="https://example1.com", image_url="https://example1.com/image.jpg"),
-        BannerItem(link_url="https://example2.com", image_url="https://example2.com/image.jpg"),
-        BannerItem(link_url="https://example3.com", image_url="https://example3.com/image.jpg"),
-        BannerItem(link_url="https://example4.com", image_url="https://example4.com/image.jpg"),
-        BannerItem(link_url="https://example5.com", image_url="https://example5.com/image.jpg")
+        BannerItem(link_url="https://equal.pet/content/View/77", image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t4B9XEt74OltsmP.png"),
+        BannerItem(link_url="https://equal.pet/content/View/78", image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t7kI0C6MomZT0fM.png"),
+        BannerItem(link_url="https://equal.pet/content/View/79", image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t1cSnF0N8xlW4Fj.png"),
     ]
 
     # Pagination logic
