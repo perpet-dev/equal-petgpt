@@ -36,8 +36,10 @@ system = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in 
     Separation anxiety and developmental fear periods, \
     Getting the whole family on the same page with training, \
     how to travel with a pet (could be hotels, air planes, buses, cars, etc.). \
-    Answer in the same language as the question. Do not answer for questions not related to pet. \
-    PetGPT will be given a pet profile including name, breed, age, weight and eventually parts where the pet maybe be need more care (like teeth, skin ...). "
+    Answer in the same language as the question. Do not answer for questions not related to pet like politics, econmics etc. \
+    PetGPT will be given a pet profile including name, breed, age, weight and eventually parts where the pet maybe be need more care (like teeth, skin ...). \
+    If input language is Korean, use sentence ending style like 좋아요, 해요, 되요, 있어요, 세요, 이에요 not 좋습니다, 합니다, 됩니다, 있습니다, 합니다, 입니다.  \
+    And use emoji, emoticons if possible."
     
 logger = logging.getLogger(__name__)
 
@@ -213,3 +215,59 @@ async def generation_websocket_endpoint_chatgpt(websocket: WebSocket):
     except Exception as e:
         logger.error(f"Unexpected error: {e}", exc_info=True)
         await websocket.send_json({"error": "An unexpected error occurred while processing your request."})
+
+
+if __name__ == "__main__":
+    # petgpt prompt tuning
+
+    def petgpt_test(question):
+
+        system = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in healthcare for dogs and cats to assist pet owners with a wide range of questions and challenges. \
+            PetGPT provides detailed care tips, including dietary recommendations, exercise needs, and general wellness advice, emphasizing suitable vitamins and supplements. \
+            PetGPT can provide immediate, accurate, and tailored advice on various aspects of pet care, including health, behavior, \
+            nutrition, grooming, exercise, and general well-being. PetGPT's ability to access a vast database of information allows it \
+            to offer solutions and suggestions based on the latest veterinary science and best practices in pet care. \
+            It can also guide pet owners through the process of understanding and purchasing pet insurance, managing vet bills, \
+            and making informed decisions about their pet's health and care. \
+            Additionally, PetGPT can assist in training and socialization techniques, offering tips to manage common issues like separation anxiety,\
+            destructive behavior, and indoor accidents. Its interactive nature allows for personalized advice based on specific details \
+            shared by the pet owner about their pet. Answer questions and give tips about Vaccinations, boosters,\
+            Housebreaking and crate training, Chewing, teething and general destruction, \
+            Separation anxiety and developmental fear periods, \
+            Getting the whole family on the same page with training, \
+            how to travel with a pet (could be hotels, air planes, buses, cars, etc.). \
+            Answer in the same language as the question. Do not answer for questions not related to pet like politics, econmics etc. \
+            PetGPT will be given a pet profile including name, breed, age, weight and eventually parts where the pet maybe be need more care (like teeth, skin ...). \
+            If input language is Korean, use sentence ending style like 좋아요, 해요, 되요, 있어요, 세요, 이에요 not 좋습니다, 합니다, 됩니다, 있습니다, 합니다, 입니다.  \
+            And use emoji, emoticons if possible."
+
+        OPENAI_API_KEY="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"
+        openai.api_key=OPENAI_API_KEY
+        model = 'gpt-4'
+        
+        system_message = {"role": "system", "content": system}
+        #conversation_with_system = [system_message] + conversation
+        #message_stream_id = str(uuid.uuid4())
+        #conversation = prepare_messages_for_openai(conversation_with_system)
+
+        client = OpenAI(
+            organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
+            api_key=OPENAI_API_KEY
+        )
+        response = client.chat.completions.create(
+            model = model,
+            messages=[
+                system_message, 
+                {"role":"user", "content":"Here is the content: {}".format(question)}
+            ],
+            temperature=0,
+            max_tokens=1024,
+            #stream=True
+        )
+
+        print(response)
+        response.choices[0].message.content
+
+    question = '리트리버는 일주일에 산책을 몇 번 해야 합니까?'
+    #question = '닥터훈트의 관절 건강 관리 방법은?'
+    petgpt_test(question)
