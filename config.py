@@ -31,3 +31,8 @@ DB_PASSWORD = "perpet1234!" # "O7dOQFXQ1PYY" #
 DB_DATABASE = "perpet"
 DB_PORT = 3306 # 3307
 
+LOG_NAME = 'EqualPetGPT'
+LOG_FILE_NAME = './log/petgpt.log'
+
+
+

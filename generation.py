@@ -4,8 +4,10 @@ import uuid
 from fastapi import WebSocket, WebSocketDisconnect
 from petprofile import PetProfileRetriever
 
-import logging
-logger = logging.getLogger(__name__)
+from config import LOG_NAME, LOGGING_LEVEL, LOG_FILE_NAME
+
+from log_util import LogUtil
+logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 
 system_with_image = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in analyzing images of dogs and cats. \
     Upon receiving an image, you identifies the pet's breed, age and weight. PetGPT provides detailed care tips, \
@@ -42,8 +44,6 @@ system = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in 
     PetGPT will be given a pet profile including name, breed, age, weight and eventually parts where the pet maybe be need more care (like teeth, skin ...). \
     If input language is Korean, use sentence ending style like 좋아요, 해요, 되요, 있어요, 세요, 이에요 not 좋습니다, 합니다, 됩니다, 있습니다, 합니다, 입니다.  \
     And use emoji, emoticons if possible."
-    
-logger = logging.getLogger(__name__)
 
 # Assuming API key and custom model/server configurations are set elsewhere
 # openai.api_key = "your-api-key"

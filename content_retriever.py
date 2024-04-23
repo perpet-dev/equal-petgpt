@@ -14,7 +14,7 @@ import jsonlines
 import random
 
 from subject_json import SUBJECT_JSON
-from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE, OPENAI_API_KEY, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX
+from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE, OPENAI_API_KEY, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX, LOG_NAME, LOGGING_LEVEL, LOG_FILE_NAME
 
 INDEX_NAME = 'equalapp2'
 BREEDS_DOG_TAG = '62'
@@ -22,8 +22,8 @@ BREEDS_CAT_TAG = '276'
 BREEDS_NONE = ''
 MATCH_SCORE_CUTOFF = 0.4
 
-import logging
-logger = logging.getLogger(__name__)
+from log_util import LogUtil
+logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 
 client = OpenAI(api_key = OPENAI_API_KEY)
 pc = Pinecone(PINECONE_API_KEY)
