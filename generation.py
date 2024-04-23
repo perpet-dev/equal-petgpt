@@ -51,7 +51,6 @@ logger = logging.getLogger(__name__)
 
 # Example of filtering out unsupported fields from messages before sending to OpenAI
 def prepare_messages_for_openai(messages):
-    pet_profile = None
     # Define the allowed fields in a message
     allowed_fields = {'role', 'content'}
 
@@ -60,7 +59,7 @@ def prepare_messages_for_openai(messages):
     for message in messages:
         filtered_message = {key: value for key, value in message.items() if key in allowed_fields}
         filtered_messages.append(filtered_message)
-    return filtered_messages, pet_profile
+    return filtered_messages
 
 import openai
 from openai import OpenAI
@@ -75,13 +74,13 @@ async def handle_text_messages(websocket: WebSocket, model, conversation):
             pet_age = pet_profile.age
             pet_breed = pet_profile.breed
             pet_weight = pet_profile.weight
-            system_prompt = "{} \n pet name: {}, breed: {}, age: {}, weight: {}kg".format(pet_name, pet_breed, pet_age, pet_weight)
+            system_prompt = "{} \n pet name: {}, breed: {}, age: {}, weight: {}kg".format(system, pet_name, pet_breed, pet_age, pet_weight)
             system_message = {"role": "system", "content": system_prompt}
         else:
-            system_message = {"role": "system", "content": system}    
-            
+            system_message = {"role": "system", "content": system}          
     except Exception as e:
         logger.fatal("conversation does not have pet_id.")
+        system_message = {"role": "system", "content": system}  
 
     conversation_with_system = [system_message] + conversation
 
