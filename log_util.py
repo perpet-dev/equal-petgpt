@@ -12,14 +12,14 @@ class LogUtil(object):
     # Singleton 으로 구성
     def __new__(cls, *args, **kwargs):
         if not hasattr(cls, "_instance"):         
-            print("LogUtil::__new__ is called")
+            #print("LogUtil::__new__ is called")
             cls._instance = super().__new__(cls) 
         return cls._instance 
         
     def __init__(self, logname:str='logutil', logfile_name:str='logutil.log', loglevel:int=logging.INFO, maxBytes:int=1024000, backupCount:int=5):
         cls = type(self)
         if not hasattr(cls, "_init"):           
-            print("LogUtil::__init__ is called\n")
+            #print("LogUtil::__init__ is called\n")
             formatter = logging.Formatter(fmt='%(levelname)s: %(name)s: %(asctime)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
             self.logger = logging.getLogger(logname)
             self.logger.setLevel(logging.INFO)
