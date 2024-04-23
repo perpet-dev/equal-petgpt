@@ -4,6 +4,7 @@ import logging.config
 LOGGING_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG')
 PORT = int(os.getenv('PORT', 9090))
 EUREKA = os.getenv('EUREKA_CLIENT_SERVICEURL_DEFAULTZONE', "http://dev.promptinsight.ai:10001/eureka") 
+
 # OPENAI_API_KEY = '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'
 #OPENAI_EMBEDDING_MODEL_NAME = 'text-embedding-3-small'
 #OPENAI_EMBEDDING_DIMENSION = 1536

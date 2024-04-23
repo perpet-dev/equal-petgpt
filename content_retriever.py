@@ -13,17 +13,7 @@ import re
 import jsonlines
 import random
 
-
 from subject_json import SUBJECT_JSON
-
-# DB_HOST =  "127.0.0.1" # "dev.promptinsight.ai"  
-# DB_USER = "perpetapi" # "perpetdev" #  
-# DB_PASSWORD = "O7dOQFXQ1PYY" #"perpet1234!" #  # 
-# DB_HOST = "dev.promptinsight.ai"  
-# DB_USER = "perpetdev" #  
-# DB_PASSWORD = "perpet1234!" #  # 
-# DB_DATABASE = "perpet"
-# DB_PORT = 3307
 from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE, OPENAI_API_KEY, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX
 
 INDEX_NAME = 'equalapp2'
@@ -64,33 +54,6 @@ class EqualContentRetriever():
                     self.question_map[key_] = self.question_map[key_] + '\n' + line['question']
                 else:
                     self.question_map[key_] = line['question']
-
-    def get_random_questions(self, pet_type:str, breed:str='', top_n=3):
-        breed_question = ''
-        use_breed = False
-        breed = breed.replace(' ', '')
-        selected_questions = []
-        type_key = "{}_".format(pet_type)
-        type_questions = self.question_map[type_key].split('\n')
-        
-        if breed == '': # no breed
-            if len(type_questions) >= top_n:
-                selected_questions = random.sample(type_questions, top_n)
-            else:
-                logger.critical('Qustion list not enough...')
-                selected_questions = type_questions
-        else: # breed           
-            breed_key = "{}_{}".format(pet_type, breed)
-            if breed_key in self.question_map:
-                breed_questions = self.question_map[breed_key].split('\n')
-                if len(breed_questions) >= 1:
-                    breed_question = random.sample(breed_questions, 1) # 질문 1개 (breed 맞춤)
-                selected_questions = breed_question + random.sample(type_questions, top_n - 1) 
-            else: 
-                logger.critical("Check Breed Key : {}".format(breed_key))
-                selected_questions = random.sample(type_questions, top_n)
-
-        return selected_questions
 
     def __generate_questions(self, system_question:str, content_to_analyze:str):
         logger.debug('>> Generate Questions')
@@ -210,6 +173,33 @@ class EqualContentRetriever():
                             'tag':res['metadata']['tag']})
         return result
 
+    def get_random_questions(self, pet_type:str, breed:str='', top_n=3):
+        breed_question = ''
+        use_breed = False
+        breed = breed.replace(' ', '')
+        selected_questions = []
+        type_key = "{}_".format(pet_type)
+        type_questions = self.question_map[type_key].split('\n')
+        
+        if breed == '': # no breed
+            if len(type_questions) >= top_n:
+                selected_questions = random.sample(type_questions, top_n)
+            else:
+                logger.critical('Qustion list not enough...')
+                selected_questions = type_questions
+        else: # breed           
+            breed_key = "{}_{}".format(pet_type, breed)
+            if breed_key in self.question_map:
+                breed_questions = self.question_map[breed_key].split('\n')
+                if len(breed_questions) >= 1:
+                    breed_question = random.sample(breed_questions, 1) # 질문 1개 (breed 맞춤)
+                selected_questions = breed_question + random.sample(type_questions, top_n - 1) 
+            else: 
+                logger.critical("Check Breed Key : {}".format(breed_key))
+                selected_questions = random.sample(type_questions, top_n)
+
+        return selected_questions
+    
     def build_question_jsonl(self, db_host=DB_HOST, db_port=DB_PORT, db_user=DB_USER, db_password=DB_PASSWORD, db_database=DB_DATABASE):
         logger.info("EqualContentRetiever::build_pinecone_index")
         # Step 1 : Iterate content db
@@ -349,7 +339,13 @@ class EqualContentRetriever():
         for x in self.contents_cache:
             if x['pet_type'] == pet_type and x['category_sn'] == sn:
                 return x['content']
-    
+
+    def rag(self, query, rag_index):
+        logger.debug("EqualContentRetriever::rag")
+        
+
+
+
     def get_query_contents(self, query:str, pet_type:str='', tags:list=[]):
         # Pinecone search
         logger.debug("EqualContentRetriever::get_query_contents, query={}, pet_type={}, tags={}".format(query, pet_type, tags))
