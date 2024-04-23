@@ -1,9 +1,15 @@
+import httpx
 import asyncio
-import traceback
+import json
+
+from typing import List
+import aiohttp
 import uuid
 from fastapi import WebSocket, WebSocketDisconnect
 import logging
 logger = logging.getLogger(__name__)
+from petprofile import PetProfileRetriever
+from config import OPENAI_API_KEY, API_URL
 
 system_with_image = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in analyzing images of dogs and cats. \
     Upon receiving an image, you identifies the pet's breed, age and weight. PetGPT provides detailed care tips, \
@@ -62,7 +68,13 @@ def prepare_messages_for_openai(messages):
 
 import openai
 from openai import OpenAI
-async def handle_text_messages(websocket: WebSocket, model, conversation):
+async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id):
+    retriever = PetProfileRetriever()
+    pet_profile = retriever.get_pet_profile(pet_id)
+    retriever.close()
+    
+    system += f"\nYou are assisting '{pet_profile}'"
+    logger.info(f"handle_text_messages for Pet profile: {pet_profile}")
     system_message = {"role": "system", "content": system}
     conversation_with_system = [system_message] + conversation
     #message_stream_id = str(uuid.uuid4())
@@ -78,7 +90,7 @@ async def handle_text_messages(websocket: WebSocket, model, conversation):
         model = model,
         messages=conversation,
         temperature=0,
-        max_tokens=1024,
+        max_tokens=256,
         stream=True
     )
     message_stream_id = str(uuid.uuid4())
@@ -148,7 +160,107 @@ async def handle_image_messages(websocket: WebSocket, model, messages):
         logger.error(f"Error processing text message: {e}", exc_info=True)
         await websocket.send_json({"error": "Error processing your request"})
 
-async def generation_websocket_endpoint_chatgpt(websocket: WebSocket):
+
+async def openai_chat_api_request(model: str, messages: List[dict]):
+    headers = {
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": model,
+        "messages": messages
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.post(API_URL, json=payload, headers=headers) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                logger.error(f"OpenAI API error: {response.status}")
+                return None
+
+def construct_system_message(pet_profile):
+    pet_name = pet_profile.get('pet_name', 'Unknown Pet')
+    pet_type = pet_profile.get('pet_type', 'Unknown Type')
+    breed = pet_profile.get('breed', 'Unknown Breed')
+    age = pet_profile.get('age', 'Unknown Age')
+    body_weight = pet_profile.get('body_weight', 'Unknown Weight')
+    gender = pet_profile.get('gender', 'Unknown Gender')
+
+    logger.info(f"Pet profile: Name={pet_name}, Type={pet_type}, Breed={breed}, Age={age}, Weight={body_weight}, Gender={gender}")
+    
+    return {
+        "role": "system",
+        "content": f"{system}\nYou are assisting '{pet_name}', a {age}-year-old {pet_type} of the breed {breed} and is a {gender}."
+    }
+
+async def handle_websocket_messages(websocket: WebSocket, data: dict):
+    logger.info(f"Received data: {data}")
+    messages = data.get("messages", [])
+    pet_profile = {}
+    if messages:
+        if 'petProfile' in messages[0]:
+            pet_profile = messages[0].pop('petProfile')
+            # Construct a system message with pet profile details
+            system_message = construct_system_message(pet_profile)
+            messages.insert(0, system_message)
+    
+    # Determine if the message contains images
+    model = "gpt-4-vision-preview" if any(m.get("type") == "image_url" for m in messages if isinstance(m, dict)) else "gpt-4"
+    logger.debug(f"Should send messages: {messages}")
+
+    try:
+        # Correctly await the coroutine to get the async iterator
+        response_stream = await call_openai_api(model, messages)
+        async for response in response_stream:
+            if 'choices' in response:
+                for choice in response['choices']:
+                    if 'message' in choice and choice['message']:
+                        await websocket.send_json({
+                            "id": str(uuid.uuid4()),
+                            "content": choice['message']['content']
+                        })
+        await websocket.send_json({"finished": True})
+    except Exception as e:
+        logger.error(f"Error during message processing: {e}", exc_info=True)
+        await websocket.send_json({"error": "Error processing your request"})
+
+#@app.websocket("/ws/generation")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_json()
+            await handle_websocket_messages(websocket, data)
+    except WebSocketDisconnect:
+        logger.info("WebSocket connection closed")
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        await websocket.send_json({"error": "An unexpected error occurred."})
+
+async def call_openai_api(model, messages):
+    OPENAI_API_KEY = "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"
+    headers = {
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "model": model,
+        "messages": messages,
+        "temperature": 0,
+        "max_tokens": 1024,
+        "stream": True
+    }
+    url = "https://api.openai.com/v1/chat/completions"
+    return fetch_stream(url, headers, data)
+
+async def fetch_stream(url, headers, json_body):
+    async with httpx.AsyncClient() as client:
+        async with client.stream('POST', url, headers=headers, json=json_body) as response:
+            async for line in response.aiter_lines():
+                if line:
+                    yield json.loads(line)
+
+async def generation_websocket_endpoint_chatgpt(websocket: WebSocket, pet_id: str):
     await websocket.accept()
     logger.info("WebSocket client connected")
 
@@ -184,27 +296,9 @@ async def generation_websocket_endpoint_chatgpt(websocket: WebSocket):
             
             try: 
                 if contains_image:
-                    await handle_image_messages(websocket, model, messages)
+                    await handle_image_messages(websocket, model, messages, pet_id)
                 else:
-                    await handle_text_messages(websocket, model, messages)
-                
-                # choice = response.choices[0]
-                # message = choice.message
-
-                # # Manually create the response dictionary
-                # answer = {
-                #     "finish_reason": choice.finish_reason,
-                #     "index": choice.index,
-                #     "logprobs": choice.logprobs,
-                #     "content": message.content,
-                #     "role": message.role,
-                #     "function_call": message.function_call,
-                #     "tool_calls": message.tool_calls,
-                #     "finished": True  # Add 'finished': true to the response
-                # }
-
-                # logger.info(answer)
-                # await websocket.send_json(answer)
+                    await handle_text_messages(websocket, model, messages, pet_id)
                 
             except Exception as e:
                 logger.error(f"Error while calling OpenAI API: {e}", exc_info=True)

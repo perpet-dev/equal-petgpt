@@ -18,3 +18,4 @@ huggingface-hub
 datasets
 jinja2==3.0.1
 jsonlines==2.0.0
+aiohttp==3.8.1

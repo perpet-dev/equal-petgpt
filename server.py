@@ -17,9 +17,7 @@ import os
 import openai
 import base64
 from openai import OpenAI
-import openai
-from openai import OpenAI
-import uuid
+import aiohttp
 
 from py_eureka_client import eureka_client
 from config import PORT, EUREKA, LOGGING_LEVEL, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX
@@ -32,6 +30,26 @@ from petprofile import PetProfile
 # OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 openai.api_key = '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' #OPENAI_API_KEY
 
+
+# Configure logging
+import logging
+LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG").upper()
+logging.basicConfig(level=LOG_LEVEL)
+logger = logging.getLogger("uvicorn")
+logger.setLevel(LOG_LEVEL)
+
+#prefix="/petgpt-service"
+prefix = "/"
+app = FastAPI(root_path=prefix)
+#app = FastAPI()
+# # Allow all origins
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],  # Allows all origins
+#     allow_credentials=True,
+#     allow_methods=["*"],  # Allows all methods
+#     allow_headers=["*"],  # Allows all headers
+# )
 '''
 GPT-3.5 Turbo models are capable and cost-effective.
 
@@ -53,25 +71,6 @@ gpt-4-1106-preview	$10.00 / 1M tokens	$30.00 / 1M tokens
 gpt-4-1106-vision-preview	$10.00 / 1M tokens	$30.00 / 1M tokens
 
 '''
-# Configure logging
-import logging
-LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG").upper()
-logging.basicConfig(level=LOG_LEVEL)
-logger = logging.getLogger("uvicorn")
-logger.setLevel(LOG_LEVEL)
-
-prefix="/petgpt-service"
-#prefix = "/"
-app = FastAPI(root_path=prefix)
-#app = FastAPI()
-# # Allow all origins
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],  # Allows all origins
-#     allow_credentials=True,
-#     allow_methods=["*"],  # Allows all methods
-#     allow_headers=["*"],  # Allows all headers
-# )
 # static files directory for web app
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -143,312 +142,14 @@ class PetGPTQuestionListResponse(BaseModel):
     
 @app.post("/process-pet-image")
 async def process_pet_images(pet_name: str, petImages: List[UploadFile] = File(...)):
-
-    petgpt_system_imagemessage = '''
-    You are 'PetGPT', a friendly and enthusiastic GPT that specializes in analyzing images of dogs and cats. \
-    Upon receiving an image, you try to identify the pet's type, breed and age. \
-    If you get the name of the pet, please incorporate it into your answer. \
-    type=dog or cat, breed=breed of the pet, age=age of the pet \
-    Output strictly as a JSON object containing the fields: answer, name, type, breed, age ." \
-For age, you must use the following categories:
-푸릇푸릇 폭풍 성장기"
-생기 넘치는 청년기
-꽃처럼 활짝 핀 중년기
-성숙함이 돋보이는
-우리집 최고 어르신
-and type should be either 'dog' or 'cat'.
-
-For breeds refer to the following list:
-name	type
-골든 리트리버	dog
-그레이 하운드	dog
-그레이트 데인	dog
-그레이트 스위스 마운틴 독	dog
-그레이트 피레니즈	dog
-그리폰 브뤼셀	dog
-꼬똥 드 툴레아	dog
-노르웨이 룬트훈트	dog
-노르웨이안 엘크하운드	dog
-노르웨이안 하운드	dog
-노리치 테리어	dog
-노바 스코셔 덕 톨링 레트리버	dog
-뉴펀들랜드 독	dog
-닥스훈트	dog
-달마시안	dog
-더치 셰퍼드 독	dog
-도고 아르헨티노	dog
-도그 드 보르도	dog
-도베르만	dog
-디어하운드	dog
-래브라도 리트리버	dog
-라사압소	dog
-러시안 블랙 테리어	dog
-러시안-유러피안 라이카	dog
-로디지안 리지백	dog
-루마니안 셰퍼드	dog
-로첸	dog
-로트와일러	dog
-잉글리쉬 마스티프	dog
-타트라 마운틴 쉽독	dog
-나폴리탄 마스티프	dog
-말티즈	dog
-말티푸	dog
-맨체스터 테리어	dog
-멕시칸 헤어리스 독	dog
-무디	dog
-미니어처 슈나우저	dog
-미니어처 핀셔	dog
-프렌치 포인팅 독	dog
-믹스견	dog
-바바리안 마운틴 하운드	dog
-바베트	dog
-바센지	dog
-바셋 블뢰 드 가스코뉴	dog
-바셋 포브 드 브르타뉴	dog
-바셋하운드	dog
-버니즈 마운틴 독	dog
-벌고 포인팅 독	dog
-베들링턴 테리어	dog
-베르가마스코 셰퍼드 독	dog
-벨지안 그리폰	dog
-벨지안 셰퍼드 독	dog
-보더 콜리	dog
-보더 테리어	dog
-보르조이	dog
-보스 쉽독	dog
-보스턴 테리어	dog
-복서	dog
-볼로네즈	dog
-불 테리어	dog
-불독	dog
-불마스티프	dog
-네바 마스커레이드	cat
-노르웨이 숲	cat
-데본렉스	cat
-돈스코이	cat
-라가머핀	cat
-라팜	cat
-렉돌	cat
-러시안 블루	cat
-맹크스 (Manx)	cat
-먼치킨	cat
-메인쿤	cat
-믹스묘	cat
-발리니즈	cat
-버만	cat
-버미즈	cat
-버밀라	cat
-벵갈	cat
-봄베이	cat
-브리티쉬 롱헤어	cat
-브리티쉬 숏헤어	cat
-사바나	cat
-샤르트뢰	cat
-샴	cat
-세이셸루아	cat
-셀커크 렉스	cat
-소말리	cat
-스노우슈	cat
-스코티시 스트레이트	cat
-스코티시 폴드	cat
-스핑크스	cat
-시베리안	cat
-싱가푸라	cat
-아메리칸 밥테일	cat
-아메리칸 숏헤어	cat
-아메리칸 와이어헤어	cat
-아메리칸 컬	cat
-아비시니안	cat
-엑조틱 숏헤어	cat
-오리엔탈	cat
-오스트레일리안 미스트	cat
-오시캣	cat
-이집션 마우	cat
-재패니즈 밥테일	cat
-카오 마니	cat
-코니시 렉스	cat
-코랏	cat
-코리안 숏헤어	cat
-쿠릴리안 밥테일	cat
-킴릭	cat
-타이	cat
-터키쉬 반	cat
-터키쉬 앙고라	cat
-통키니즈	cat
-페르시안	cat
-피터볼드	cat
-픽시 밥	cat
-하바나 브라운	cat
-브라질리언 테리어	dog
-브리아드	dog
-브리타니 스파니엘	dog
-블랙 앤 탄 쿤하운드	dog
-블러드 하운드	dog
-비글	dog
-비숑 프리제	dog
-비어디드 콜리	dog
-쁘띠 바셋 그리폰 방뎅	dog
-쁘띠 브라반숑	dog
-샤를로스 울프하운드	dog
-사모예드	dog
-살루키	dog
-샤페이	dog
-서식스 스파니엘	dog
-세인트 버나드	dog
-세인트 저먼 포인터	dog
-셰틀랜드 쉽독	dog
-슈나우저	dog
-스위스 하운드	dog
-스카이 테리어	dog
-스코티시 테리어	dog
-스키퍼키	dog
-스타포드셔 불 테리어	dog
-스테비훈	dog
-스패니시 그레이하운드	dog
-스패니시 마스티프	dog
-스패니시 워터 독	dog
-스패니시 하운드	dog
-스피츠	dog
-슬로바키안 하운드	dog
-슬루기	dog
-시바	dog
-시베리안 허스키	dog
-시츄	dog
-시코쿠	dog
-실리엄 테리어	dog
-아르투아 하운드	dog
-아리에쥬아	dog
-아메리칸 스태퍼드셔 테리어	dog
-아메리칸 아키타	dog
-아메리칸 워터 스파니엘	dog
-아메리칸 코카 스파니엘	dog
-아메리칸 폭스하운드	dog
-아이리시 글렌 오브 이말 테리어	dog
-아이리시 세터	dog
-아이리시 소프트코티드 휘튼 테리어	dog
-아이리시 울프하운드	dog
-아이리시 워터 스파니엘	dog
-아이리시 테리어	dog
-아이슬랜드 쉽독	dog
-아키타	dog
-아펜핀셔	dog
-아프간 하운드	dog
-알라스칸 말라뮤트	dog
-에어데일 테리어	dog
-오스트레일리안 셰퍼드	dog
-오스트레일리안 스텀피 테일 캐틀 독	dog
-오스트레일리안 켈피	dog
-오스트레일리안 테리어	dog
-오스트리안 블랙 앤드 탄 하운드	dog
-오스트리안 핀셔	dog
-오터 하운드	dog
-올드 대니시 포인팅 독	dog
-올드 잉글리시 쉽독	dog
-와이마라너	dog
-요크셔테리어	dog
-시베리안 라이카	dog
-웨스트 하일랜드 화이트 테리어	dog
-웰시 스프링어 스파니엘	dog
-웰시 코기	dog
-웰시 테리어	dog
-이탈리안 그레이하운드	dog
-이탈리안 볼피노	dog
-이탈리안 포인팅 독	dog
-잉글리시 세터 (르웰린)	dog
-잉글리시 스프링거 스파니엘	dog
-잉글리시 코커 스파니엘	dog
-잉글리시 토이 테리어 블랙 앤드 탠	dog
-잉글리시 포인터	dog
-잉글리시 폭스하운드	dog
-자이언트 슈나우저	dog
-재패니즈 스피츠	dog
-재패니즈 친	dog
-재패니즈 테리어	dog
-잭 러셀 테리어	dog
-저먼 롱헤어드 포인팅 독	dog
-저먼 셰퍼드	dog
-저먼 쇼트-헤어드 포인팅 독	dog
-저먼 스파니엘	dog
-저먼 핀셔	dog
-저먼 하운드	dog
-진돗개	dog
-차우차우	dog
-차이니스 크레스티드	dog
-체서피크 베이 리트리버	dog
-체스키 테리어	dog
-치와와	dog
-카네코르소	dog
-카디건 웰시 코기	dog
-카발리에 킹 찰스 스파니엘	dog
-캉갈 셰퍼드 독	dog
-커릴리언 베어 독	dog
-컬리 코티드 리트리버	dog
-케리 블루 테리어	dog
-케언 테리어	dog
-케이넌 독	dog
-그린란드견	dog
-빠삐용 (콘티넨탈 토이 스파니엘)	dog
-러프 콜리	dog
-스무스 콜리	dog
-코몬도르	dog
-쿠바츠	dog
-쿠이커혼제	dog
-크로아티안 셰퍼드 독	dog
-크롬폴란데	dog
-클럼버 스파니엘	dog
-킹 찰스 스파니엘	dog
-타이 리지백	dog
-타이완 독	dog
-티베탄 스파니엘	dog
-티베탄 마스티프	dog
-티베탄 테리어	dog
-파라오 하운드	dog
-파슨 러셀 테리어	dog
-퍼그	dog
-페키니즈	dog
-펨브록 웰시 코기	dog
-포르투기즈 쉽독	dog
-포르투기즈 워터 독	dog
-포르투기즈 포인팅 독	dog
-포메라니안	dog
-폭스 테리어	dog
-폴리시 로랜드 쉽독	dog
-폴리시 하운드	dog
-푸델포인터	dog
-푸들	dog
-프렌치 불독	dog
-프렌치 스파니엘	dog
-프렌치 하운드	dog
-플랫 코티드 리트리버	dog
-피니쉬 하운드	dog
-피니시 스피츠	dog
-피레니안 마스티프	dog
-피레니안 마운틴 독	dog
-피레니안 셰펴드	dog
-피레니안 쉽독	dog
-비즐라 (헝가리안 포인터)	dog
-헝가리안 그레이하운드	dog
-호바와트	dog
-홋카이도견	dog
-화이트 스위스 셰퍼드 독	dog
-갈갈	dog
-갈갈	dog
-골든	dog
-골든	dog
-휘핏	dog
-토이푸들	dog
-포메러니안	dog
-말티숑	dog
-요크셔테리어	dog
-미니어처 푸들	dog
-    '''
-    oaiclient = OpenAI(organization='org-oMDD9ptBReP4GSSW5lMD1wv6',)
+    from pet_image_prompt import petgpt_system_imagemessage
     messages = [
         {"role": "system", "content": petgpt_system_imagemessage},
         {"role": "user","content": [
             {"type": "text", 
             "text": f"It's {pet_name}'s photo. What's the pet type, breed and age? 한국말로 답변해줘요"}]}
     ]
+    
     for upload_file in petImages:
         contents = await upload_file.read()
         img_base64 = base64.b64encode(contents).decode("utf-8")
@@ -460,15 +161,33 @@ name	type
             "type": "image_url",
             "image_url": {"url" : img_base64}
         })
+        
+    url = "https://api.openai.com/v1/chat/completions"
+    payload = {
+        "model": "gpt-4-vision-preview",
+        "messages": messages,
+        "max_tokens": 500
+    }
+    headers = {
+        "Authorization": f"Bearer {openai.api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, json=payload, headers=headers) as response:
+            result = await response.json()
+            gpt4v = result['choices'][0]['message']['content']
+            return {"message": gpt4v}
+    
+    # oaiclient = OpenAI(organization='org-oMDD9ptBReP4GSSW5lMD1wv6',)
+    # response = oaiclient.chat.completions.create(
+    #     model="gpt-4-vision-preview",
+    #     messages=messages,
+    #     max_tokens=500,
+    # )
 
-    response = oaiclient.chat.completions.create(
-        model="gpt-4-vision-preview",
-        messages=messages,
-        max_tokens=500,
-    )
-
-    gpt4v = response.choices[0].message.content
-    return {"message": f"{gpt4v}"}
+    # gpt4v = response.choices[0].message.content
+    # return {"message": f"{gpt4v}"}
     
 @app.post("/extract-questions")
 async def extract_questions(request: ContentRequest):
@@ -662,38 +381,48 @@ async def create_vet_comment(pet_profile: PetProfile):
 {{NAME}}은 구강 건강 관리에 좀 더 주의를 기울여야 해요. 치석은 구강 건강뿐만 아니라, 심장, 신장, 간 등의 다른 신체 부위로 세균이나 염증을 퍼뜨려 질병을 일으킬 수도 있기 때문에 매우 신경 써야 하는 문제예요. 구강 질환은 초기에는 명확한 증상이 나타나지 않을 수 있으니, {{NAME}}의 입 안을 주기적으로 확인하고 이상이 있을 경우 수의사와 상의하시는 게 좋아요. 강아지 전용 칫솔과 치약을 사용하여 주 3회 이상의 양치가 권장되고 칫솔질에 익숙하지 않을 경우 거부할 수 있으니 천천히 익숙하게 해주는 게 중요해요.
     skip mentionning supplements elements like 영양소인 오메가-3 지방산, 코엔자임 Q10, 아르기닌, 타우린, 항산화제, 비타민 B-복합체 because you will generate in another API.
 '''
-# 내분비계는 우리 몸의 다양한 기능들, 예를 들어 대사, 성장, 수면 등을 조절하는 여러 가지 호르몬을 분비해요. 내분비계 질환이 생기면, 호르몬의 불균형이 발생해 몸의 정상적인 기능을 방해하고, 이로 인해 산화 스트레스가 일어날 수 있어요. 예를 들어, 쿠싱증후군에서 스트레스 호르몬인 코르티솔이 과도하게 분비되면, 면역 체계의 기능을 약화시키고 감염과 염증에 노출될 위험을 증가시킬 수 있어요. 또한, 갑상선 호르몬이 부족하면, 세포의 에너지 생산이 줄어들고 이는 미토콘드리아에서 과도한 '자유 라디칼'을 발생시킬 수 있어요. '자유 라디칼'은 세포와 DNA에 손상을 입히는 물질로, 산화 스트레스를 일으키는 주요 원인 중 하나에요. 이렇게 내분비계 질환은 여러 가지 방식으로 산화 스트레스를 일으킬 수 있어요. 그래서 내분비계 기저 질환을 가진 {{NAME}}처럼 아이들에게선 적절한 수의학적 치료와 함께 산화 스트레스를 최소화하는 방법을 고려하는 것이 중요해요.
-# {{NAME}}가 비뇨기계 질환을 겪었다는 사실을 정말 안타깝게 생각해요. 7살 이상의 반려묘의 경우, 방광의 수축력이 감소할 수 있어요. 이는 소변을 완전히 비울 수 없게 하며, 방광염의 위험성을 증가 시켜요. 그래서 주기적인 배뇨 훈련을 통해 방광을 완전히 비울 수 있도록 도와야 해요. 또한 충분히 물을 마실 수 있게 하고, 소변의 적정 pH를 유지하기 위해 올바른 식단을 제공하는 것이 중요해요. 많은 물을 마시면 소변이 묽어지고, 자주 소변을 볼 수 있어서, 방광을 깨끗하게 유지하는데 도움이 되거든요. 결석의 종류에 따라 다르지만 대체적으로 소변의 pH는 약 6.0-6.5를 유지하는 게 좋아요. 이를 위해 수의사와 상담을 통해 특정 비뇨기계 사료를 추천받을 수도 있어요. 칼슘은 인의 1~2배가 되도록 조절하는 것이 바람직하고요. 단백질을 많이 섭취하면 인이 급격히 올라갈 수 있으니, 평소에 육류 간식을 많이 먹지 않도록 주의해야 해요. 권장 간식과 섭취량은 수의사와 상담을 통해 결정하는 것이 좋아요. 
-# 비대성 심근병증(HCM)은 고양이에서 흔히 발생하는 심장병으로, 심장 근육이 비정상적으로 두꺼워져 펌프 기능이 약화되는 질환이에요. 유전적 요인 때문에 랙돌, 브숏, 페르시안 같은 일부 품종이 더욱 취약하지만, 다른 종에서도 발생할 수 있어요. 초기 단계에서는 증상이 뚜렷하지 않지만, 점차 호흡 곤란과 식욕 부진 등이 나타날 수 있어요. 심장초음파, 혈압 측정, 흉부 X-레이 등을 통해 진단하고, Pro-BNP와 Troponin 같은 혈액 검사도 진단과 예후 평가에 도움이 돼요. 질병의 진행 정도와 증상에 따라 심부전 관리와 혈전 형성 예방을 위한 약물 치료가 필요할 수 있어요. 진단 후에는 스트레스 최소화, 식단 조절 그리고 체중 관리가 중요하고, 정기적인 검진을 통해 질병의 진행 상황을 확인하고 필요한 치료를 받아야 해요. 현재까지 완치 방법이 없지만, 적절한 관리와 치료를 통해 삶의 질을 향상시키고, 심장 부전과 같은 합병증의 발생을 예방하거나 지연시킬 수 있어요. 그래서, HCM을 조기에 진단하는 것이 매우 중요하답니다.
-# 최근에 아이가 특별한 이유 없이 무기력해 보인 적이 있었나요? 무기력한 증상을 보이거나 잇몸이나 코가 촉촉하지 않고 끈적이거나 말라 있다면 탈수의 징후일 수 있어요. 수분은 매우 중요한 역할을 해요. 소화, 영양분의 흡수, 체온의 조절, 기관과 세포의 기능 유지 등 대부분의 신체 작용은 물이 존재해야만 이루어져요. 탈수 상태에서는 이러한 과정들이 제대로 작동하지 않아, 신체의 에너지 생성이 잘 되지 않고, 균형이 무너지죠. 따라서 항상 신선한 물을 제공해줘야 하고, 물을 계속 잘 마시지 않는다면 식단의 일부를 습식 사료로 변경하는 것을 고려해 보시는 것이 좋아요. 일반적으로, 중성화한 성견은 몸무게 1kg당 하루에 약 50-60ml의 물을 섭취해야 해요. 즉, 만약 아이가 5kg이라면 하루에 약 250-300ml의 물을 섭취해야 해요. 다만, 권장 음수량은 아이의 건강 상태나 활동량, 기온 등에 따라 달라질 수 있으므로 정확한 용량은 수의사와의 상담을 통해서 결정하세요.
-# {{NAME}}은 피부 건강 관리에 좀 더 신경을 써야 해요. 피부 건강은 아이들이 섭취하는 영양소의 균형과 밀접한 관련이 있어요. 특히, 오메가-3 같은 필수 지방산은 피부의 수분 유지와 염증 방지에 도움을 줘요. 충분한 수분 섭취도 중요해요. 그래서 신선한 물을 언제든지 마실 수 있게 해주셔야 해요. 이 외에 레티놀, 토코페롤 등이 들어간 피부 맞춤 영양 보충제를 선택하면 도움이 될 수 있어요. 레티놀은 세포 재생을 촉진하고, 토코페롤은 항산화 작용이 탁월하며 피부의 수분 장벽을 강화하는 역할을 해요. 적절한 영양분 섭취와 더불어, 적절한 목욕 및 그루밍으로 피부를 청결하게 관리하는 것도 중요해요. 강아지의 피부 pH는 사람과 다르기 때문에 전용 샴푸를 사용해야해요. 너무 자주 목욕시키면 피부가 건조해지고 가려움증을 유발할 수 있으니, 수의사의 조언에 따라 적절한 목욕 빈도를 유지해주세요. 만약에 비정상적으로 보이는 붉은 반점, 가려움, 분비물 등의 변화가 있다면 즉시 수의사와 상의해주셔야 해요.
-# 먼저, {{NAME}}의 건강을 위해 보호자님이 얼마나 신경을 쓰고 계신지 알아, 그 노력과 애정을 진심으로 응원해요. {{NAME}}의 경우 심혈관계 질환을 앓고 있다고 말씀해주셨네요. 대동맥과 좌심실을 나누는 이첨판막에 점액종성 변화가 생기는 MMVD가 소형견에서 가장 일반적으로 나타나는 심장 질환이에요. 활동량이 눈에 띄게 줄어들거나, 숨을 쉬는 데 힘들어하는 등의 증상이 보인다면 이미 심각한 응급 상황일 수 있어서 반드시 병원에 가야 해요. 아이의 일상 행동 패턴을 알고, 변화를 조기에 파악하는 것이 중요해요. 아이가 편히 잠을 잘 때, 1분 동안 몇 번 숨을 쉬는지 세는 것도 좋은 방법이에요. 정상적인 호흡 횟수는 분당 10-30회 정도이고, 이 범위를 벗어나면 문제가 있는 것으로 볼 수 있어요. 혀나 잇몸의 색깔을 주기적으로 확인하고, 분홍색이 아닌 보라색이나 회색 등으로 변했다면 전신에 산소 공급이 제대로 이루어지지 않고 있는 것을 나타낼 수 있으니, 바로 수의사와 상담해야 해요.
-# {{NAME}}은 눈 건강 관리를 좀 더 세심하게 하는 것이 좋다고 판단돼요. {{NAME}}의 눈을 건강하게 유지해 줄 수 있는 주요 영양소들을 알아볼게요. 비타민 A (레티놀)는 망막의 건강을 유지하고, 백내장의 발생을 줄이는데 도움을 줄 수 있어요. 비타민 E (토코페롤)는 강력한 항산화제로 작용하여 자유 라디칼로부터 {{NAME}}의 눈을 보호하는 역할을 할 수 있어요. 오메가-3 지방산, 특히 DHA와 EPA는 망막 건강을 증진하고, 안구 건조증 증상을 완화하는 역할을 수행할 수 있어요. 루테인과 제아잔틴은 노화로 인한 시력저하를 방지할 수 있는 항산화 카로티노이드에요. 이런 영양소들이 충분히 들어있는 영양 보충제를 복용하면 {{NAME}}의 눈을 건강하게 유지하는 데 큰 도움을 줄 수 있어요. 그런데, 개인의 건강 상태에 따라 필요한 영양 성분은 다를 수 있으니 특별한 증상이 있을 경우 꼭 수의사와 상담한 후 결정하시길 바래요.
-# 요즘 {{NAME}}의 기력이 없어 보이지 않았나요? 우리 {{NAME}}이 힘들어하는 것은 '산화 스트레스' 때문일 수 있다는 건 알고 계셨나요? 산화 스트레스는 몸속에 '자유 라디칼'이라는 물질이 과도하게 많아져서 발생하는데요. 이 자유 라디칼은 생명체의 정상적인 생리활동 중에도 발생하지만, 너무 많이 증가하면 세포나 조직에 손상을 주고, 여러 가지 질병을 유발하기도 해요. 주로 기저질환, 스트레스, 부적절한 식사, 환경적 요인 등으로 발생하죠. {{NAME}}처럼 10살 이상의 노령견은 일반적인 식사만으로는 충분한 항산화 성분을 공급받기 어려울 수 있어요. 수의사와의 정기적인 상담을 통해 {{NAME}}의 상태를 잘 파악하고 어떤 항산화 성분이 도움이 될 수 있는지 조언을 구해보는 게 좋아요. 이퀄에서 추천하는 대표적인 항산화제인 비타민 E(토코페롤), 셀레늄 그리고 코엔자임Q10은 함께 작용하여 산화 스트레스를 줄이고 세포 손상을 방지하는 중요한 역할을 합니다. {{NAME}}의 건강을 위해 식단에 항산화제를 추가해보는 건 어떨까요?
-# 중년령 이상의 반려견은 백내장, 안구건조증 등과 같은 만성 안과 질환에 걸릴 확률이 높아요. 백내장은 수정체가 흐릿해지는 질환으로, 수정체 내의 단백질이 변형되어 덩어리를 이루고, 빛의 통과를 방해하여 시력을 잃게 만드는 거예요. 반면, 안구건조증은 눈물샘의 기능 장애나 손상 때문에 생겨나요. 안구건조증을 앓고 있는 강아지의 눈 표면은 건조해지고 통증과 충혈, 점막 손상을 일으킨답니다. 그래서 강아지가 눈을 자주 비비거나, 눈 분비물이 끈적거리는 등의 증상을 보일 수 있어요. {{NAME}}의 눈 건강을 위해 일상적인 관리가 중요해요. 눈물 자국은 눈 주변 피부에 자극을 주고 면역력을 낮출 수 있으니 매일 눈 주변을 깨끗이 유지하고 이물질이나 눈꼽은 제거해주어야 해요. 또한, 비타민 A, C, E와 오메가-3 지방산 같은 눈 건강에 좋은 영양소가 들어간 식사를 제공하는 것도 도움이 돼요. 가장 중요한 것은 정기적으로 수의사에게 안과 검진을 받아서 문제를 빨리 발견하고 적절하게 치료하는 거예요.
-# 우선, {{NAME}}의 건강을 관리해주고 계신 반려인님의 애정과 노력을 진심으로 응원한다는 말씀을 드리고 싶어요. 종양이 있는 반려동물의 영양 관리는 매우 중요해요. 종양은 종종 높은 에너지 요구량을 특징으로 하거든요. 그래서 체중 유지와 근육량 소실을 예방하기 위해 고품질의 단백질 식품을 통한 영양 섭취가 필요하답니다. 면역 시스템 강화도 중요한데, 오메가-3 지방산 같은 특정 영양소가 암의 진행을 늦추는 데 도움이 될 수 있어요. 그리고 암 치료 중에는 식욕 부진, 설사, 구토 등의 부작용이 생길 수 있으므로, 이러한 증상을 완화하는 식사 방식을 고려해야 해요. 더불어 식단에 셀레늄과 비타민 E 같은 항산화제를 더해주는 것이 도움이 될 수 있으니 보충을 고려해보세요. 다만, 각각의 애완동물마다 건강 상태나 영양 필요량이 다르므로, {{NAME}}에게 맞는 식단은 반드시 수의사와 상의해서 결정하시는 것이 좋아요.
-# 7살 이하의 비교적 어린 고양이라고 해도 상부 호흡기 감염, 기관지염, 천식 등 다양한 호흡기 질환에 노출될 위험이 있어요. 이런 질환들은 기침, 호흡 곤란, 식욕 부진 등의 증상을 일으킬 수 있어요. 이런 증상이 발견되면 바로 수의사에게 도움을 청해야 해요. 호흡기 질환을 예방하고 관리하는 몇 가지 방법들을 소개할게요. 상기도 감염은 주로 바이러스나 세균, 특히 고양이 헤르페스 바이러스, 칼리시 바이러스, 클라미디아 등에 의해서 발생해요. 이런 감염을 효과적으로 예방하는 방법 중 하나는 정기적인 백신 접종이에요. 또한, 고양이 스트레스를 최소화하고, 건강한 생활 습관을 유지함으로써 면역력을 강화하면 감염을 예방하는 데 도움이 돼요. 기관지염은 흡입된 자극물질에 의해 발생할 수 있어요. 이를 예방하기 위해서는 주거 환경을 청결하게 유지하고, 실내 공기의 건조함을 최소화하는 거에요. 만약 질환 증상이 발견되면 바로 수의사와 상담하여 적절한 치료를 받아야 해요.
 
-
-    OPENAI_API_KEY="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"
-    openai.api_key=OPENAI_API_KEY
-    client = OpenAI(
-        organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
-    )
-    completion = client.chat.completions.create(
-        model="gpt-4", #"gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": f"{systemquestion}"},
-            {"role": "user", "content": f"{pet_profile}"},
+    # OPENAI_API_KEY="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"
+    # openai.api_key=OPENAI_API_KEY
+    # client = OpenAI(
+    #     organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
+    # )
+    # completion = client.chat.completions.create(
+    #     model="gpt-4", #"gpt-3.5-turbo",
+    #     messages=[
+    #         {"role": "system", "content": f"{systemquestion}"},
+    #         {"role": "user", "content": f"{pet_profile}"},
+    #     ]
+    # )
+    # template = completion.choices[0].message.content
+    # pet_name = pet_profile.pet_name
+    # formatted_string = template.replace("{{NAME}}", "{}").format(pet_name)
+    # logger.debug(f"vet_comment:{formatted_string}")
+    # return VetCommentResponse(
+    #         vet_comment=formatted_string
+    #     )
+    url = "https://api.openai.com/v1/chat/completions"
+    payload = {
+        "model": "gpt-4",  # or another model name as appropriate
+        "messages": [
+            {"role": "system", "content": systemquestion},
+            {"role": "user", "content": f"The pet's name is {pet_profile.pet_name}, type is {pet_profile.pet_type}, breed is {pet_profile.breed}, age is {pet_profile.age}."}
         ]
-    )
-    template = completion.choices[0].message.content
-    pet_name = pet_profile.pet_name
-    formatted_string = template.replace("{{NAME}}", "{}").format(pet_name)
-    logger.debug(f"vet_comment:{formatted_string}")
-    return VetCommentResponse(
-            vet_comment=formatted_string
-        )
+    }
+    headers = {
+        "Authorization": f"Bearer {openai.api_key}",
+        "Content-Type": "application/json"
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, json=payload, headers=headers) as response:
+            if response.status != 200:
+                raise HTTPException(status_code=response.status, detail="Error calling OpenAI API")
+            result = await response.json()
+            template = result['choices'][0]['message']['content']
+            formatted_string = template.replace("{{NAME}}", pet_profile.pet_name)
+
+    return VetCommentResponse(vet_comment=formatted_string)
     
 @app.post("/pet-gpt-vetcomment-supplements", response_model=VetCommentResponse, status_code=status.HTTP_201_CREATED)
 async def create_vet_comment(pet_profile: PetProfile):
@@ -721,25 +450,49 @@ async def create_vet_comment(pet_profile: PetProfile):
     
     Don't forget to generate only up to 3 sentences.
 '''
-    OPENAI_API_KEY="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"
-    openai.api_key=OPENAI_API_KEY
-    client = OpenAI(
-        organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
-    )
-    completion = client.chat.completions.create(
-        model="gpt-4", #"gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": f"{systemquestion}"},
-            {"role": "user", "content": f"{pet_profile}"},
+    # OPENAI_API_KEY="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"
+    # openai.api_key=OPENAI_API_KEY
+    # client = OpenAI(
+    #     organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
+    # )
+    # completion = client.chat.completions.create(
+    #     model="gpt-4", #"gpt-3.5-turbo",
+    #     messages=[
+    #         {"role": "system", "content": f"{systemquestion}"},
+    #         {"role": "user", "content": f"{pet_profile}"},
+    #     ]
+    # )
+    # template = completion.choices[0].message.content
+    # pet_name = pet_profile.pet_name
+    # formatted_string = template.replace("{{NAME}}", "{}").format(pet_name)
+    # logger.debug(f"vet_comment:{formatted_string}")
+    # return VetCommentResponse(
+    #         vet_comment=formatted_string
+    #     )
+    # Prepare the API URL and headers
+    url = "https://api.openai.com/v1/chat/completions"
+    payload = {
+        "model": "gpt-4",  # Specify the correct model
+        "messages": [
+            {"role": "system", "content": systemquestion},
+            {"role": "user", "content": f"The pet's name is {pet_profile.pet_name}, type is {pet_profile.pet_type}, breed is {pet_profile.breed}, age is {pet_profile.age}."}
         ]
-    )
-    template = completion.choices[0].message.content
-    pet_name = pet_profile.pet_name
-    formatted_string = template.replace("{{NAME}}", "{}").format(pet_name)
-    logger.debug(f"vet_comment:{formatted_string}")
-    return VetCommentResponse(
-            vet_comment=formatted_string
-        )
+    }
+    headers = {
+        "Authorization": f"Bearer {openai.api_key}",
+        "Content-Type": "application/json"
+    }
+
+    # Use aiohttp to make asynchronous HTTP requests
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, json=payload, headers=headers) as response:
+            if response.status != 200:
+                raise HTTPException(status_code=response.status, detail="Error calling OpenAI API")
+            result = await response.json()
+            template = result['choices'][0]['message']['content']
+            formatted_string = template.replace("{{NAME}}", pet_profile.pet_name)
+
+    return VetCommentResponse(vet_comment=formatted_string)
 
 async def register_with_eureka():
     if prefix == "/petgpt-service":
@@ -750,8 +503,11 @@ async def register_with_eureka():
 
 from generation import (
     generation_websocket_endpoint_chatgpt
+    #websocket_endpoint
 )
-app.websocket("/ws/generation")(generation_websocket_endpoint_chatgpt)
+app.websocket("/ws/generation/{pet_id}")(generation_websocket_endpoint_chatgpt)
+#app.websocket("/ws/generation")(websocket_endpoint)
+
 
 @app.on_event("startup")
 async def startup_event():

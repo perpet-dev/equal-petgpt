@@ -332,13 +332,13 @@ body {
 
     </style>
 <body>
-
     <div class="chat-container">
         <div id="sidebar" class="sidebar">
             <!-- List of chats could go here -->
         </div>
         <button id="toggleSidebar" class="toggle-sidebar">☰</button>
         <h3>PetGPT</h3>
+        <input id="petId" type="text" placeholder="Pet ID"> <!-- Example value can be dynamically set -->
         <div id="messages" class="chat-content">
         </div>
         <form id="messageForm" class="input-form">
@@ -476,8 +476,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const messageList = document.getElementById("messages");
 
     function connect() {
+        let petId = document.getElementById("petId").value; // Retrieve the pet ID from the input field
+        if (!petId) {
+            console.error("Pet ID is required");
+            return; // Optionally handle error
+        }
         //ws = new WebSocket("ws://dev.promptinsight.ai:10070/ws/generation");
-        ws = new WebSocket("ws://dev.promptinsight.ai:10002/petgpt-service/ws/generation");
+        //ws = new WebSocket("ws://dev.promptinsight.ai:10002/petgpt-service/ws/generation");
+        ws = new WebSocket(`ws:0.0.0.0:9090/ws/generation/${petId}`);
         ws.onopen = () => console.log("Connected to WebSocket");
         ws.onmessage = handleServerMessage;
         ws.onclose = (event) => {
@@ -540,12 +546,36 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function getPetProfile() {
+        return {
+            pet_name: document.getElementById('petName').value,
+            pet_type: document.getElementById('petType').value,
+            breed: document.getElementById('petBreed').value,
+            age: document.getElementById('petAge').value,
+            body_weight: document.getElementById('petWeight').value,
+            gender: document.getElementById('petGender').value,
+        };
+    }
+
     function sendMessage(message, role) {
-        
+        const messageData = {
+            role: role,
+            content: message
+        };
         appendMessage(message, role); // Add message to UI and history
 
         // Construct and send the payload
-        const data = JSON.stringify({ messages: messageHistory });
+        // const data = JSON.stringify({ messages: messageHistory });
+        // Include pet profile in the history for state management
+        messageHistory.push({
+            role: role,
+            content: message,
+            timestamp: new Date().toISOString()
+        });
+
+        // Construct and send the payload
+        const data = JSON.stringify({ messages: [messageData] });
+        connect();
         if (ws.readyState === WebSocket.OPEN) {
             console.log("sendMessage: " + data);
             ws.send(data);
