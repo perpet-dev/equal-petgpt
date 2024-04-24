@@ -31,7 +31,7 @@ spec = ServerlessSpec(cloud='aws', region='us-west-2')
 
 class EqualContentRetriever():
     def __init__(self, index_name=INDEX_NAME):
-        logger.info('EqualContentRetriever::init')
+        logger.debug('EqualContentRetriever::init')
         self.index_name = index_name
         self.category_dict = json.loads(SUBJECT_JSON)
         self.contents_cache = []
@@ -41,12 +41,12 @@ class EqualContentRetriever():
         self.__load_questions_jsonl()
 
     def __load_breed_map(self):
-       logger.debug(">> load breed map")
+       logger.debug("EqualContentRetriever::__load_breed_map")
        self.breed_map = pd.read_csv('breed.tag.map', sep='\t', header=0)
 
     def __load_questions_jsonl(self):
         # {"doc_id": 390, "type": "dog", "breed_tag": 489, "breed_id": 74, "breed": "비글", "question": "비글은 고집이 강한 개인가요?"}
-        logger.debug(">> load question jsonl")
+        logger.debug("EqualContentRetriever::__load_question_jsonl")
         with jsonlines.open("questions.jsonl") as jsonl_f:
             for line in jsonl_f.iter():
                 key_ = "{}_{}".format(line['type'], line['breed'].replace(' ', ''))
@@ -56,7 +56,7 @@ class EqualContentRetriever():
                     self.question_map[key_] = line['question']
 
     def __generate_questions(self, system_question:str, content_to_analyze:str):
-        logger.debug('>> Generate Questions')
+        logger.debug('EqualContentRetriever::__generate_questions')
         
         OPENAI_API_KEY="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"
         
@@ -76,7 +76,8 @@ class EqualContentRetriever():
         return completion.choices[0].message.content
 
     def __category_content_cache(self):
-        logger.debug('>> Make content cache for performance')
+        logger.debug('EqualContentRetriever::__category_content_cache')
+
         index = pc.Index(INDEX_NAME)
         for x in self.category_dict:
             if x['type'] == 'dog' or x['type'] == 'cat':
@@ -99,6 +100,8 @@ class EqualContentRetriever():
                 self.contents_cache.append({'pet_type':x['type'],'category_sn':x['sn'], 'category_title':x['subject'] ,'content':elements})
                 
     def __pinecone_index(self, text_dataset:Dataset, dimension=OPENAI_EMBEDDING_DIMENSION, incremental=True):   
+        logger.debug('EqualContentRetriever::__pinecone_index')
+        
         existing_indexes = [ index_info['name']  for index_info in pc.list_indexes() ]
 
         if incremental == False:
@@ -144,6 +147,8 @@ class EqualContentRetriever():
             index.upsert(vectors=list(to_upsert)) # upsert to Pinecone
 
     def __pinecone_search(self, index_name, query, filter=None, top_k=5, include_metadata=True):
+        logger.debug('EqualContentRetriever::__pinecone_search => {}, {}'.format(query, filter))
+        
         result = []
         filter_only = False
         if query == '': 
@@ -174,6 +179,8 @@ class EqualContentRetriever():
         return result
 
     def get_random_questions(self, pet_type:str, breed:str='', top_n=3):
+        logger.debug('EqualContentRetriever::__get_random_questions => {}, {}'.format(pet_type, breed))
+        
         breed_question = ''
         use_breed = False
         breed = breed.replace(' ', '')
@@ -339,12 +346,6 @@ class EqualContentRetriever():
         for x in self.contents_cache:
             if x['pet_type'] == pet_type and x['category_sn'] == sn:
                 return x['content']
-
-    def rag(self, query, rag_index):
-        logger.debug("EqualContentRetriever::rag")
-        
-
-
 
     def get_query_contents(self, query:str, pet_type:str='', tags:list=[]):
         # Pinecone search
