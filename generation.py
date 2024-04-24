@@ -6,8 +6,12 @@ from typing import List
 import aiohttp
 import uuid
 from fastapi import WebSocket, WebSocketDisconnect
-import logging
-logger = logging.getLogger(__name__)
+from petprofile import PetProfileRetriever
+
+from config import LOG_NAME, LOGGING_LEVEL, LOG_FILE_NAME
+
+from log_util import LogUtil
+logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 from petprofile import PetProfileRetriever
 from config import OPENAI_API_KEY, API_URL
 
@@ -43,11 +47,10 @@ system = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in 
     Getting the whole family on the same page with training, \
     how to travel with a pet (could be hotels, air planes, buses, cars, etc.). \
     Answer in the same language as the question. Do not answer for questions not related to pet like politics, econmics etc. \
+    Also provide a response without paragraph break. \
     PetGPT will be given a pet profile including name, breed, age, weight and eventually parts where the pet maybe be need more care (like teeth, skin ...). \
     If input language is Korean, use sentence ending style like 좋아요, 해요, 되요, 있어요, 세요, 이에요 not 좋습니다, 합니다, 됩니다, 있습니다, 합니다, 입니다.  \
     And use emoji, emoticons if possible."
-    
-logger = logging.getLogger(__name__)
 
 # Assuming API key and custom model/server configurations are set elsewhere
 # openai.api_key = "your-api-key"
@@ -63,7 +66,6 @@ def prepare_messages_for_openai(messages):
     for message in messages:
         filtered_message = {key: value for key, value in message.items() if key in allowed_fields}
         filtered_messages.append(filtered_message)
-
     return filtered_messages
 
 import openai
@@ -92,8 +94,26 @@ async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id
             And use emoji, emoticons if possible."
     system += f"\nYou are assisting '{pet_profile}'"
     logger.info(f"handle_text_messages for Pet profile: {pet_profile}")
-    system_message = {"role": "system", "content": system}
+    try:
+        if "pet_id" in conversation[0]:
+            pet_id = conversation[0].get("pet_id")
+            retriever = PetProfileRetriever()
+            pet_profile = retriever.get_pet_profile(pet_id)
+            retriever.close()
+            pet_name = pet_profile.pet_name
+            pet_age = pet_profile.age
+            pet_breed = pet_profile.breed
+            pet_weight = pet_profile.weight
+            system_prompt = "{} \n pet name: {}, breed: {}, age: {}, weight: {}kg".format(system, pet_name, pet_breed, pet_age, pet_weight)
+            system_message = {"role": "system", "content": system_prompt}
+        else:
+            system_message = {"role": "system", "content": system}          
+    except Exception as e:
+        logger.fatal("conversation does not have pet_id.")
+        system_message = {"role": "system", "content": system}  
+
     conversation_with_system = [system_message] + conversation
+
     #message_stream_id = str(uuid.uuid4())
     conversation = prepare_messages_for_openai(conversation_with_system)
     await send_message_to_openai(model, conversation, websocket)
@@ -333,8 +353,7 @@ async def generation_websocket_endpoint_chatgpt(websocket: WebSocket, pet_id: st
 if __name__ == "__main__":
     # petgpt prompt tuning
 
-    def petgpt_test(question):
-
+    def petgpt_test(question, pet_name, pet_breed, pet_age, pet_weight):
         system = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in healthcare for dogs and cats to assist pet owners with a wide range of questions and challenges. \
             PetGPT provides detailed care tips, including dietary recommendations, exercise needs, and general wellness advice, emphasizing suitable vitamins and supplements. \
             PetGPT can provide immediate, accurate, and tailored advice on various aspects of pet care, including health, behavior, \
@@ -350,6 +369,7 @@ if __name__ == "__main__":
             Getting the whole family on the same page with training, \
             how to travel with a pet (could be hotels, air planes, buses, cars, etc.). \
             Answer in the same language as the question. Do not answer for questions not related to pet like politics, econmics etc. \
+            Also provide a response without paragraph break. \
             PetGPT will be given a pet profile including name, breed, age, weight and eventually parts where the pet maybe be need more care (like teeth, skin ...). \
             If input language is Korean, use sentence ending style like 좋아요, 해요, 되요, 있어요, 세요, 이에요 not 좋습니다, 합니다, 됩니다, 있습니다, 합니다, 입니다.  \
             And use emoji, emoticons if possible."
@@ -358,7 +378,7 @@ if __name__ == "__main__":
         openai.api_key=OPENAI_API_KEY
         model = 'gpt-4'
         
-        system_message = {"role": "system", "content": system}
+        system_message = {"role": "system", "content": system + ' pet name: {}, pet breed: {}, pet age: {}, pet weight: {}'.format(pet_name, pet_breed, pet_age, pet_weight)}
         #conversation_with_system = [system_message] + conversation
         #message_stream_id = str(uuid.uuid4())
         #conversation = prepare_messages_for_openai(conversation_with_system)
@@ -367,6 +387,9 @@ if __name__ == "__main__":
             organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
             api_key=OPENAI_API_KEY
         )
+
+        
+
         response = client.chat.completions.create(
             model = model,
             messages=[
@@ -381,6 +404,10 @@ if __name__ == "__main__":
         print(response)
         response.choices[0].message.content
 
-    question = '리트리버는 일주일에 산책을 몇 번 해야 합니까?'
+    question = '일주일에 산책을 몇 번 해야 합니까?'
     #question = '닥터훈트의 관절 건강 관리 방법은?'
-    petgpt_test(question)
+    #question = '고양이도 우울증에 걸리나요?'
+    
+    # 이름: 똘이, 견종: 리트리버, 나이: 7살, 몸무게: 12kg, 
+    #petgpt_test(question, pet_name='똘이', pet_breed='리트리버', pet_age='7', pet_weight='12kg')
+    prepare_messages_for_openai(messages=[{"role":"system","content":"$message","pet_id":13, "timestamp":"$timeStamp"}])

@@ -13,18 +13,8 @@ import re
 import jsonlines
 import random
 
-
 from subject_json import SUBJECT_JSON
-
-# DB_HOST =  "127.0.0.1" # "dev.promptinsight.ai"  
-# DB_USER = "perpetapi" # "perpetdev" #  
-# DB_PASSWORD = "O7dOQFXQ1PYY" #"perpet1234!" #  # 
-# DB_HOST = "dev.promptinsight.ai"  
-# DB_USER = "perpetdev" #  
-# DB_PASSWORD = "perpet1234!" #  # 
-# DB_DATABASE = "perpet"
-# DB_PORT = 3307
-from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE, OPENAI_API_KEY, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX
+from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE, OPENAI_API_KEY, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX, LOG_NAME, LOGGING_LEVEL, LOG_FILE_NAME
 
 INDEX_NAME = 'equalapp2'
 BREEDS_DOG_TAG = '62'
@@ -32,8 +22,8 @@ BREEDS_CAT_TAG = '276'
 BREEDS_NONE = ''
 MATCH_SCORE_CUTOFF = 0.4
 
-import logging
-logger = logging.getLogger(__name__)
+from log_util import LogUtil
+logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 
 client = OpenAI(api_key = OPENAI_API_KEY)
 pc = Pinecone(PINECONE_API_KEY)
@@ -41,7 +31,7 @@ spec = ServerlessSpec(cloud='aws', region='us-west-2')
 
 class EqualContentRetriever():
     def __init__(self, index_name=INDEX_NAME):
-        logger.info('EqualContentRetriever::init')
+        logger.debug('EqualContentRetriever::init')
         self.index_name = index_name
         self.category_dict = json.loads(SUBJECT_JSON)
         self.contents_cache = []
@@ -51,12 +41,12 @@ class EqualContentRetriever():
         self.__load_questions_jsonl()
 
     def __load_breed_map(self):
-       logger.debug(">> load breed map")
+       logger.debug("EqualContentRetriever::__load_breed_map")
        self.breed_map = pd.read_csv('breed.tag.map', sep='\t', header=0)
 
     def __load_questions_jsonl(self):
         # {"doc_id": 390, "type": "dog", "breed_tag": 489, "breed_id": 74, "breed": "비글", "question": "비글은 고집이 강한 개인가요?"}
-        logger.debug(">> load question jsonl")
+        logger.debug("EqualContentRetriever::__load_question_jsonl")
         with jsonlines.open("questions.jsonl") as jsonl_f:
             for line in jsonl_f.iter():
                 key_ = "{}_{}".format(line['type'], line['breed'].replace(' ', ''))
@@ -65,35 +55,8 @@ class EqualContentRetriever():
                 else:
                     self.question_map[key_] = line['question']
 
-    def get_random_questions(self, pet_type:str, breed:str='', top_n=3):
-        breed_question = ''
-        use_breed = False
-        breed = breed.replace(' ', '')
-        selected_questions = []
-        type_key = "{}_".format(pet_type)
-        type_questions = self.question_map[type_key].split('\n')
-        
-        if breed == '': # no breed
-            if len(type_questions) >= top_n:
-                selected_questions = random.sample(type_questions, top_n)
-            else:
-                logger.critical('Qustion list not enough...')
-                selected_questions = type_questions
-        else: # breed           
-            breed_key = "{}_{}".format(pet_type, breed)
-            if breed_key in self.question_map:
-                breed_questions = self.question_map[breed_key].split('\n')
-                if len(breed_questions) >= 1:
-                    breed_question = random.sample(breed_questions, 1) # 질문 1개 (breed 맞춤)
-                selected_questions = breed_question + random.sample(type_questions, top_n - 1) 
-            else: 
-                logger.critical("Check Breed Key : {}".format(breed_key))
-                selected_questions = random.sample(type_questions, top_n)
-
-        return selected_questions
-
     def __generate_questions(self, system_question:str, content_to_analyze:str):
-        logger.debug('>> Generate Questions')
+        logger.debug('EqualContentRetriever::__generate_questions')
         
         OPENAI_API_KEY="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"
         
@@ -113,7 +76,8 @@ class EqualContentRetriever():
         return completion.choices[0].message.content
 
     def __category_content_cache(self):
-        logger.debug('>> Make content cache for performance')
+        logger.debug('EqualContentRetriever::__category_content_cache')
+
         index = pc.Index(INDEX_NAME)
         for x in self.category_dict:
             if x['type'] == 'dog' or x['type'] == 'cat':
@@ -136,6 +100,8 @@ class EqualContentRetriever():
                 self.contents_cache.append({'pet_type':x['type'],'category_sn':x['sn'], 'category_title':x['subject'] ,'content':elements})
                 
     def __pinecone_index(self, text_dataset:Dataset, dimension=OPENAI_EMBEDDING_DIMENSION, incremental=True):   
+        logger.debug('EqualContentRetriever::__pinecone_index')
+        
         existing_indexes = [ index_info['name']  for index_info in pc.list_indexes() ]
 
         if incremental == False:
@@ -181,6 +147,8 @@ class EqualContentRetriever():
             index.upsert(vectors=list(to_upsert)) # upsert to Pinecone
 
     def __pinecone_search(self, index_name, query, filter=None, top_k=5, include_metadata=True):
+        logger.debug('EqualContentRetriever::__pinecone_search => {}, {}'.format(query, filter))
+        
         result = []
         filter_only = False
         if query == '': 
@@ -210,6 +178,35 @@ class EqualContentRetriever():
                             'tag':res['metadata']['tag']})
         return result
 
+    def get_random_questions(self, pet_type:str, breed:str='', top_n=3):
+        logger.debug('EqualContentRetriever::__get_random_questions => {}, {}'.format(pet_type, breed))
+        
+        breed_question = ''
+        use_breed = False
+        breed = breed.replace(' ', '')
+        selected_questions = []
+        type_key = "{}_".format(pet_type)
+        type_questions = self.question_map[type_key].split('\n')
+        
+        if breed == '': # no breed
+            if len(type_questions) >= top_n:
+                selected_questions = random.sample(type_questions, top_n)
+            else:
+                logger.critical('Qustion list not enough...')
+                selected_questions = type_questions
+        else: # breed           
+            breed_key = "{}_{}".format(pet_type, breed)
+            if breed_key in self.question_map:
+                breed_questions = self.question_map[breed_key].split('\n')
+                if len(breed_questions) >= 1:
+                    breed_question = random.sample(breed_questions, 1) # 질문 1개 (breed 맞춤)
+                selected_questions = breed_question + random.sample(type_questions, top_n - 1) 
+            else: 
+                logger.critical("Check Breed Key : {}".format(breed_key))
+                selected_questions = random.sample(type_questions, top_n)
+
+        return selected_questions
+    
     def build_question_jsonl(self, db_host=DB_HOST, db_port=DB_PORT, db_user=DB_USER, db_password=DB_PASSWORD, db_database=DB_DATABASE):
         logger.info("EqualContentRetiever::build_pinecone_index")
         # Step 1 : Iterate content db
@@ -349,7 +346,7 @@ class EqualContentRetriever():
         for x in self.contents_cache:
             if x['pet_type'] == pet_type and x['category_sn'] == sn:
                 return x['content']
-    
+
     def get_query_contents(self, query:str, pet_type:str='', tags:list=[]):
         # Pinecone search
         logger.debug("EqualContentRetriever::get_query_contents, query={}, pet_type={}, tags={}".format(query, pet_type, tags))

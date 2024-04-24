@@ -2,9 +2,30 @@ import websocket
 import json
 import threading
 
-def on_message(ws, message):
+from config import LOG_FILE_NAME, LOGGING_LEVEL, LOG_NAME
+from log_util import LogUtil
+logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
+
+from petprofile import PetProfileRetriever
+petProfileRetriever = PetProfileRetriever()
+
+def on_message(ws, pet_id, message):
+    print("on_message\n")
     global accumulated_message
-    data = json.loads(message)  # Parse the incoming message string to a dictionary
+    data = json.loads(message) 
+    
+    retriever = PetProfileRetriever()
+    pet_profile = retriever.get_pet_profile(pet_id)
+    retriever.close()
+
+    pet_type = pet_profile.pet_type # 고양이 . 강아지
+    pet_name = pet_profile.pet_name # 이름
+    pet_age = pet_profile.age # 나이
+    pet_tag_id = pet_profile.tag_id # 태그
+    pet_breed = pet_profile.breed # 견종, 묘종
+    pet_weight = "{}kg".format(pet_profile.weight) # 몸무게
+    
+    # Parse the incoming message string to a dictionary
     if 'content' in data:
         # Append the new message to the accumulated messages
         content = json.loads(f'"{data["content"]}"') 
@@ -44,12 +65,10 @@ accumulated_message = ""  # Initialize an empty string to accumulate messages
 if __name__ == "__main__":
     websocket.enableTrace(True)
     wsurl = "ws://dev.promptinsight.ai:10002/petgpt-service/ws/generation"
-    #"ws://localhost:9090/ws/generation"
+    #wsurl = "ws://localhost:10000/ws/generation"
     ws = websocket.WebSocketApp(wsurl,
                                 on_open=on_open,
                                 on_message=on_message,
                                 on_error=on_error,
                                 on_close=on_close)
-
     ws.run_forever()
-

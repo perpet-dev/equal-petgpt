@@ -2,6 +2,10 @@ from sqlalchemy import create_engine, Column, ForeignKey, Integer, String, Boole
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
+from config import LOG_FILE_NAME, LOGGING_LEVEL, LOG_NAME
+from log_util import LogUtil
+logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
+
 Base = declarative_base()
 
 class User(Base):

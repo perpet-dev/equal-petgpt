@@ -20,7 +20,7 @@ from openai import OpenAI
 import aiohttp
 
 from py_eureka_client import eureka_client
-from config import PORT, EUREKA, LOGGING_LEVEL, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX
+from config import PORT, EUREKA, LOGGING_LEVEL, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX, LOG_NAME, LOG_FILE_NAME
 from pinecone import Pinecone, ServerlessSpec, PodSpec
 import pprint
 from petprofile import PetProfile
@@ -71,6 +71,27 @@ gpt-4-1106-preview	$10.00 / 1M tokens	$30.00 / 1M tokens
 gpt-4-1106-vision-preview	$10.00 / 1M tokens	$30.00 / 1M tokens
 
 '''
+# Configure logging
+#import logging
+# LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG").upper()
+# logging.basicConfig(level=LOG_LEVEL)
+# logger = logging.getLogger("uvicorn")
+# logger.setLevel(LOG_LEVEL)
+from log_util import LogUtil
+logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
+
+prefix="/petgpt-service"
+#prefix = "/"
+app = FastAPI(root_path=prefix)
+#app = FastAPI()
+# # Allow all origins
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],  # Allows all origins
+#     allow_credentials=True,
+#     allow_methods=["*"],  # Allows all methods
+#     allow_headers=["*"],  # Allows all headers
+# )
 # static files directory for web app
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -511,6 +532,7 @@ app.websocket("/ws/generation/{pet_id}")(generation_websocket_endpoint_chatgpt)
 
 @app.on_event("startup")
 async def startup_event():
+    import logging 
     logger.setLevel(logging.DEBUG)
     logger.debug("This is a debug message of PetGPT Service.")
     # Register with Eureka when the FastAPI app starts

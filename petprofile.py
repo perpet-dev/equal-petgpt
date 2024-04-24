@@ -4,8 +4,12 @@ import mysql.connector
 from mysql.connector import Error
 from pydantic import BaseModel, HttpUrl
 from typing import Generic, TypeVar, List, Optional
-import logging
-logger = logging.getLogger(__name__)
+
+from config import LOG_FILE_NAME, LOGGING_LEVEL, LOG_NAME
+from log_util import LogUtil
+logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
+# import logging
+# logger = logging.getLogger(__name__)
 
 
 class Supplement(BaseModel):

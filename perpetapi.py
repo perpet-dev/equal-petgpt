@@ -1,5 +1,9 @@
 # Path: perpetapi.py
 import requests
+from config import LOG_FILE_NAME, LOGGING_LEVEL, LOG_NAME
+from log_util import LogUtil
+logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
+
 # The base URL or proxy-client where your service is hosted
 base_url =  "https://api.equal.pet"
 

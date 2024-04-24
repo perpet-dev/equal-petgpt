@@ -56,11 +56,26 @@ SUBJECT_JSON = """
                     "filter": []
                 },
                 {
+                    "doc_id": 173,
+                    "title": "제 개는 항상 저에게 집착하는 것 같아요, 이것은 무엇을 의미하는걸까요? 걱정해야 할까요?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
                     "doc_id": 176,
                     "title": "밖에 나가는 것을 두려워하는 강아지를 도울 수 있는 가장 효과적인 방법은 무엇인가요?",
                     "use_filter":false,
                     "filter": []
-                },
+                }
+            ]
+        }, 
+        {
+            "type": "dog",
+            "no": 2,
+            "ver": "V2-01",
+            "sn": "DG002V2-01",
+            "subject": "댕집사의 주인님 탐구생활: 상식편",
+            "curations": [
                 {
                     "doc_id": 177,
                     "title": "개는 하루에 보통 몇 번 대변을 보나요?",
@@ -80,27 +95,11 @@ SUBJECT_JSON = """
                     "filter": []
                 },
                 {
-                    "doc_id": 101,
-                    "title": "우리 아이는 어떤 사료가 가장 잘 맞을까?",
-                    "use_filter":false,
-                    "filter": []
-                },
-                {
                     "doc_id": 103,
                     "title": "기본 홈케어! 안전하게 집에서 귀 세정하는 방법",
                     "use_filter":false,
                     "filter": []
                 }
-            ]
-        }, 
-        {
-            "type": "dog",
-            "no": 2,
-            "ver": "V2-01",
-            "sn": "DG002V2-01",
-            "subject": "댕집사의 주인님 탐구생활: 상식편",
-            "curations": [
-
             ]
         },
         {
@@ -110,7 +109,36 @@ SUBJECT_JSON = """
             "sn": "DG003V2-01",
             "subject": "{petName}에게 추천되는 영양정보",
             "curations": [
-
+                {
+                    "doc_id": 389,
+                    "title": "말티즈에게 습식 사료와 건식 사료 중 어떤 것이 좋을까요?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 96,
+                    "title": "우리 아이는 어떤 사료가 가장 잘 맞을까?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 355,
+                    "title": "프렌치 불독을 위한 특별한 영양 팁이 있나요?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 369,
+                    "title": "골든 리트리버에게 도움이 되는 영양소는 무엇이 있나요?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 377,
+                    "title": "시츄의 비만을 예방하기 위한 방법에는 어떤 것들이 있을까요?",
+                    "use_filter":false,
+                    "filter": []
+                }
             ]
         }, 
         {
@@ -120,7 +148,19 @@ SUBJECT_JSON = """
             "sn": "DG004V2-01",
             "subject": "알아두면 쓸모있는 견강 정보",
             "curations": [
-              {
+                {
+                    "doc_id": 139,
+                    "title": "잔디에서 자주 구르는 개에게 기생충 예방을 해줘야할까요?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 81,
+                    "title": "외부기생충 예방에 대한 A-Z",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
                     "doc_id": 77,
                     "title": "기초 예방 접종에 관한 모든 것",
                     "use_filter":false,
@@ -133,8 +173,14 @@ SUBJECT_JSON = """
                     "filter": []
                 },
                 {
-                    "doc_id": 81,
-                    "title": "외부기생충 예방에 대한 A-Z",
+                    "doc_id": 99,
+                    "title": "기관 협착과 기관지 협착 원인부터 예방법까지!",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 102,
+                    "title": "큰 눈이 매력적인 시츄가 조심해야하는 질환은?",
                     "use_filter":false,
                     "filter": []
                 }
@@ -147,7 +193,12 @@ SUBJECT_JSON = """
             "sn": "DG005V2-01",
             "subject": "{petName}에게 이거 먹여도 될까요?",
             "curations": [
-
+                {
+                    "doc_id": 100,
+                    "title": "안전하게 즐길 수 있는 과일은 무엇이 있을까요?",
+                    "use_filter":false,
+                    "filter": []
+                }
             ]
         },
         {
@@ -259,7 +310,24 @@ SUBJECT_JSON = """
             "sn": "CT003V2-01",
             "subject": "{petName}에게 이거 먹여도 될까?",
             "curations": [
-
+                {
+                    "doc_id": 199,
+                    "title": "고양이는 왜 풀을 먹을까요?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 201,
+                    "title": "고양이에게 안전한 꽃의 종류는?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 202,
+                    "title": "고양이에게 위험한 꽃에는 어떤 것들이 있을까?",
+                    "use_filter":false,
+                    "filter": []
+                }
             ]
         }, 
         {
@@ -288,8 +356,14 @@ SUBJECT_JSON = """
                     "filter": []
                 }, 
                 {
-                    "doc_id": 101,
-                    "title": "우리 아이는 어떤 사료가 가장 잘 맞을까?",
+                    "doc_id": 225,
+                    "title": "실내에서만 지내는 고양이도 진드기 예방을 해야 하나요?",
+                    "use_filter":false,
+                    "filter": []
+                }, 
+                {
+                    "doc_id": 226,
+                    "title": "진드기 예방을 위해 고양이에게 어떤 제품을 사용해야 하나요?",
                     "use_filter":false,
                     "filter": []
                 }
@@ -302,7 +376,48 @@ SUBJECT_JSON = """
             "sn": "CT005V2-01",
             "subject": "{petName}에게 추천되는 영양정보",
             "curations": [
-      
+                {
+                    "doc_id": 101,
+                    "title": "우리 아이는 어떤 사료가 가장 잘 맞을까?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 117,
+                    "title": "고양이에게 영양가 있는 식사를 제공하기 위해 어떤 음식을 선택해야 할까요?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 219,
+                    "title": "자유 급식과 고양이 비만의 연관성",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 220,
+                    "title": "왜 이렇게 많은 고양이가 비만일까?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 224,
+                    "title": "고양이가 완전히 성장하는 나이는 언제인가요? 언제부터 어른 고양이 사료를 먹이기 시작해야 하나요?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 101,
+                    "title": "우리 아이는 어떤 사료가 가장 잘 맞을까?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 261,
+                    "title": "벵갈 고양이를 위해 어떤 종류의 식단이 권장되나요?",
+                    "use_filter":false,
+                    "filter": []
+                }
             ]
         }
     ]

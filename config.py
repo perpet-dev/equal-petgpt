@@ -4,6 +4,7 @@ import logging.config
 LOGGING_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG')
 PORT = int(os.getenv('PORT', 9090))
 EUREKA = os.getenv('EUREKA_CLIENT_SERVICEURL_DEFAULTZONE', "http://dev.promptinsight.ai:10001/eureka") 
+
 # OPENAI_API_KEY = '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'
 #OPENAI_EMBEDDING_MODEL_NAME = 'text-embedding-3-small'
 #OPENAI_EMBEDDING_DIMENSION = 1536
@@ -30,4 +31,9 @@ DB_USER = "perpetdev" # "perpetapi" #
 DB_PASSWORD = "perpet1234!" # "O7dOQFXQ1PYY" # 
 DB_DATABASE = "perpet"
 DB_PORT = 3306 # 3307
+
+LOG_NAME = 'EqualPetGPT'
+LOG_FILE_NAME = './log/petgpt.log'
+
+
 
