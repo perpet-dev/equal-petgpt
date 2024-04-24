@@ -38,8 +38,8 @@ logging.basicConfig(level=LOG_LEVEL)
 logger = logging.getLogger("uvicorn")
 logger.setLevel(LOG_LEVEL)
 
-#prefix="/petgpt-service"
-prefix = "/"
+prefix="/petgpt-service"
+#prefix = "/"
 app = FastAPI(root_path=prefix)
 #app = FastAPI()
 # # Allow all origins
@@ -646,4 +646,4 @@ async def get_pet_profile(pet_id: int):
 if __name__ == "__main__":
     import uvicorn
     print(f"Starting server on port {PORT} with Eureka server: {EUREKA}")
-    uvicorn.run(app, host="0.0.0.0", port=PORT, log_level="debug")
+    uvicorn.run("server:app", host="0.0.0.0", port=PORT, workers=4, log_level="debug")

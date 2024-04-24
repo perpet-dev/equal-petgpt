@@ -361,6 +361,8 @@ body {
     <script>
         // static/js/chat.js
 let messageHistory = [];
+let ws; // WebSocket instance
+let messageQueue = [];
 
 document.addEventListener('DOMContentLoaded', function() {
     messageInput = document.getElementById('messageInput');
@@ -472,29 +474,73 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    let ws;
     const messageList = document.getElementById("messages");
+    // Ensure WebSocket connection is established
+    function ensureConnection() {
+        if (!ws || ws.readyState === WebSocket.CLOSED) {
+            connect(); // Attempt to connect
+        }
+    }
 
     function connect() {
-        let petId = document.getElementById("petId").value; // Retrieve the pet ID from the input field
-        if (!petId) {
-            console.error("Pet ID is required");
-            return; // Optionally handle error
-        }
-        //ws = new WebSocket("ws://dev.promptinsight.ai:10070/ws/generation");
-        //ws = new WebSocket("ws://dev.promptinsight.ai:10002/petgpt-service/ws/generation");
-        ws = new WebSocket(`ws:0.0.0.0:9090/ws/generation/${petId}`);
-        ws.onopen = () => console.log("Connected to WebSocket");
+        let petId = document.getElementById("petId").value;
+        //ws = new WebSocket(`ws://0.0.0.0:9090/ws/generation/${petId}`);
+        ws = new WebSocket(`ws://dev.promptinsight.ai:10002/petgpt-service/ws/generation/${petId}`);
+    
+        ws.onopen = () => {
+            console.log("Connected to WebSocket");
+            //sendQueuedMessages(); // Ensure any queued messages are sent
+        };
+    
         ws.onmessage = handleServerMessage;
-        ws.onclose = (event) => {
-            console.log("Socket closed. Attempting to reconnect...");
-            console.log(`Socket closed with code ${event.code}, reason: ${event.reason}`);
+    
+        ws.onclose = () => {
+            console.log("WebSocket closed. Reconnecting...");
             setTimeout(connect, 1000);
         };
+    
         ws.onerror = (event) => {
             console.error("WebSocket error observed:", event);
-            ws.close();
         };
+    }
+    
+    // Helper function to ensure WebSocket is open before sending
+    function waitForOpenConnection(socket, callback) {
+        const maxNumberOfAttempts = 10;
+        const intervalTime = 200; // ms
+    
+        let currentAttempt = 0;
+        const interval = setInterval(() => {
+            if (currentAttempt > maxNumberOfAttempts - 1) {
+                clearInterval(interval);
+                console.log("Maximum number of attempts reached. Could not send message.");
+                return;
+            }
+            if (socket.readyState === WebSocket.OPEN) {
+                clearInterval(interval);
+                callback();
+            }
+            currentAttempt++;
+        }, intervalTime);
+    }
+    
+    // Revised sendMessage to use waitForOpenConnection
+    function sendMessage(message, role) {
+        const messageData = JSON.stringify({
+            role: role,
+            content: message
+        });
+    
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(messageData);
+            console.log("Message sent:", messageData);
+        } else {
+            console.log("Waiting for connection to open to send message...");
+            waitForOpenConnection(ws, () => {
+                ws.send(messageData);
+                console.log("Message sent:", messageData);
+            });
+        }
     }
 
     let currentAssistantMessageDiv = null; // Element for ongoing assistant message
@@ -546,17 +592,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function getPetProfile() {
-        return {
-            pet_name: document.getElementById('petName').value,
-            pet_type: document.getElementById('petType').value,
-            breed: document.getElementById('petBreed').value,
-            age: document.getElementById('petAge').value,
-            body_weight: document.getElementById('petWeight').value,
-            gender: document.getElementById('petGender').value,
-        };
-    }
-
+    /*
     function sendMessage(message, role) {
         const messageData = {
             role: role,
@@ -575,15 +611,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Construct and send the payload
         const data = JSON.stringify({ messages: [messageData] });
-        connect();
-        if (ws.readyState === WebSocket.OPEN) {
-            console.log("sendMessage: " + data);
+        console.log("must sendMessage: " + data);
+        if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(data);
         } else {
-            console.log("WebSocket is not open. Attempting to reconnect before sending.");
-            connect();
+            console.log("WebSocket is not open. Queueing message.");
+            messageQueue.push(data); // Queue the message if WebSocket is not open
+            ensureConnection(); // Ensure WebSocket is trying to connect
+        }}
+    }
+*/
+    async function ensureWebSocketOpen() {
+        // Wait until the WebSocket is in the OPEN state
+        while (ws.readyState !== WebSocket.OPEN) {
+            await new Promise(resolve => setTimeout(resolve, 100));
         }
     }
+    async function sendMessage(message, role) {
+        const messageData = {
+            role: role,
+            content: message
+        };
+        appendMessage(message, role); // Add message to UI and history
+        
+        // Ensure WebSocket is open before sending
+        await ensureWebSocketOpen();
+        const data = JSON.stringify({ messages: [messageData] });
+
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(data);
+            console.log("Message sent:", data);
+        } else {
+            console.log("WebSocket is not open after waiting.");
+        }
+    }
+    
 
     document.getElementById("messageForm").addEventListener("submit", (event) => {
         event.preventDefault();

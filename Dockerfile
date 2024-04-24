@@ -19,10 +19,12 @@ RUN pip install -r requirements.txt
 COPY . .
 
 # Make port 80 available to the world outside this container
-EXPOSE 10080
+EXPOSE 10070
 
 # Define environment variable
-ENV PORT 10080
+ENV PORT 10070
 
 # CMD can still use variable substitution in the shell form
-CMD ["python", "server.py"]
+#CMD ["python", "server.py"]
+#CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", $PORT, "--workers", "4"]
+CMD uvicorn server:app --host 0.0.0.0 --port $PORT --workers 4
