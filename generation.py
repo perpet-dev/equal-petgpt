@@ -58,6 +58,7 @@ system = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in 
 
 # Example of filtering out unsupported fields from messages before sending to OpenAI
 def prepare_messages_for_openai(messages):
+    logger.debug('prepare_messages_for_openai')
     # Define the allowed fields in a message
     allowed_fields = {'role', 'content'}
 
@@ -71,7 +72,7 @@ def prepare_messages_for_openai(messages):
 import openai
 from openai import OpenAI
 async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id):
-
+    logger.debug('handle_text_messages')
     system = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in healthcare for dogs and cats to assist pet owners with a wide range of questions and challenges. \
             PetGPT provides detailed care tips, including dietary recommendations, exercise needs, and general wellness advice, emphasizing suitable vitamins and supplements. \
             PetGPT can provide immediate, accurate, and tailored advice on various aspects of pet care, including health, behavior, \
@@ -113,6 +114,7 @@ async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id
     await send_message_to_openai(model, conversation, websocket)
     
 async def send_message_to_openai(model, conversation, websocket):
+    logger.debug('send_message_to_openai')
     # Synchronously call the OpenAI API without await
     OPENAI_API_KEY="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"
     openai.api_key=OPENAI_API_KEY
@@ -144,6 +146,7 @@ async def send_message_to_openai(model, conversation, websocket):
         await websocket.send_json({"error": "Error processing your request"})
 
 async def handle_image_messages(websocket: WebSocket, model, messages):
+    logger.debug('handle_image_messages')
     try:
         OPENAI_API_KEY="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"
         openai.api_key=OPENAI_API_KEY
@@ -195,6 +198,7 @@ async def handle_image_messages(websocket: WebSocket, model, messages):
 
 
 async def openai_chat_api_request(model: str, messages: List[dict]):
+    logger.debug('openai_chat_api_request')
     headers = {
         "Authorization": f"Bearer {OPENAI_API_KEY}",
         "Content-Type": "application/json"
@@ -212,6 +216,7 @@ async def openai_chat_api_request(model: str, messages: List[dict]):
                 return None
 
 def construct_system_message(pet_profile):
+    logger.debug('construct_system_message')
     pet_name = pet_profile.get('pet_name', 'Unknown Pet')
     pet_type = pet_profile.get('pet_type', 'Unknown Type')
     breed = pet_profile.get('breed', 'Unknown Breed')
@@ -294,6 +299,7 @@ async def fetch_stream(url, headers, json_body):
                     yield json.loads(line)
 
 async def generation_websocket_endpoint_chatgpt(websocket: WebSocket, pet_id: str):
+    logger.debug('generation_websocket_endpoint_chatgpt')
     await websocket.accept()
     logger.info("WebSocket client connected")
 
