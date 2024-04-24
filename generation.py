@@ -97,19 +97,15 @@ async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id
     retriever.close()
         
     logger.info(f"handle_text_messages for Pet profile: {pet_profile}")
+    
+    if 'error' in pet_profile:
+        system_message = {"role": "system", "content": system}
+    else:
+        pet_info_prompt = "pet name: {}, breed: {}, age: {}, weight: {}kg".format(pet_profile.pet_name, pet_profile.breed, pet_profile.age, pet_profile.weight)
+        logger.debug(pet_info_prompt)
+        system_prompt = system + "\n You are assisting " + pet_info_prompt 
+        system_message = {"role": "system", "content": system_prompt}                
         
-    # try:
-    #     if 'pet_name' in pet_profile:
-    #         pet_info_prompt = "pet name: {}, breed: {}, age: {}, weight: {}kg".format(pet_profile.pet_name, pet_profile.breed, pet_profile.age, pet_profile.weight)
-    #         logger.debug(pet_info_prompt)
-    #         system_prompt = system + "\n You are assisting " + pet_info_prompt 
-    #         system_message = {"role": "system", "content": system_prompt}
-    #     else:
-    #         system_message = {"role": "system", "content": system}        
-    # except Exception as e:
-    #     logger.error("conversation does not have pet_id.")
-    system_message = {"role": "system", "content": system}   
-
     conversation_with_system = [system_message] + conversation
 
     #message_stream_id = str(uuid.uuid4())

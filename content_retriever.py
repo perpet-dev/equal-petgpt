@@ -233,6 +233,7 @@ class EqualContentRetriever():
                 logger.critical("Check Breed Key : {}".format(breed_key))
                 selected_questions = random.sample(type_questions, top_n)
 
+        logger.debug('>> random questions : {}'.format(selected_questions))
         return selected_questions
     
     def build_question_jsonl(self, db_host=DB_HOST, db_port=DB_PORT, db_user=DB_USER, db_password=DB_PASSWORD, db_database=DB_DATABASE):
