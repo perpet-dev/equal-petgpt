@@ -112,8 +112,8 @@ SUBJECT_JSON = """
                 {
                     "doc_id": 389,
                     "title": "말티즈에게 습식 사료와 건식 사료 중 어떤 것이 좋을까요?",
-                    "use_filter":false,
-                    "filter": []
+                    "use_filter":true,
+                    "filter": [88]
                 },
                 {
                     "doc_id": 96,
@@ -124,20 +124,20 @@ SUBJECT_JSON = """
                 {
                     "doc_id": 355,
                     "title": "프렌치 불독을 위한 특별한 영양 팁이 있나요?",
-                    "use_filter":false,
-                    "filter": []
+                    "use_filter":true,
+                    "filter": [461]
                 },
                 {
                     "doc_id": 369,
                     "title": "골든 리트리버에게 도움이 되는 영양소는 무엇이 있나요?",
-                    "use_filter":false,
-                    "filter": []
+                    "use_filter":true,
+                    "filter": [83]
                 },
                 {
                     "doc_id": 377,
                     "title": "시츄의 비만을 예방하기 위한 방법에는 어떤 것들이 있을까요?",
-                    "use_filter":false,
-                    "filter": []
+                    "use_filter":true,
+                    "filter": [366]
                 }
             ]
         }, 

@@ -14,7 +14,7 @@ import jsonlines
 import random
 
 from subject_json import SUBJECT_JSON
-from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE, OPENAI_API_KEY, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX, LOG_NAME, LOGGING_LEVEL, LOG_FILE_NAME
+from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE, OPENAI_API_KEY, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX
 
 INDEX_NAME = 'equalapp2'
 BREEDS_DOG_TAG = '62'
@@ -22,6 +22,7 @@ BREEDS_CAT_TAG = '276'
 BREEDS_NONE = ''
 MATCH_SCORE_CUTOFF = 0.4
 
+from config import LOG_NAME, LOG_FILE_NAME, LOGGING_LEVEL
 from log_util import LogUtil
 logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 
@@ -30,15 +31,24 @@ pc = Pinecone(PINECONE_API_KEY)
 spec = ServerlessSpec(cloud='aws', region='us-west-2')  
 
 class EqualContentRetriever():
+    # Singleton 으로 구성
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls, "_instance"):         
+            cls._instance = super().__new__(cls) 
+        return cls._instance 
+    
     def __init__(self, index_name=INDEX_NAME):
-        logger.debug('EqualContentRetriever::init')
-        self.index_name = index_name
-        self.category_dict = json.loads(SUBJECT_JSON)
-        self.contents_cache = []
-        self.__category_content_cache()
-        self.__load_breed_map()
-        self.question_map = {}
-        self.__load_questions_jsonl()
+        cls = type(self)
+        if not hasattr(cls, "_init"):
+            logger.debug('EqualContentRetriever::init')
+            self.index_name = index_name
+            self.category_dict = json.loads(SUBJECT_JSON)
+            self.contents_cache = []
+            self.__category_content_cache()
+            self.__load_breed_map()
+            self.question_map = {}
+            self.__load_questions_jsonl()
+            cls._init = True
 
     def __load_breed_map(self):
        logger.debug("EqualContentRetriever::__load_breed_map")
@@ -84,19 +94,37 @@ class EqualContentRetriever():
                 elements = []
                 for y in x['curations']:
                     doc_id = y['doc_id']
+                    filters = y['filter']
+                    use_filter = y['use_filter']
                     ret = index.query(
                             id=str(doc_id),
                             top_k=1, 
                             include_metadata=True)
                     if len(ret['matches']) > 0:
-                        elements.append({
-                                        'doc_id':ret['matches'][0]['id'],
-                                        'title':ret['matches'][0]['metadata']['title'], 
-                                        'content':ret['matches'][0]['metadata']['content'],
-                                        'image_url':ret['matches'][0]['metadata']['image_url'],
-                                        'link_url':ret['matches'][0]['metadata']['source_url'],
-                                        'tag':ret['matches'][0]['metadata']['tag']
-                                    })
+                        if len(filters) == 0: # filter 없음
+                            elements.append({
+                                            'doc_id':ret['matches'][0]['id'],
+                                            'title':ret['matches'][0]['metadata']['title'], 
+                                            'content':ret['matches'][0]['metadata']['content'],
+                                            'image_url':ret['matches'][0]['metadata']['image_url'],
+                                            'link_url':ret['matches'][0]['metadata']['source_url'],
+                                            'tag':ret['matches'][0]['metadata']['tag'], 
+                                            'filter':'', 
+                                            'use_filter':use_filter
+                                        })
+                        else:
+                            for filter in filters:
+                                elements.append({
+                                            'doc_id':ret['matches'][0]['id'],
+                                            'title':ret['matches'][0]['metadata']['title'], 
+                                            'content':ret['matches'][0]['metadata']['content'],
+                                            'image_url':ret['matches'][0]['metadata']['image_url'],
+                                            'link_url':ret['matches'][0]['metadata']['source_url'],
+                                            'tag':ret['matches'][0]['metadata']['tag'], 
+                                            'filter': str(filter),
+                                            'use_filter':use_filter
+                                        })
+
                 self.contents_cache.append({'pet_type':x['type'],'category_sn':x['sn'], 'category_title':x['subject'] ,'content':elements})
                 
     def __pinecone_index(self, text_dataset:Dataset, dimension=OPENAI_EMBEDDING_DIMENSION, incremental=True):   
@@ -343,9 +371,19 @@ class EqualContentRetriever():
 
     def get_category_contents(self, pet_type:str, sn:str, tags:list=[int]):    
         logger.debug("EqualContentRetriever::get_category_contents")
+        tags = list(filter(None, tags))
+        selected_contents = []
         for x in self.contents_cache:
             if x['pet_type'] == pet_type and x['category_sn'] == sn:
-                return x['content']
+                for content in x['content']:
+                    if content['use_filter'] == True:
+                        for tag in tags:
+                            if tag in content['filter']:
+                                selected_contents.append(content)
+                    else:
+                        selected_contents.append(content)
+                #return x['content']
+        return selected_contents
 
     def get_query_contents(self, query:str, pet_type:str='', tags:list=[]):
         # Pinecone search
@@ -414,7 +452,7 @@ if __name__ == "__main__":
                 output_file.write("{}\t{}\n".format(row[0], row[1]))
                 
 
-    # ret = contentRetriever.get_categories2(breeds=BREEDS_DOG_TAG, pet_name='뽀삐')
+    # ret = contentRetriever.get_categories(breeds=BREEDS_DOG_TAG, pet_name='뽀삐')
     # pprint.pprint(ret, indent=4)
         
     # print('-'* 80)
