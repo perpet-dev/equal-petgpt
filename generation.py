@@ -93,22 +93,18 @@ async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id
             PetGPT will be given a pet profile including name, breed, age, weight and eventually parts where the pet maybe be need more care (like teeth, skin ...). \
             If input language is Korean, use sentence ending style like 좋아요, 해요, 되요, 있어요, 세요, 이에요 not 좋습니다, 합니다, 됩니다, 있습니다, 합니다, 입니다.  \
             And use emoji, emoticons if possible."
-    system += f"\nYou are assisting '{pet_profile}'"
+    # system += f"\nYou are assisting 'pet name : {pet_profile}'"
     logger.info(f"handle_text_messages for Pet profile: {pet_profile}")
     try:
-        if "pet_id" in conversation[0]:
-            pet_id = conversation[0].get("pet_id")
-            retriever = PetProfileRetriever()
-            pet_profile = retriever.get_pet_profile(pet_id)
-            retriever.close()
-            pet_name = pet_profile.pet_name
-            pet_age = pet_profile.age
-            pet_breed = pet_profile.breed
-            pet_weight = pet_profile.weight
-            system_prompt = "{} \n pet name: {}, breed: {}, age: {}, weight: {}kg".format(system, pet_name, pet_breed, pet_age, pet_weight)
-            system_message = {"role": "system", "content": system_prompt}
-        else:
-            system_message = {"role": "system", "content": system}          
+        retriever = PetProfileRetriever()
+        pet_profile = retriever.get_pet_profile(pet_id)
+        retriever.close()
+        pet_name = pet_profile.pet_name
+        pet_age = pet_profile.age
+        pet_breed = pet_profile.breed
+        pet_weight = pet_profile.weight
+        system_prompt = "{} \n pet name: {}, breed: {}, age: {}, weight: {}kg".format(system, pet_name, pet_breed, pet_age, pet_weight)
+        system_message = {"role": "system", "content": system_prompt}
     except Exception as e:
         logger.fatal("conversation does not have pet_id.")
         system_message = {"role": "system", "content": system}  
