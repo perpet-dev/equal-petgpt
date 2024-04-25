@@ -73,6 +73,8 @@ import openai
 from openai import OpenAI
 async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id):
     logger.debug('handle_text_messages')
+    logger.debug('pet_id: {} , conversation: {}'.format(pet_id, conversation))
+
     system = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in healthcare for dogs and cats to assist pet owners with a wide range of questions and challenges. \
             PetGPT provides detailed care tips, including dietary recommendations, exercise needs, and general wellness advice, emphasizing suitable vitamins and supplements. \
             PetGPT can provide immediate, accurate, and tailored advice on various aspects of pet care, including health, behavior, \
@@ -110,13 +112,14 @@ async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id
         # system_message = {"role": "system", "content": system_prompt}                
         
     conversation_with_system = [system_message] + conversation
-
+    query = conversation
     #message_stream_id = str(uuid.uuid4())
     conversation = prepare_messages_for_openai(conversation_with_system)
-    await send_message_to_openai(model, conversation, websocket)
+    await send_message_to_openai(model, pet_id, query, conversation, websocket)
     
-async def send_message_to_openai(model, conversation, websocket):
+async def send_message_to_openai(model, pet_id, query, conversation, websocket):
     logger.debug('send_message_to_openai')
+    message_tot = ''
     # Synchronously call the OpenAI API without await
     OPENAI_API_KEY="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"
     openai.api_key=OPENAI_API_KEY
@@ -140,10 +143,12 @@ async def send_message_to_openai(model, conversation, websocket):
                 chunk_message_with_id = {"id": message_stream_id, "content":chunk_message}
                 #send to socket
                 #logger.info(f"Generation WebSocket to ChatGPT {chunk_message_with_id}")
+                message_tot = message_tot + chunk_message.replace('\n', ' ')
                 await websocket.send_json(chunk_message_with_id)
-
         # Send a finished signal with the same ID
+        logger.debug("pet_id: {}, message_id: {}, query: '{}', answer: {}".format(pet_id, message_stream_id, query, message_tot))
         await websocket.send_json({"id": message_stream_id, "finished": True})
+
     except Exception as e:
         logger.error(f"Error processing text message: {e}", exc_info=True)
         await websocket.send_json({"error": "Error processing your request"})
