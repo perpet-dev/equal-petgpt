@@ -210,7 +210,7 @@ async def openai_chat_api_request(model: str, messages: List[dict]):
                 return None
 
 def construct_system_message(pet_profile):
-    logger.debug('construct_system_message')
+    logger.debug('construct_system_message : {}'.format(pet_profile))
     pet_name = pet_profile.get('pet_name', 'Unknown Pet')
     pet_type = pet_profile.get('pet_type', 'Unknown Type')
     breed = pet_profile.get('breed', 'Unknown Breed')
