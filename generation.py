@@ -98,9 +98,17 @@ async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id
     retriever.close()
         
     logger.info(f"handle_text_messages for Pet profile: {pet_profile}")
-
+    
+    # if 'error' in pet_profile:
+    #     system_message = {"role": "system", "content": system}
+    # else:
     system_message = construct_system_message(pet_profile)
-                
+        
+        # pet_info_prompt = "pet name: {}, breed: {}, age: {}, weight: {}kg".format(pet_profile.pet_name, pet_profile.breed, pet_profile.age, pet_profile.weight)
+        # logger.debug(pet_info_prompt)
+        # system_prompt = system + "\n You are assisting " + pet_info_prompt 
+        # system_message = {"role": "system", "content": system_prompt}                
+        
     conversation_with_system = [system_message] + conversation
 
     #message_stream_id = str(uuid.uuid4())
@@ -125,12 +133,13 @@ async def send_message_to_openai(model, conversation, websocket):
     message_stream_id = str(uuid.uuid4())
     # iterate through the stream of events
     try:
+        logger.debug("Generation WebSocket to ChatGPT.")
         for chunk in response:
             chunk_message = chunk.choices[0].delta.content  # extract the message
             if  chunk_message is not None:
                 chunk_message_with_id = {"id": message_stream_id, "content":chunk_message}
                 #send to socket
-                logger.info(f"Generation WebSocket to ChatGPT {chunk_message_with_id}")
+                #logger.info(f"Generation WebSocket to ChatGPT {chunk_message_with_id}")
                 await websocket.send_json(chunk_message_with_id)
 
         # Send a finished signal with the same ID
@@ -210,20 +219,30 @@ async def openai_chat_api_request(model: str, messages: List[dict]):
                 return None
 
 def construct_system_message(pet_profile):
-    logger.debug('construct_system_message : {}'.format(pet_profile))
-    pet_name = pet_profile.get('pet_name', 'Unknown Pet')
-    pet_type = pet_profile.get('pet_type', 'Unknown Type')
-    breed = pet_profile.get('breed', 'Unknown Breed')
-    age = pet_profile.get('age', 'Unknown Age')
-    body_weight = pet_profile.get('body_weight', 'Unknown Weight')
-    gender = pet_profile.get('gender', 'Unknown Gender')
+    logger.debug('construct_system_message')
+    logger.debug(str(pet_profile))
 
-    logger.info(f"Pet profile: Name={pet_name}, Type={pet_type}, Breed={breed}, Age={age}, Weight={body_weight}, Gender={gender}")
+    try:
+        if 'error' in pet_profile:
+            return {"role": "system", "content": system}  
+        else:
+            pet_name = pet_profile.pet_name
+            pet_type = pet_profile.pet_type
+            breed = pet_profile.breed
+            age = pet_profile.age
+            weight = pet_profile.weight
+            gender = pet_profile.gender
+
+            logger.info(f"Pet profile: Name={pet_name}, Type={pet_type}, Breed={breed}, Age={age}, Weight={weight}kg, Gender={gender}")
+            
+            return {
+                "role": "system",
+                "content": f"{system}\nYou are assisting '{pet_name}', a {age}-year-old {pet_type} of the breed {breed} and is a {gender}."
+            }
+    except Exception as e:
+        logger.error(f"Error processing pet profile: {e}")
     
-    return {
-        "role": "system",
-        "content": f"{system}\nYou are assisting '{pet_name}', a {age}-year-old {pet_type} of the breed {breed} and is a {gender}."
-    }
+    return {"role": "system", "content": system}  
 
 async def handle_websocket_messages(websocket: WebSocket, data: dict):
     logger.info(f"Received data: {data}")
