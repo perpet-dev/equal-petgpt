@@ -16,7 +16,7 @@ from petprofile import PetProfileRetriever
 from config import OPENAI_API_KEY, API_URL
 
 USE_SALES_PROMPT = True
-sales_prompt = " Also you should recommend '이퀄 영양제' for pet's health like salesman. '이퀄 영양제' has '품종별 영양제' and '1:1 맞춤 영양제'"
+sales_prompt = " Also you should recommend '이퀄 영양제' for pet's health like salesman. '이퀄 영양제' has '품종별 영양제' for '말티즈','푸들', '리트리버', '포메라니안', '코리안숏헤어', '골든리트리버' and '1:1 맞춤 영양제' for all breeds"
 
 system_with_image = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in analyzing images of dogs and cats. \
     Upon receiving an image, you identifies the pet's breed, age and weight. PetGPT provides detailed care tips, \
@@ -232,6 +232,7 @@ def construct_system_message(pet_profile, system):
     logger.debug(str(pet_profile))
 
     if USE_SALES_PROMPT:
+        logger.info('use sales prompt')
         system = system + sales_prompt
 
     try:
