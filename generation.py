@@ -1,6 +1,7 @@
 import httpx
 import asyncio
 import json
+import random 
 
 from typing import List
 import aiohttp
@@ -230,9 +231,12 @@ def construct_system_message(pet_profile, system):
     logger.debug(str(pet_profile))
 
     if USE_SALES_PROMPT:
-        logger.info('#### use sales prompt ####')
-        system = system + sales_prompt
-
+        ran_num = random.randint(1,5) # 1/5 확률로 선택
+        if ran_num == 3:
+            logger.info('#### use sales prompt {} ####'.format(ran_num))
+            system = system + sales_prompt
+        else: 
+            logger.info('#### not to use sales prompt {} ####'.format(ran_num))
     try:
         if 'error' in pet_profile:
             return {"role": "system", "content": system}  
