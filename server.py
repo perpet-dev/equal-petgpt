@@ -250,10 +250,9 @@ async def extract_questions(request: ContentRequest):
         Don't put comments or explanations like: "다음은 구강 건강에 관한 잇몸 질환에 대한 잠재적인 FAQ 목록입니다: ..."
         Output should be in Korean language.    
         '''
-    OPENAI_API_KEY="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"
-    openai.api_key=OPENAI_API_KEY
     client = OpenAI(
         organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
+        api_key=OPENAI_API_KEY
     )
     completion = client.chat.completions.create(
         model="gpt-4",  #"gpt-3.5-turbo",#,"gpt-4", 
