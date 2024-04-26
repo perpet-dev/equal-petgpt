@@ -10,11 +10,11 @@ websockets==11.0.2
 Werkzeug==3.0.1
 yarl==1.9.2
 zipp==3.15.0
-sqlalchemy==2.0.28
-pymysql==1.1.0
-pinecone-client==3.2.0
 mysql-connector-python
+pymysql==1.1.0
+sqlalchemy==2.0.28
 huggingface-hub
+pinecone-client==3.2.0
 datasets
 jinja2==3.0.1
 jsonlines==2.0.0

@@ -12,24 +12,17 @@ from pydantic import BaseModel, HttpUrl
 from pydantic.generics import GenericModel
 from typing import Generic, TypeVar, List, Optional
 from config import PORT, EUREKA, MONGODB
+from datetime import datetime, timezone
 
 import os
 import openai
 import base64
 from openai import OpenAI
 import aiohttp
-
+from pymongo import MongoClient
 from py_eureka_client import eureka_client
-from config import PORT, EUREKA, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX
-from pinecone import Pinecone, ServerlessSpec, PodSpec
-import pprint
+from config import OPENAI_API_KEY, PORT, EUREKA, LOGGING_LEVEL, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX, LOG_NAME, LOG_FILE_NAME
 from petprofile import PetProfile
-# #from datasets import Dataset
-
-# Set your OpenAI API key securely
-# OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-openai.api_key = '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' #OPENAI_API_KEY
-
 
 # Configure logging
 # import logging
@@ -164,9 +157,14 @@ class QuestionItem(BaseModel):
 
 class PetGPTQuestionListResponse(BaseModel):
     list: List[QuestionItem]
-    
+
+# MongoDB setup
+client = MongoClient(MONGODB)
+mongo_db = client.perpet_healthcheck
+collection = mongo_db["pet_images"]
+
 @app.post("/process-pet-image")
-async def process_pet_images(pet_name: str, petImages: List[UploadFile] = File(...)):
+async def process_pet_images(user_id: str, pet_name: str, petImages: List[UploadFile] = File(...)):
     logger.debug('process_pet_images : {}'.format(pet_name))
     from pet_image_prompt import petgpt_system_imagemessage
     messages = [
@@ -175,19 +173,22 @@ async def process_pet_images(pet_name: str, petImages: List[UploadFile] = File(.
             {"type": "text", 
             "text": f"It's {pet_name}'s photo. What's the pet type, breed and age? 한국말로 답변해줘요"}]}
     ]
-    
+    image_data = []
     for upload_file in petImages:
         contents = await upload_file.read()
         img_base64 = base64.b64encode(contents).decode("utf-8")
         # Format the base64 string as a data URL
         if not img_base64.startswith('data:image'):
             img_base64 = f"data:image/jpeg;base64,{img_base64}"
+        image_data.append(img_base64)
+        upload_file.file.close()  # Don't forget to close the file handle
 
         messages[1]["content"].append({
             "type": "image_url",
             "image_url": {"url" : img_base64}
         })
-        
+    save_to_database(user_id, pet_name, image_data)
+    
     url = "https://api.openai.com/v1/chat/completions"
     payload = {
         "model": "gpt-4-vision-preview",
@@ -198,22 +199,26 @@ async def process_pet_images(pet_name: str, petImages: List[UploadFile] = File(.
         "Authorization": f"Bearer {openai.api_key}",
         "Content-Type": "application/json"
     }
-    
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=payload, headers=headers) as response:
             result = await response.json()
             gpt4v = result['choices'][0]['message']['content']
             return {"message": gpt4v}
-    
-    # oaiclient = OpenAI(organization='org-oMDD9ptBReP4GSSW5lMD1wv6',)
-    # response = oaiclient.chat.completions.create(
-    #     model="gpt-4-vision-preview",
-    #     messages=messages,
-    #     max_tokens=500,
-    # )
 
-    # gpt4v = response.choices[0].message.content
-    # return {"message": f"{gpt4v}"}
+def save_to_database(user_id: str, pet_name: str, image_data: List[str]):
+    """ Saves image data along with user and pet information to MongoDB """
+    try:
+        document = {
+            "user_id": user_id,
+            "pet_name": pet_name,
+            "images": image_data,
+            "upload_time": datetime.now()
+        }
+        collection.insert_one(document)
+        return {"message": "Images saved successfully"}
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save image data")
     
 @app.post("/extract-questions")
 async def extract_questions(request: ContentRequest):
@@ -390,7 +395,6 @@ async def pet_gpt_question_list(pet_id: str, page: int = Query(0, ge=0), size: i
             empty=len(items_on_page) == 0
         )
     )
-
 
 class VetCommentResponse(BaseModel):
     vet_comment: str
