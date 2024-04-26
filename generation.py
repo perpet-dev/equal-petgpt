@@ -124,10 +124,9 @@ async def send_message_to_openai(model, pet_id, query, conversation, websocket):
     logger.debug('send_message_to_openai')
     message_tot = ''
     # Synchronously call the OpenAI API without await
-    OPENAI_API_KEY="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"
-    openai.api_key=OPENAI_API_KEY
     client = OpenAI(
         organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
+        api_key=OPENAI_API_KEY
     )
     response = client.chat.completions.create(
         model = model,
@@ -160,10 +159,9 @@ async def send_message_to_openai(model, pet_id, query, conversation, websocket):
 async def handle_image_messages(websocket: WebSocket, model, messages):
     logger.debug('handle_image_messages')
     try:
-        OPENAI_API_KEY="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"
-        openai.api_key=OPENAI_API_KEY
         client = OpenAI(
             organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
+            api_key=OPENAI_API_KEY
         )
         response = client.chat.completions.create(
             model = model,#"gpt-4-vision-preview"{}
@@ -302,7 +300,6 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.send_json({"error": "An unexpected error occurred."})
 
 async def call_openai_api(model, messages):
-    OPENAI_API_KEY = "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"
     headers = {
         "Authorization": f"Bearer {OPENAI_API_KEY}",
         "Content-Type": "application/json"
