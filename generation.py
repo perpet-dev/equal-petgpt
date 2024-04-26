@@ -232,7 +232,7 @@ def construct_system_message(pet_profile, system):
     logger.debug(str(pet_profile))
 
     if USE_SALES_PROMPT:
-        logger.info('use sales prompt')
+        logger.info('#### use sales prompt ####')
         system = system + sales_prompt
 
     try:
