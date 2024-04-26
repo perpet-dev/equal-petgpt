@@ -1,3 +1,6 @@
+#-*- coding:utf-8 -*- 
+#!/usr/bin/env python
+# by Albert 
 import mysql.connector
 import time
 from tqdm import tqdm
