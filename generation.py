@@ -16,7 +16,7 @@ from petprofile import PetProfileRetriever
 from config import OPENAI_API_KEY, API_URL
 
 USE_SALES_PROMPT = True
-sales_prompt = "Also you should recommend '이퀄 영양제' for pet's health like salesman. '이퀄 영양제' has '품종별 영양제' and '1:1 맞춤 영양제'"
+sales_prompt = " Also you should recommend '이퀄 영양제' for pet's health like salesman. '이퀄 영양제' has '품종별 영양제' and '1:1 맞춤 영양제'"
 
 system_with_image = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in analyzing images of dogs and cats. \
     Upon receiving an image, you identifies the pet's breed, age and weight. PetGPT provides detailed care tips, \
@@ -98,8 +98,7 @@ async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id
             If input language is Korean, use sentence ending style like 좋아요, 해요, 되요, 있어요, 세요, 이에요 not 좋습니다, 합니다, 됩니다, 있습니다, 합니다, 입니다.  \
             And use emoji, emoticons if possible."
     
-    if USE_SALES_PROMPT:
-        system = system + sales_prompt
+
 
     retriever = PetProfileRetriever()
     pet_profile = retriever.get_pet_profile(pet_id)
@@ -231,8 +230,11 @@ async def openai_chat_api_request(model: str, messages: List[dict]):
                 return None
 
 def construct_system_message(pet_profile):
-    logger.debug('construct_system_message')
+    logger.debug('construct_system_message : sales = {}'.format(USE_SALES_PROMPT))
     logger.debug(str(pet_profile))
+
+    if USE_SALES_PROMPT:
+        system = system + sales_prompt
 
     try:
         if 'error' in pet_profile:
