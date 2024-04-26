@@ -380,7 +380,7 @@ if __name__ == "__main__":
     # petgpt prompt tuning
 
     def petgpt_test(question, pet_name, pet_breed, pet_age, pet_weight):
-        system = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in healthcare for dogs and cats to assist pet owners with a wide range of questions and challenges. \
+        system_txt = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in healthcare for dogs and cats to assist pet owners with a wide range of questions and challenges. \
             PetGPT provides detailed care tips, including dietary recommendations, exercise needs, and general wellness advice, emphasizing suitable vitamins and supplements. \
             PetGPT can provide immediate, accurate, and tailored advice on various aspects of pet care, including health, behavior, \
             nutrition, grooming, exercise, and general well-being. PetGPT's ability to access a vast database of information allows it \
@@ -402,11 +402,14 @@ if __name__ == "__main__":
             Also you should recommend '이퀄 영양제' for pet's health like salesman. \
             '이퀄 영양제' has '품종별 영양제' and '1:1 맞춤 영양제'"
 
-        OPENAI_API_KEY="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"
-        openai.api_key=OPENAI_API_KEY
+        
+     
         model = 'gpt-4'
         
-        system_message = {"role": "system", "content": system + ' pet name: {}, pet breed: {}, pet age: {}, pet weight: {}'.format(pet_name, pet_breed, pet_age, pet_weight)}
+        ad_prompt = " Also you should recommend '이퀄 영양제' for pet's health like salesman if query is related to nutrition. '이퀄 영양제' has '품종별 영양제' for '말티즈','푸들', '리트리버', '포메라니안', '코리안숏헤어', '골든리트리버' and '1:1 맞춤 영양제' for all breeds'"
+        system_txt = system_txt + ad_prompt
+
+        system_message = {"role": "system", "content": system_txt  + ' pet name: {}, pet breed: {}, pet age: {}, pet weight: {}'.format(pet_name, pet_breed, pet_age, pet_weight)}
         #conversation_with_system = [system_message] + conversation
         #message_stream_id = str(uuid.uuid4())
         #conversation = prepare_messages_for_openai(conversation_with_system)
@@ -415,8 +418,6 @@ if __name__ == "__main__":
             organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
             api_key=OPENAI_API_KEY
         )
-
-        
 
         response = client.chat.completions.create(
             model = model,
