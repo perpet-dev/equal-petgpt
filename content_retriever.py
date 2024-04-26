@@ -5,12 +5,12 @@ import mysql.connector
 import time
 from tqdm import tqdm
 from openai import OpenAI
-from pinecone import Pinecone, ServerlessSpec, PodSpec
+from pinecone import Pinecone, ServerlessSpec #, PodSpec
 from datasets import Dataset
-import numpy as np
+#import numpy as np
 import json
-import pprint
-import openai
+# import pprint
+# import openai
 import pandas as pd
 import re
 import jsonlines

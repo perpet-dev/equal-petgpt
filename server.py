@@ -76,19 +76,6 @@ gpt-4-1106-vision-preview	$10.00 / 1M tokens	$30.00 / 1M tokens
 # from log_util import LogUtil
 # logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 
-
-prefix="/petgpt-service"
-#prefix = "/"
-app = FastAPI(root_path=prefix)
-#app = FastAPI()
-# # Allow all origins
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],  # Allows all origins
-#     allow_credentials=True,
-#     allow_methods=["*"],  # Allows all methods
-#     allow_headers=["*"],  # Allows all headers
-# )
 # static files directory for web app
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -164,7 +151,7 @@ mongo_db = client.perpet_healthcheck
 collection = mongo_db["pet_images"]
 
 @app.post("/process-pet-image")
-async def process_pet_images(user_id: str, pet_name: str, petImages: List[UploadFile] = File(...)):
+async def process_pet_images(user_id: int, pet_name: str, petImages: List[UploadFile] = File(...)):
     logger.debug('process_pet_images : {}'.format(pet_name))
     from pet_image_prompt import petgpt_system_imagemessage
     messages = [
@@ -196,29 +183,43 @@ async def process_pet_images(user_id: str, pet_name: str, petImages: List[Upload
         "max_tokens": 500
     }
     headers = {
-        "Authorization": f"Bearer {openai.api_key}",
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
         "Content-Type": "application/json"
     }
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=payload, headers=headers) as response:
             result = await response.json()
+            logger.debug(result)
             gpt4v = result['choices'][0]['message']['content']
             return {"message": gpt4v}
 
-def save_to_database(user_id: str, pet_name: str, image_data: List[str]):
-    """ Saves image data along with user and pet information to MongoDB """
+def save_to_database(user_id: int, pet_name: str, image_data: List[str]):
+    """ Saves or updates image data along with user and pet information in MongoDB """
     try:
-        document = {
-            "user_id": user_id,
-            "pet_name": pet_name,
-            "images": image_data,
-            "upload_time": datetime.now()
+        # Define the filter for the document to find it if it already exists
+        filter = {"user_id": user_id, "pet_name": pet_name}
+
+        # Define the update to apply
+        update = {
+            "$set": {
+                "images": image_data,
+                "upload_time": datetime.now()
+            }
         }
-        collection.insert_one(document)
-        return {"message": "Images saved successfully"}
+
+        # Perform an upsert: update if exists, insert if does not exist
+        result = collection.update_one(filter, update, upsert=True)
+
+        # Check the result and return appropriate message
+        if result.matched_count > 0:
+            return {"message": "Images updated successfully"}
+        elif result.upserted_id is not None:
+            return {"message": "Images saved successfully"}
+        else:
+            return {"message": "No changes made to the images"}
     except Exception as e:
         print(f"An error occurred: {e}")
-        raise HTTPException(status_code=500, detail="Failed to save image data")
+        raise HTTPException(status_code=500, detail="Failed to save or update image data")
     
 @app.post("/extract-questions")
 async def extract_questions(request: ContentRequest):
