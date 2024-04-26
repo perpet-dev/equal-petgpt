@@ -34,8 +34,8 @@ from config import LOG_NAME, LOG_FILE_NAME, LOGGING_LEVEL
 from log_util import LogUtil
 logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 
-#prefix="/petgpt-service"
-prefix = "/"
+prefix="/petgpt-service"
+#prefix = "/"
 app = FastAPI(root_path=prefix)
 #app = FastAPI()
 # # Allow all origins
@@ -174,7 +174,7 @@ async def process_pet_images(user_id: int, pet_name: str, petImages: List[Upload
             "type": "image_url",
             "image_url": {"url" : img_base64}
         })
-    save_to_database(int(user_id), pet_name, image_data)
+    save_to_database(user_id, pet_name, image_data)
     
     url = "https://api.openai.com/v1/chat/completions"
     payload = {
