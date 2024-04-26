@@ -153,20 +153,6 @@ async def process_pet_images(
 ):
     logger.debug('process_pet_images : {}'.format(pet_name))
     from pet_image_prompt import petgpt_system_imagemessage
-#     messages = [
-#         {"role": "system", "content": petgpt_system_imagemessage},
-#         {"role": "user","content": [
-#             {"type": "text", 
-#             "text": f"It's {pet_name}'s photo. What's the pet type, breed and age? 한국말로 답변해줘요. Return result a JSON like 
-# ```json
-# {
-#   \"answer\": \"분류가 어렵습니다.\",
-#   \"name\": \"ffff\",
-#   \"type\": \"dog\",
-#   \"breed\": \"믹스견\",
-#   \"age\": \"정확한 나이 추정 불가\"
-# }```}]}
-#     ]
     # Prepare response content
     messages = [
         {"role": "system", "content": petgpt_system_imagemessage},
