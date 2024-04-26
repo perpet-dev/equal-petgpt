@@ -157,7 +157,12 @@ class QuestionItem(BaseModel):
 
 class PetGPTQuestionListResponse(BaseModel):
     list: List[QuestionItem]
-    
+
+# MongoDB setup
+client = MongoClient(MONGODB)
+mongo_db = client.perpet_healthcheck
+collection = mongo_db["pet_images"]
+
 @app.post("/process-pet-image")
 async def process_pet_images(user_id: str, pet_name: str, petImages: List[UploadFile] = File(...)):
     logger.debug('process_pet_images : {}'.format(pet_name))
