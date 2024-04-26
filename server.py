@@ -1,22 +1,17 @@
 # -*- coding: utf-8 -*-
-from fastapi import FastAPI, Request, Query, HTTPException
+from fastapi import FastAPI, Request, Query, HTTPException, File, UploadFile, status, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import WebSocket, WebSocketDisconnect
-from fastapi import File, UploadFile, status
 import uvicorn
-import requests
 from pydantic import BaseModel, HttpUrl
 from pydantic.generics import GenericModel
 from typing import Generic, TypeVar, List, Optional
 from config import PORT, EUREKA, MONGODB
-from datetime import datetime, timezone
-
-import os
-import openai
+from datetime import datetime
 import base64
+import openai
 from openai import OpenAI
 import aiohttp
 from pymongo import MongoClient
@@ -151,14 +146,42 @@ mongo_db = client.perpet_healthcheck
 collection = mongo_db["pet_images"]
 
 @app.post("/process-pet-image")
-async def process_pet_images(user_id: int, pet_name: str, petImages: List[UploadFile] = File(...)):
+async def process_pet_images(
+    pet_name: str = Form(...),  # Mandatory form field
+    petImages: List[UploadFile] = File(...),  # List of images as multipart form data
+    user_id: Optional[int] = Query(default=None)  # Optional query parameter
+):
     logger.debug('process_pet_images : {}'.format(pet_name))
     from pet_image_prompt import petgpt_system_imagemessage
+#     messages = [
+#         {"role": "system", "content": petgpt_system_imagemessage},
+#         {"role": "user","content": [
+#             {"type": "text", 
+#             "text": f"It's {pet_name}'s photo. What's the pet type, breed and age? 한국말로 답변해줘요. Return result a JSON like 
+# ```json
+# {
+#   \"answer\": \"분류가 어렵습니다.\",
+#   \"name\": \"ffff\",
+#   \"type\": \"dog\",
+#   \"breed\": \"믹스견\",
+#   \"age\": \"정확한 나이 추정 불가\"
+# }```}]}
+#     ]
+    # Prepare response content
     messages = [
         {"role": "system", "content": petgpt_system_imagemessage},
-        {"role": "user","content": [
+        {"role": "user", "content": [
             {"type": "text", 
-            "text": f"It's {pet_name}'s photo. What's the pet type, breed and age? 한국말로 답변해줘요"}]}
+             "text": f"It's {pet_name}'s photo. What's the pet type, breed, and age? 한국말로 답변해줘요. Return result as JSON like:\n"
+                     "```json\n"
+                     "{\n"
+                     "  \"answer\": \"분류가 어렵습니다.\",\n"
+                     "  \"name\": \"ffff\",\n"
+                     "  \"type\": \"dog\",\n"
+                     "  \"breed\": \"믹스견\",\n"
+                     "  \"age\": \"정확한 나이 추정 불가\"\n"
+                     "}```"}
+        ]}
     ]
     image_data = []
     for upload_file in petImages:
@@ -174,7 +197,8 @@ async def process_pet_images(user_id: int, pet_name: str, petImages: List[Upload
             "type": "image_url",
             "image_url": {"url" : img_base64}
         })
-    save_to_database(user_id, pet_name, image_data)
+    if user_id is not None:
+        save_to_database(user_id, pet_name, image_data)
     
     url = "https://api.openai.com/v1/chat/completions"
     payload = {
