@@ -15,6 +15,9 @@ logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_
 from petprofile import PetProfileRetriever
 from config import OPENAI_API_KEY, API_URL
 
+USE_SALES_PROMPT = True
+sales_prompt = "Also you should recommend '이퀄 영양제' for pet's health like salesman. '이퀄 영양제' has '품종별 영양제' and '1:1 맞춤 영양제'"
+
 system_with_image = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in analyzing images of dogs and cats. \
     Upon receiving an image, you identifies the pet's breed, age and weight. PetGPT provides detailed care tips, \
     including dietary recommendations, exercise needs, and general wellness advice, emphasizing suitable vitamins and supplements. \
@@ -95,6 +98,9 @@ async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id
             If input language is Korean, use sentence ending style like 좋아요, 해요, 되요, 있어요, 세요, 이에요 not 좋습니다, 합니다, 됩니다, 있습니다, 합니다, 입니다.  \
             And use emoji, emoticons if possible."
     
+    if USE_SALES_PROMPT:
+        system = system + sales_prompt
+
     retriever = PetProfileRetriever()
     pet_profile = retriever.get_pet_profile(pet_id)
     retriever.close()
@@ -391,7 +397,9 @@ if __name__ == "__main__":
             Also provide a response without paragraph break. \
             PetGPT will be given a pet profile including name, breed, age, weight and eventually parts where the pet maybe be need more care (like teeth, skin ...). \
             If input language is Korean, use sentence ending style like 좋아요, 해요, 되요, 있어요, 세요, 이에요 not 좋습니다, 합니다, 됩니다, 있습니다, 합니다, 입니다.  \
-            And use emoji, emoticons if possible."
+            And use emoji, emoticons if possible. \
+            Also you should recommend '이퀄 영양제' for pet's health like salesman. \
+            '이퀄 영양제' has '품종별 영양제' and '1:1 맞춤 영양제'"
 
         OPENAI_API_KEY="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"
         openai.api_key=OPENAI_API_KEY
@@ -423,10 +431,10 @@ if __name__ == "__main__":
         print(response)
         response.choices[0].message.content
 
-    question = '일주일에 산책을 몇 번 해야 합니까?'
+    question = '나이 들어 가면서 건강이 약해지는 것 같아요. 어떻게 할까요?'
     #question = '닥터훈트의 관절 건강 관리 방법은?'
     #question = '고양이도 우울증에 걸리나요?'
     
     # 이름: 똘이, 견종: 리트리버, 나이: 7살, 몸무게: 12kg, 
-    #petgpt_test(question, pet_name='똘이', pet_breed='리트리버', pet_age='7', pet_weight='12kg')
-    prepare_messages_for_openai(messages=[{"role":"system","content":"$message","pet_id":13, "timestamp":"$timeStamp"}])
+    petgpt_test(question, pet_name='똘이', pet_breed='리트리버', pet_age='7', pet_weight='12kg')
+    #prepare_messages_for_openai(messages=[{"role":"system","content":"$message","pet_id":13, "timestamp":"$timeStamp"}])
