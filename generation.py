@@ -35,7 +35,7 @@ system_with_image = "You are 'PetGPT', a friendly and enthusiastic GPT that spec
     Getting the whole family on the same page with training, \
     how to travel with a pet (could be hotels, air planes, buses, cars, etc.). \
     Answer in the same language as the question."
-system = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in healthcare for dogs and cats to assist pet owners with a wide range of questions and challenges. \
+system_txt = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in healthcare for dogs and cats to assist pet owners with a wide range of questions and challenges. \
     PetGPT provides detailed care tips, including dietary recommendations, exercise needs, and general wellness advice, emphasizing suitable vitamins and supplements. \
     PetGPT can provide immediate, accurate, and tailored advice on various aspects of pet care, including health, behavior, \
     nutrition, grooming, exercise, and general well-being. PetGPT's ability to access a vast database of information allows it \
@@ -97,8 +97,6 @@ async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id
             PetGPT will be given a pet profile including name, breed, age, weight and eventually parts where the pet maybe be need more care (like teeth, skin ...). \
             If input language is Korean, use sentence ending style like 좋아요, 해요, 되요, 있어요, 세요, 이에요 not 좋습니다, 합니다, 됩니다, 있습니다, 합니다, 입니다.  \
             And use emoji, emoticons if possible."
-    
-
 
     retriever = PetProfileRetriever()
     pet_profile = retriever.get_pet_profile(pet_id)
@@ -109,7 +107,7 @@ async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id
     # if 'error' in pet_profile:
     #     system_message = {"role": "system", "content": system}
     # else:
-    system_message = construct_system_message(pet_profile)
+    system_message = construct_system_message(pet_profile, system)
         
         # pet_info_prompt = "pet name: {}, breed: {}, age: {}, weight: {}kg".format(pet_profile.pet_name, pet_profile.breed, pet_profile.age, pet_profile.weight)
         # logger.debug(pet_info_prompt)
@@ -229,7 +227,7 @@ async def openai_chat_api_request(model: str, messages: List[dict]):
                 logger.error(f"OpenAI API error: {response.status}")
                 return None
 
-def construct_system_message(pet_profile):
+def construct_system_message(pet_profile, system):
     logger.debug('construct_system_message : sales = {}'.format(USE_SALES_PROMPT))
     logger.debug(str(pet_profile))
 
