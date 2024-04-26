@@ -2,6 +2,9 @@ import httpx
 import asyncio
 import json
 import random 
+from pymongo import MongoClient
+import datetime
+
 
 from typing import List
 import aiohttp
@@ -14,7 +17,12 @@ from config import LOG_NAME, LOGGING_LEVEL, LOG_FILE_NAME
 from log_util import LogUtil
 logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 from petprofile import PetProfileRetriever
-from config import OPENAI_API_KEY, API_URL
+from config import OPENAI_API_KEY, API_URL, MONGODB
+
+
+client = MongoClient(MONGODB)
+mongo_db = client.perpet_healthcheck
+petgpt_collection = mongo_db["petgpt_logs"]
 
 USE_SALES_PROMPT = True
 sales_prompt = " Also you should recommend '이퀄 영양제' for pet's health like salesman. '이퀄 영양제' has '품종별 영양제' for '말티즈','푸들', '리트리버', '포메라니안', '코리안숏헤어', '골든리트리버' and '1:1 맞춤 영양제' for all breeds"
@@ -60,6 +68,25 @@ system_txt = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes
 # openai.api_key = "your-api-key"
 # openai.api_base = "your-api-base-url"
 
+def save_to_petgpt_log(pet_id : int, question: str, answer: str):
+    """ Saves or updates image data along with user and pet information in MongoDB """
+    try:
+        # Define the filter for the document to find it if it already exists
+        #filter = {"user_id": user_id, "pet_idname": pet_name}
+
+        # Define the update to apply
+        update = {
+            "pet_id":pet_id,
+            "question":question,
+            "answer":answer,
+            "time_stamp": datetime.now()
+        }
+
+        petgpt_collection.insert_one(update)
+
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+       
 # Example of filtering out unsupported fields from messages before sending to OpenAI
 def prepare_messages_for_openai(messages):
     logger.debug('prepare_messages_for_openai')
@@ -151,6 +178,7 @@ async def send_message_to_openai(model, pet_id, query, conversation, websocket):
         # Send a finished signal with the same ID
         if len(query) > 0 and 'content' in query[0]:
             logger.info("PETGPT_LOG: {{ pet_id: {}, message_id: {}, query: \"{}\", answer: \"{}\" }}".format(pet_id, message_stream_id, query[0]['content'], message_tot))
+            save_to_petgpt_log(pet_id, query[0]['content'], message_tot)
         await websocket.send_json({"id": message_stream_id, "finished": True})
 
     except Exception as e:

@@ -29,8 +29,8 @@ from config import LOG_NAME, LOG_FILE_NAME, LOGGING_LEVEL
 from log_util import LogUtil
 logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 
-prefix="/petgpt-service"
-#prefix = "/"
+#prefix="/petgpt-service"
+prefix = "/"
 app = FastAPI(root_path=prefix)
 #app = FastAPI()
 # # Allow all origins
@@ -144,6 +144,7 @@ class PetGPTQuestionListResponse(BaseModel):
 client = MongoClient(MONGODB)
 mongo_db = client.perpet_healthcheck
 collection = mongo_db["pet_images"]
+
 
 @app.post("/process-pet-image")
 async def process_pet_images(
