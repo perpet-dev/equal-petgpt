@@ -58,6 +58,7 @@ system = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in 
 
 # Example of filtering out unsupported fields from messages before sending to OpenAI
 def prepare_messages_for_openai(messages):
+    logger.debug('prepare_messages_for_openai')
     # Define the allowed fields in a message
     allowed_fields = {'role', 'content'}
 
@@ -71,9 +72,9 @@ def prepare_messages_for_openai(messages):
 import openai
 from openai import OpenAI
 async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id):
-    retriever = PetProfileRetriever()
-    pet_profile = retriever.get_pet_profile(pet_id)
-    retriever.close()
+    logger.debug('handle_text_messages')
+    logger.debug('pet_id: {} , conversation: {}'.format(pet_id, conversation))
+
     system = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in healthcare for dogs and cats to assist pet owners with a wide range of questions and challenges. \
             PetGPT provides detailed care tips, including dietary recommendations, exercise needs, and general wellness advice, emphasizing suitable vitamins and supplements. \
             PetGPT can provide immediate, accurate, and tailored advice on various aspects of pet care, including health, behavior, \
@@ -89,36 +90,36 @@ async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id
             Getting the whole family on the same page with training, \
             how to travel with a pet (could be hotels, air planes, buses, cars, etc.). \
             Answer in the same language as the question. Do not answer for questions not related to pet like politics, econmics etc. \
+            Also provide a response without paragraph break. \
             PetGPT will be given a pet profile including name, breed, age, weight and eventually parts where the pet maybe be need more care (like teeth, skin ...). \
             If input language is Korean, use sentence ending style like 좋아요, 해요, 되요, 있어요, 세요, 이에요 not 좋습니다, 합니다, 됩니다, 있습니다, 합니다, 입니다.  \
             And use emoji, emoticons if possible."
-    system += f"\nYou are assisting '{pet_profile}'"
+    
+    retriever = PetProfileRetriever()
+    pet_profile = retriever.get_pet_profile(pet_id)
+    retriever.close()
+        
     logger.info(f"handle_text_messages for Pet profile: {pet_profile}")
-    try:
-        if "pet_id" in conversation[0]:
-            pet_id = conversation[0].get("pet_id")
-            retriever = PetProfileRetriever()
-            pet_profile = retriever.get_pet_profile(pet_id)
-            retriever.close()
-            pet_name = pet_profile.pet_name
-            pet_age = pet_profile.age
-            pet_breed = pet_profile.breed
-            pet_weight = pet_profile.weight
-            system_prompt = "{} \n pet name: {}, breed: {}, age: {}, weight: {}kg".format(system, pet_name, pet_breed, pet_age, pet_weight)
-            system_message = {"role": "system", "content": system_prompt}
-        else:
-            system_message = {"role": "system", "content": system}          
-    except Exception as e:
-        logger.fatal("conversation does not have pet_id.")
-        system_message = {"role": "system", "content": system}  
-
+    
+    # if 'error' in pet_profile:
+    #     system_message = {"role": "system", "content": system}
+    # else:
+    system_message = construct_system_message(pet_profile)
+        
+        # pet_info_prompt = "pet name: {}, breed: {}, age: {}, weight: {}kg".format(pet_profile.pet_name, pet_profile.breed, pet_profile.age, pet_profile.weight)
+        # logger.debug(pet_info_prompt)
+        # system_prompt = system + "\n You are assisting " + pet_info_prompt 
+        # system_message = {"role": "system", "content": system_prompt}                
+        
     conversation_with_system = [system_message] + conversation
-
+    query = conversation
     #message_stream_id = str(uuid.uuid4())
     conversation = prepare_messages_for_openai(conversation_with_system)
-    await send_message_to_openai(model, conversation, websocket)
+    await send_message_to_openai(model, pet_id, query, conversation, websocket)
     
-async def send_message_to_openai(model, conversation, websocket):
+async def send_message_to_openai(model, pet_id, query, conversation, websocket):
+    logger.debug('send_message_to_openai')
+    message_tot = ''
     # Synchronously call the OpenAI API without await
     OPENAI_API_KEY="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"
     openai.api_key=OPENAI_API_KEY
@@ -135,21 +136,26 @@ async def send_message_to_openai(model, conversation, websocket):
     message_stream_id = str(uuid.uuid4())
     # iterate through the stream of events
     try:
+        logger.debug("Generation WebSocket to ChatGPT.")
         for chunk in response:
             chunk_message = chunk.choices[0].delta.content  # extract the message
             if  chunk_message is not None:
                 chunk_message_with_id = {"id": message_stream_id, "content":chunk_message}
                 #send to socket
-                logger.info(f"Generation WebSocket to ChatGPT {chunk_message_with_id}")
+                #logger.info(f"Generation WebSocket to ChatGPT {chunk_message_with_id}")
+                message_tot = message_tot + chunk_message.replace('\n', ' ')
                 await websocket.send_json(chunk_message_with_id)
-
         # Send a finished signal with the same ID
+        if len(query) > 0 and 'content' in query[0]:
+            logger.info("PETGPT_LOG: { pet_id: {}, message_id: {}, query: \"{}\", answer: \"{}\" }".format(pet_id, message_stream_id, query[0]['content'], message_tot))
         await websocket.send_json({"id": message_stream_id, "finished": True})
+
     except Exception as e:
         logger.error(f"Error processing text message: {e}", exc_info=True)
         await websocket.send_json({"error": "Error processing your request"})
 
 async def handle_image_messages(websocket: WebSocket, model, messages):
+    logger.debug('handle_image_messages')
     try:
         OPENAI_API_KEY="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"
         openai.api_key=OPENAI_API_KEY
@@ -201,6 +207,7 @@ async def handle_image_messages(websocket: WebSocket, model, messages):
 
 
 async def openai_chat_api_request(model: str, messages: List[dict]):
+    logger.debug('openai_chat_api_request')
     headers = {
         "Authorization": f"Bearer {OPENAI_API_KEY}",
         "Content-Type": "application/json"
@@ -218,19 +225,30 @@ async def openai_chat_api_request(model: str, messages: List[dict]):
                 return None
 
 def construct_system_message(pet_profile):
-    pet_name = pet_profile.get('pet_name', 'Unknown Pet')
-    pet_type = pet_profile.get('pet_type', 'Unknown Type')
-    breed = pet_profile.get('breed', 'Unknown Breed')
-    age = pet_profile.get('age', 'Unknown Age')
-    body_weight = pet_profile.get('body_weight', 'Unknown Weight')
-    gender = pet_profile.get('gender', 'Unknown Gender')
+    logger.debug('construct_system_message')
+    logger.debug(str(pet_profile))
 
-    logger.info(f"Pet profile: Name={pet_name}, Type={pet_type}, Breed={breed}, Age={age}, Weight={body_weight}, Gender={gender}")
+    try:
+        if 'error' in pet_profile:
+            return {"role": "system", "content": system}  
+        else:
+            pet_name = pet_profile.pet_name
+            pet_type = pet_profile.pet_type
+            breed = pet_profile.breed
+            age = pet_profile.age
+            weight = pet_profile.weight
+            gender = pet_profile.gender
+
+            logger.info(f"Pet profile: Name={pet_name}, Type={pet_type}, Breed={breed}, Age={age}, Weight={weight}kg, Gender={gender}")
+            
+            return {
+                "role": "system",
+                "content": f"{system}\nYou are assisting '{pet_name}', a {age}-year-old {pet_type} of the breed {breed} and is a {gender}."
+            }
+    except Exception as e:
+        logger.error(f"Error processing pet profile: {e}")
     
-    return {
-        "role": "system",
-        "content": f"{system}\nYou are assisting '{pet_name}', a {age}-year-old {pet_type} of the breed {breed} and is a {gender}."
-    }
+    return {"role": "system", "content": system}  
 
 async def handle_websocket_messages(websocket: WebSocket, data: dict):
     logger.info(f"Received data: {data}")
@@ -300,6 +318,7 @@ async def fetch_stream(url, headers, json_body):
                     yield json.loads(line)
 
 async def generation_websocket_endpoint_chatgpt(websocket: WebSocket, pet_id: str):
+    logger.debug('generation_websocket_endpoint_chatgpt')
     await websocket.accept()
     logger.info("WebSocket client connected")
 

@@ -25,16 +25,14 @@ from config import OPENAI_API_KEY, PORT, EUREKA, LOGGING_LEVEL, OPENAI_EMBEDDING
 from petprofile import PetProfile
 
 # Configure logging
-import logging
-LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG").upper()
-logging.basicConfig(level=LOG_LEVEL)
-logger = logging.getLogger("uvicorn")
-logger.setLevel(LOG_LEVEL)
-
-# MongoDB setup
-client = MongoClient(MONGODB)
-mongo_db = client.perpet_healthcheck
-collection = mongo_db["pet_images"]
+# import logging
+# LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG").upper()
+# logging.basicConfig(level=LOG_LEVEL)
+# logger = logging.getLogger("uvicorn")
+# logger.setLevel(LOG_LEVEL)
+from config import LOG_NAME, LOG_FILE_NAME, LOGGING_LEVEL
+from log_util import LogUtil
+logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 
 prefix="/petgpt-service"
 #prefix = "/"
@@ -75,8 +73,9 @@ gpt-4-1106-vision-preview	$10.00 / 1M tokens	$30.00 / 1M tokens
 # logging.basicConfig(level=LOG_LEVEL)
 # logger = logging.getLogger("uvicorn")
 # logger.setLevel(LOG_LEVEL)
-from log_util import LogUtil
-logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
+# from log_util import LogUtil
+# logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
+
 
 prefix="/petgpt-service"
 #prefix = "/"
@@ -161,6 +160,7 @@ class PetGPTQuestionListResponse(BaseModel):
     
 @app.post("/process-pet-image")
 async def process_pet_images(user_id: str, pet_name: str, petImages: List[UploadFile] = File(...)):
+    logger.debug('process_pet_images : {}'.format(pet_name))
     from pet_image_prompt import petgpt_system_imagemessage
     messages = [
         {"role": "system", "content": petgpt_system_imagemessage},
@@ -217,6 +217,7 @@ def save_to_database(user_id: str, pet_name: str, image_data: List[str]):
     
 @app.post("/extract-questions")
 async def extract_questions(request: ContentRequest):
+    logger.debug("extract_questions")
     content_to_analyze = request.content
     systemquestion = '''Hello, I'm compiling an FAQ section for a pet care website and need to extract potential frequently asked questions \
         from content written by veterinarians. The content covers a wide range of topics important to pet owners, including but not limited to:\n\
@@ -251,6 +252,7 @@ async def extract_questions(request: ContentRequest):
 # API Endpoints
 @app.get("/pet-knowledge-list/{pet_id}", response_model=ApiResponse[List[CategoryItem]])
 async def pet_knowledge_list(pet_id: str, page: int = Query(0, ge=0), items_per_page: int = Query(10, ge=1)):
+    logger.debug('pet_knowledge_list : pet_id = {}'.format(pet_id))
     try:
         list = []
         retriever = PetProfileRetriever()
@@ -307,6 +309,7 @@ class BannerItem(BaseModel):
 #메인 배너 리스트
 @app.get("/main-banner-list", response_model=ApiResponse[List[BannerItem]])
 async def main_banner_list(page: int = Query(0, ge=0), size: int = Query(5, ge=1)):
+    logger.debug('main_banner_list')
     # link_url: https://equal.pet/content/View/77
     # image_url: https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t4B9XEt74OltsmP.png
     
@@ -664,7 +667,7 @@ async def get_pet_profile(pet_id: int):
 
     if pet_profile:
         # Create and return a PetProfile instance
-        print(f"pet_profile: {pet_profile}")
+        logger.debug(f"pet_profile: {pet_profile}")
         return pet_profile
     else:
         raise HTTPException(status_code=404, detail="Pet profile not found")
