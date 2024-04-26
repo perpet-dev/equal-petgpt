@@ -146,7 +146,8 @@ async def send_message_to_openai(model, pet_id, query, conversation, websocket):
                 message_tot = message_tot + chunk_message.replace('\n', ' ')
                 await websocket.send_json(chunk_message_with_id)
         # Send a finished signal with the same ID
-        logger.debug("PETGPT_LOG: pet_id: {}, message_id: {}, query: '{}', answer: {}".format(pet_id, message_stream_id, query, message_tot))
+        if len(query) > 0 and 'content' in query[0]:
+            logger.info("PETGPT_LOG: { pet_id: {}, message_id: {}, query: \"{}\", answer: \"{}\" }".format(pet_id, message_stream_id, query[0]['content'], message_tot))
         await websocket.send_json({"id": message_stream_id, "finished": True})
 
     except Exception as e:

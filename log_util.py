@@ -50,7 +50,7 @@ class LogUtil(object):
         self.logger.error(message)
 
     def critical(self, message):
-        self.logger.critical(message)
+        self.logger.critical(message)      
 
 if __name__ == '__main__':
     logger = LogUtil(logname='prompt_insight', logfile_name='logs/prompt_insight.log')
