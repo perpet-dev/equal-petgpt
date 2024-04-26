@@ -3,7 +3,7 @@ import asyncio
 import json
 import random 
 from pymongo import MongoClient
-import datetime
+from datetime import datetime
 
 
 from typing import List
