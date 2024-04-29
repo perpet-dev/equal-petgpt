@@ -166,7 +166,6 @@ async def send_message_to_openai(model, pet_id, query, conversation, websocket):
     # iterate through the stream of events
     try:
         logger.debug("Generation WebSocket to ChatGPT.")
-        save_to_petgpt_log(pet_id,"test question", "test answer")
         for chunk in response:
             chunk_message = chunk.choices[0].delta.content  # extract the message
             if  chunk_message is not None:
