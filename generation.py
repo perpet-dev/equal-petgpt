@@ -3,8 +3,7 @@ import asyncio
 import json
 import random 
 from pymongo import MongoClient
-import datetime
-
+from datetime import datetime
 
 from typing import List
 import aiohttp
@@ -17,14 +16,12 @@ from config import LOG_NAME, LOGGING_LEVEL, LOG_FILE_NAME
 from log_util import LogUtil
 logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 from petprofile import PetProfileRetriever
-from config import OPENAI_API_KEY, API_URL, MONGODB
-
+from config import OPENAI_API_KEY, API_URL, MONGODB, USE_SALES_PROMPT
 
 client = MongoClient(MONGODB)
 mongo_db = client.perpet_healthcheck
 petgpt_collection = mongo_db["petgpt_logs"]
 
-USE_SALES_PROMPT = True
 sales_prompt = " Also you should recommend '이퀄 영양제' for pet's health like salesman. '이퀄 영양제' has '품종별 영양제' for '말티즈','푸들', '리트리버', '포메라니안', '코리안숏헤어', '골든리트리버' and '1:1 맞춤 영양제' for all breeds"
 
 system_with_image = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in analyzing images of dogs and cats. \
@@ -81,12 +78,12 @@ def save_to_petgpt_log(pet_id : int, question: str, answer: str):
             "answer":answer,
             "time_stamp": datetime.now()
         }
-
-        petgpt_collection.insert_one(update)
-
+        logger.info(f"Saving to petgpt_logs: {update}")
+        result = petgpt_collection.insert_one(update)
+        logger.info(f"Inserted ID: {result.inserted_id}")
     except Exception as e:
         logger.error(f"An error occurred: {e}")
-       
+
 # Example of filtering out unsupported fields from messages before sending to OpenAI
 def prepare_messages_for_openai(messages):
     logger.debug('prepare_messages_for_openai')
@@ -100,7 +97,6 @@ def prepare_messages_for_openai(messages):
         filtered_messages.append(filtered_message)
     return filtered_messages
 
-import openai
 from openai import OpenAI
 async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id):
     logger.debug('handle_text_messages')
@@ -167,6 +163,7 @@ async def send_message_to_openai(model, pet_id, query, conversation, websocket):
     # iterate through the stream of events
     try:
         logger.debug("Generation WebSocket to ChatGPT.")
+        save_to_petgpt_log(pet_id,"test question", "test answer")
         for chunk in response:
             chunk_message = chunk.choices[0].delta.content  # extract the message
             if  chunk_message is not None:
@@ -175,7 +172,6 @@ async def send_message_to_openai(model, pet_id, query, conversation, websocket):
                 #logger.info(f"Generation WebSocket to ChatGPT {chunk_message_with_id}")
                 message_tot = message_tot + chunk_message.replace('\n', ' ')
                 await websocket.send_json(chunk_message_with_id)
-        # Send a finished signal with the same ID
         if len(query) > 0 and 'content' in query[0]:
             logger.info("PETGPT_LOG: {{ pet_id: {}, message_id: {}, query: \"{}\", answer: \"{}\" }}".format(pet_id, message_stream_id, query[0]['content'], message_tot))
             save_to_petgpt_log(pet_id, query[0]['content'], message_tot)
@@ -185,55 +181,55 @@ async def send_message_to_openai(model, pet_id, query, conversation, websocket):
         logger.error(f"Error processing text message: {e}", exc_info=True)
         await websocket.send_json({"error": "Error processing your request"})
 
-async def handle_image_messages(websocket: WebSocket, model, messages):
-    logger.debug('handle_image_messages')
-    try:
-        client = OpenAI(
-            organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
-            api_key=OPENAI_API_KEY
-        )
-        response = client.chat.completions.create(
-            model = model,#"gpt-4-vision-preview"{}
-            messages=[
-                    {"role": "system", "content": system},
-                    {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": "What’s in this image?"},
-                        {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
-                        },
-                        },
-                    ],
-                    }
-                ],
-                max_tokens=4096,
-        )
+# async def handle_image_messages(websocket: WebSocket, model, messages):
+#     logger.debug('handle_image_messages')
+#     try:
+#         client = OpenAI(
+#             organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
+#             api_key=OPENAI_API_KEY
+#         )
+#         response = client.chat.completions.create(
+#             model = model,#"gpt-4-vision-preview"{}
+#             messages=[
+#                     {"role": "system", "content": system},
+#                     {
+#                     "role": "user",
+#                     "content": [
+#                         {"type": "text", "text": "What’s in this image?"},
+#                         {
+#                         "type": "image_url",
+#                         "image_url": {
+#                             "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+#                         },
+#                         },
+#                     ],
+#                     }
+#                 ],
+#                 max_tokens=4096,
+#         )
 
-        print(response.choices[0])
+#         print(response.choices[0])
 
-        choice = response.choices[0]
-        message = choice.message
+#         choice = response.choices[0]
+#         message = choice.message
 
-        # Manually create the response dictionary
-        answer = {
-            "finish_reason": choice.finish_reason,
-            "index": choice.index,
-            "logprobs": choice.logprobs,
-            "content": message.content,
-            "role": message.role,
-            "function_call": message.function_call,
-            "tool_calls": message.tool_calls,
-            "finished": True  # Add 'finished': true to the response
-        }
+#         # Manually create the response dictionary
+#         answer = {
+#             "finish_reason": choice.finish_reason,
+#             "index": choice.index,
+#             "logprobs": choice.logprobs,
+#             "content": message.content,
+#             "role": message.role,
+#             "function_call": message.function_call,
+#             "tool_calls": message.tool_calls,
+#             "finished": True  # Add 'finished': true to the response
+#         }
 
-        logger.info(answer)
-        await websocket.send_json(answer)
-    except Exception as e:
-        logger.error(f"Error processing text message: {e}", exc_info=True)
-        await websocket.send_json({"error": "Error processing your request"})
+#         logger.info(answer)
+#         await websocket.send_json(answer)
+#     except Exception as e:
+#         logger.error(f"Error processing text message: {e}", exc_info=True)
+#         await websocket.send_json({"error": "Error processing your request"})
 
 
 async def openai_chat_api_request(model: str, messages: List[dict]):

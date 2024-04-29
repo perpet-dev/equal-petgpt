@@ -20,14 +20,15 @@ from config import OPENAI_API_KEY, PORT, EUREKA, LOGGING_LEVEL, OPENAI_EMBEDDING
 from petprofile import PetProfile
 
 # Configure logging
-# import logging
-# LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG").upper()
-# logging.basicConfig(level=LOG_LEVEL)
-# logger = logging.getLogger("uvicorn")
-# logger.setLevel(LOG_LEVEL)
+import logging
+import os
+LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG").upper()
+logging.basicConfig(level=LOG_LEVEL)
+logger = logging.getLogger("uvicorn")
+logger.setLevel(LOG_LEVEL)
 from config import LOG_NAME, LOG_FILE_NAME, LOGGING_LEVEL
-from log_util import LogUtil
-logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
+# from log_util import LogUtil
+# logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 
 #prefix="/petgpt-service"
 prefix = "/"

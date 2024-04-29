@@ -5,12 +5,7 @@ LOGGING_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG')
 PORT = int(os.getenv('PORT', 9090))
 EUREKA = os.getenv('EUREKA_CLIENT_SERVICEURL_DEFAULTZONE', "http://dev.promptinsight.ai:10001/eureka") 
 
-#OPENAI_EMBEDDING_MODEL_NAME = 'text-embedding-3-small'
-#OPENAI_EMBEDDING_DIMENSION = 1536
-#PINECONE_API_KEY =  'dcce7d00-5f7f-48bf-8b19-33480e74ad12'
-
 OPENAI_API_KEY="sk-proj-7gUQaIE8SYGNgs3qBCHqT3BlbkFJMMWvJ7SfdzGMAVWaPsDU"
-
 API_URL = "https://api.openai.com/v1/chat/completions"
 OPENAI_EMBEDDING_MODEL_NAME = 'text-embedding-3-small'
 OPENAI_EMBEDDING_DIMENSION = 1536
@@ -35,6 +30,7 @@ DB_PORT = 3306 # 3307
 
 LOG_NAME = 'EqualPetGPT'
 LOG_FILE_NAME = './log/petgpt.log'
+USE_SALES_PROMPT = True
 
 
 
