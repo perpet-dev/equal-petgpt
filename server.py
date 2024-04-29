@@ -16,23 +16,21 @@ from openai import OpenAI
 import aiohttp
 from pymongo import MongoClient
 from py_eureka_client import eureka_client
-from config import OPENAI_API_KEY, PORT, EUREKA, LOGGING_LEVEL, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX, LOG_NAME, LOG_FILE_NAME
+from config import PREFIXURL, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, OPENAI_API_KEY, PORT, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME
 from petprofile import PetProfile
 
 # Configure logging
-import logging
-import os
-LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG").upper()
-logging.basicConfig(level=LOG_LEVEL)
-logger = logging.getLogger("uvicorn")
-logger.setLevel(LOG_LEVEL)
+# import logging
+# import os
+# LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG").upper()
+# logging.basicConfig(level=LOG_LEVEL)
+# logger = logging.getLogger("uvicorn")
+# logger.setLevel(LOG_LEVEL)
 from config import LOG_NAME, LOG_FILE_NAME, LOGGING_LEVEL
-# from log_util import LogUtil
-# logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
+from log_util import LogUtil
+logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 
-#prefix="/petgpt-service"
-prefix = "/"
-app = FastAPI(root_path=prefix)
+app = FastAPI(root_path=PREFIXURL)
 #app = FastAPI()
 # # Allow all origins
 # app.add_middleware(
@@ -195,8 +193,10 @@ async def process_pet_images(
         "max_tokens": 500
     }
     headers = {
+        "Content-Type": "application/json",
+        "OpenAI-Organization": f"{OPENAI_ORG}",
         "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "Content-Type": "application/json"
+        "OpenAI-Project": f"{OPENAI_PROJ}"
     }
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=payload, headers=headers) as response:
@@ -416,6 +416,7 @@ async def create_vet_comment(pet_profile: PetProfile):
     You are 'PetGPT', a friendly and enthusiastic GPT that specializes in healthcare of dogs and cats.
     Upon receiving a pet's type(cat/dog), breed, gender, age, body shape and general health comments of some areas the pet is requiring attention,
     your goal is to provide personalized, practical, actionable information and advice for pet owners.
+    Refer to diagnoses and health_info in pet's profile.
     Your comments should be a very concise and well articulated summary containing 2 or 3 sentences.
     Output should be in Korean language.
     Follow strictly the style, tone and manner of the following examples (line by line) of comments templates. 
@@ -426,27 +427,6 @@ async def create_vet_comment(pet_profile: PetProfile):
 {{NAME}}은 구강 건강 관리에 좀 더 주의를 기울여야 해요. 치석은 구강 건강뿐만 아니라, 심장, 신장, 간 등의 다른 신체 부위로 세균이나 염증을 퍼뜨려 질병을 일으킬 수도 있기 때문에 매우 신경 써야 하는 문제예요. 구강 질환은 초기에는 명확한 증상이 나타나지 않을 수 있으니, {{NAME}}의 입 안을 주기적으로 확인하고 이상이 있을 경우 수의사와 상의하시는 게 좋아요. 강아지 전용 칫솔과 치약을 사용하여 주 3회 이상의 양치가 권장되고 칫솔질에 익숙하지 않을 경우 거부할 수 있으니 천천히 익숙하게 해주는 게 중요해요.
     skip mentionning supplements elements like 영양소인 오메가-3 지방산, 코엔자임 Q10, 아르기닌, 타우린, 항산화제, 비타민 B-복합체 because you will generate in another API.
 '''
-
-    # OPENAI_API_KEY="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"
-    # openai.api_key=OPENAI_API_KEY
-    # client = OpenAI(
-    #     organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
-    # )
-    # completion = client.chat.completions.create(
-    #     model="gpt-4", #"gpt-3.5-turbo",
-    #     messages=[
-    #         {"role": "system", "content": f"{systemquestion}"},
-    #         {"role": "user", "content": f"{pet_profile}"},
-    #     ]
-    # )
-    # template = completion.choices[0].message.content
-    # pet_name = pet_profile.pet_name
-    # formatted_string = template.replace("{{NAME}}", "{}").format(pet_name)
-    # logger.debug(f"vet_comment:{formatted_string}")
-    # return VetCommentResponse(
-    #         vet_comment=formatted_string
-    #     )
-    url = "https://api.openai.com/v1/chat/completions"
     payload = {
         "model": "gpt-4",  # or another model name as appropriate
         "messages": [
@@ -455,12 +435,16 @@ async def create_vet_comment(pet_profile: PetProfile):
         ]
     }
     headers = {
-        "Authorization": f"Bearer {openai.api_key}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "OpenAI-Organization": f"{OPENAI_ORG}",
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "OpenAI-Project": f"{OPENAI_PROJ}"
     }
-
+    
+    logger.debug(f"payload:{payload}")
+    logger.debug(f"headers:{headers}")
     async with aiohttp.ClientSession() as session:
-        async with session.post(url, json=payload, headers=headers) as response:
+        async with session.post(OPENAI_API_URL, json=payload, headers=headers) as response:
             if response.status != 200:
                 raise HTTPException(status_code=response.status, detail="Error calling OpenAI API")
             result = await response.json()
@@ -495,27 +479,6 @@ async def create_vet_comment(pet_profile: PetProfile):
     
     Don't forget to generate only up to 3 sentences.
 '''
-    # OPENAI_API_KEY="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"
-    # openai.api_key=OPENAI_API_KEY
-    # client = OpenAI(
-    #     organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
-    # )
-    # completion = client.chat.completions.create(
-    #     model="gpt-4", #"gpt-3.5-turbo",
-    #     messages=[
-    #         {"role": "system", "content": f"{systemquestion}"},
-    #         {"role": "user", "content": f"{pet_profile}"},
-    #     ]
-    # )
-    # template = completion.choices[0].message.content
-    # pet_name = pet_profile.pet_name
-    # formatted_string = template.replace("{{NAME}}", "{}").format(pet_name)
-    # logger.debug(f"vet_comment:{formatted_string}")
-    # return VetCommentResponse(
-    #         vet_comment=formatted_string
-    #     )
-    # Prepare the API URL and headers
-    url = "https://api.openai.com/v1/chat/completions"
     payload = {
         "model": "gpt-4",  # Specify the correct model
         "messages": [
@@ -524,14 +487,17 @@ async def create_vet_comment(pet_profile: PetProfile):
         ]
     }
     headers = {
-        "Authorization": f"Bearer {openai.api_key}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "OpenAI-Organization": f"{OPENAI_ORG}",
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "OpenAI-Project": f"{OPENAI_PROJ}"
     }
 
     # Use aiohttp to make asynchronous HTTP requests
     async with aiohttp.ClientSession() as session:
-        async with session.post(url, json=payload, headers=headers) as response:
+        async with session.post(OPENAI_API_URL, json=payload, headers=headers) as response:
             if response.status != 200:
+                logger.error(f"Error calling OpenAI API: {response.status}")
                 raise HTTPException(status_code=response.status, detail="Error calling OpenAI API")
             result = await response.json()
             template = result['choices'][0]['message']['content']
@@ -540,7 +506,7 @@ async def create_vet_comment(pet_profile: PetProfile):
     return VetCommentResponse(vet_comment=formatted_string)
 
 async def register_with_eureka():
-    if prefix == "/petgpt-service":
+    if PREFIXURL == "/petgpt-service":
         # Asynchronously register service with Eureka
         await eureka_client.init_async(eureka_server=EUREKA,
                                     app_name="petgpt-service",

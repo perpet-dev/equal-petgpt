@@ -1,3 +1,4 @@
+from token import OP
 import httpx
 import asyncio
 import json
@@ -16,7 +17,7 @@ from config import LOG_NAME, LOGGING_LEVEL, LOG_FILE_NAME
 from log_util import LogUtil
 logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 from petprofile import PetProfileRetriever
-from config import OPENAI_API_KEY, API_URL, MONGODB, USE_SALES_PROMPT
+from config import OPENAI_API_KEY, OPENAI_API_URL, OPENAI_PROJ, OPENAI_ORG, MONGODB, USE_SALES_PROMPT
 
 client = MongoClient(MONGODB)
 mongo_db = client.perpet_healthcheck
@@ -149,8 +150,8 @@ async def send_message_to_openai(model, pet_id, query, conversation, websocket):
     message_tot = ''
     # Synchronously call the OpenAI API without await
     client = OpenAI(
-        organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
-        api_key=OPENAI_API_KEY
+        organization = OPENAI_ORG,
+        api_key = OPENAI_API_KEY
     )
     response = client.chat.completions.create(
         model = model,
@@ -169,7 +170,6 @@ async def send_message_to_openai(model, pet_id, query, conversation, websocket):
             if  chunk_message is not None:
                 chunk_message_with_id = {"id": message_stream_id, "content":chunk_message}
                 #send to socket
-                #logger.info(f"Generation WebSocket to ChatGPT {chunk_message_with_id}")
                 message_tot = message_tot + chunk_message.replace('\n', ' ')
                 await websocket.send_json(chunk_message_with_id)
         if len(query) > 0 and 'content' in query[0]:
@@ -181,69 +181,20 @@ async def send_message_to_openai(model, pet_id, query, conversation, websocket):
         logger.error(f"Error processing text message: {e}", exc_info=True)
         await websocket.send_json({"error": "Error processing your request"})
 
-# async def handle_image_messages(websocket: WebSocket, model, messages):
-#     logger.debug('handle_image_messages')
-#     try:
-#         client = OpenAI(
-#             organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
-#             api_key=OPENAI_API_KEY
-#         )
-#         response = client.chat.completions.create(
-#             model = model,#"gpt-4-vision-preview"{}
-#             messages=[
-#                     {"role": "system", "content": system},
-#                     {
-#                     "role": "user",
-#                     "content": [
-#                         {"type": "text", "text": "What’s in this image?"},
-#                         {
-#                         "type": "image_url",
-#                         "image_url": {
-#                             "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
-#                         },
-#                         },
-#                     ],
-#                     }
-#                 ],
-#                 max_tokens=4096,
-#         )
-
-#         print(response.choices[0])
-
-#         choice = response.choices[0]
-#         message = choice.message
-
-#         # Manually create the response dictionary
-#         answer = {
-#             "finish_reason": choice.finish_reason,
-#             "index": choice.index,
-#             "logprobs": choice.logprobs,
-#             "content": message.content,
-#             "role": message.role,
-#             "function_call": message.function_call,
-#             "tool_calls": message.tool_calls,
-#             "finished": True  # Add 'finished': true to the response
-#         }
-
-#         logger.info(answer)
-#         await websocket.send_json(answer)
-#     except Exception as e:
-#         logger.error(f"Error processing text message: {e}", exc_info=True)
-#         await websocket.send_json({"error": "Error processing your request"})
-
-
 async def openai_chat_api_request(model: str, messages: List[dict]):
     logger.debug('openai_chat_api_request')
     headers = {
+        "Content-Type": "application/json",
+        "OpenAI-Organization": f"{OPENAI_ORG}",
         "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "Content-Type": "application/json"
+        "OpenAI-Project": f"{OPENAI_PROJ}"
     }
     payload = {
         "model": model,
         "messages": messages
     }
     async with aiohttp.ClientSession() as session:
-        async with session.post(API_URL, json=payload, headers=headers) as response:
+        async with session.post(OPENAI_API_URL, json=payload, headers=headers) as response:
             if response.status == 200:
                 return await response.json()
             else:
@@ -329,8 +280,10 @@ async def websocket_endpoint(websocket: WebSocket):
 
 async def call_openai_api(model, messages):
     headers = {
+        "Content-Type": "application/json",
+        "OpenAI-Organization": f"{OPENAI_ORG}",
         "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "Content-Type": "application/json"
+        "OpenAI-Project": f"{OPENAI_PROJ}"
     }
     data = {
         "model": model,
@@ -339,8 +292,7 @@ async def call_openai_api(model, messages):
         "max_tokens": 1024,
         "stream": True
     }
-    url = "https://api.openai.com/v1/chat/completions"
-    return fetch_stream(url, headers, data)
+    return fetch_stream(OPENAI_API_URL, headers, data)
 
 async def fetch_stream(url, headers, json_body):
     async with httpx.AsyncClient() as client:
@@ -385,9 +337,9 @@ async def generation_websocket_endpoint_chatgpt(websocket: WebSocket, pet_id: st
             model = "gpt-4-vision-preview" if contains_image else "gpt-4-0125-preview"
             
             try: 
-                if contains_image:
-                    await handle_image_messages(websocket, model, messages, pet_id)
-                else:
+                # if contains_image:
+                #     await handle_image_messages(websocket, model, messages, pet_id)
+                # else:
                     await handle_text_messages(websocket, model, messages, pet_id)
                 
             except Exception as e:
