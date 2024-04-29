@@ -369,44 +369,46 @@ async def main_banner_list(page: int = Query(0, ge=0), size: int = Query(5, ge=1
 @app.get("/pet-gpt-question-list/{pet_id}", response_model=ApiResponse[List[QuestionItem]])
 async def pet_gpt_question_list(pet_id: str, page: int = Query(0, ge=0), size: int = Query(3, ge=1)):
     logger.debug(f"PetGPT Service for pet_id: {pet_id}")
+    try:
+        retriever = PetProfileRetriever()
+        pet_profile = retriever.get_pet_profile(pet_id)
+        retriever.close()
 
-    retriever = PetProfileRetriever()
-    pet_profile = retriever.get_pet_profile(pet_id)
-    retriever.close()
+        pet_type = pet_profile.pet_type
+        pet_breed = pet_profile.breed
 
-    pet_type = pet_profile.pet_type
-    pet_breed = pet_profile.breed
+        selected_questions = contentRetriever.get_random_questions(pet_type=pet_type, breed=pet_breed, top_n=size)
+        questions = []
+        question_id = 1
 
-    selected_questions = contentRetriever.get_random_questions(pet_type=pet_type, breed=pet_breed, top_n=size)
-    questions = []
-    question_id = 1
+        for question in selected_questions:
+            questions.append(QuestionItem(title=question, question_id="Q{}".format(question_id)))
+            question_id = question_id + 1
 
-    for question in selected_questions:
-        questions.append(QuestionItem(title=question, question_id="Q{}".format(question_id)))
-        question_id = question_id + 1
+        # Pagination logic
+        total_items = len(questions)
+        total_pages = (total_items + size - 1) // size
+        items_on_page = questions[page*size:(page+1)*size]  # Slice the list to get the items for the current page
 
-    # Pagination logic
-    total_items = len(questions)
-    total_pages = (total_items + size - 1) // size
-    items_on_page = questions[page*size:(page+1)*size]  # Slice the list to get the items for the current page
-
-    return ApiResponse(
-        success=True,
-        code=200,
-        msg="Success",
-        data=ResponseContent(
-            content=items_on_page,
-            # Pagination details
-            totalPages=total_pages,
-            last=page >= total_pages - 1,
-            totalElements=total_items,
-            first=page == 0,
-            size=size,
-            number=page,
-            numberOfElements=len(items_on_page),
-            empty=len(items_on_page) == 0
+        return ApiResponse(
+            success=True,
+            code=200,
+            msg="Success",
+            data=ResponseContent(
+                content=items_on_page,
+                # Pagination details
+                totalPages=total_pages,
+                last=page >= total_pages - 1,
+                totalElements=total_items,
+                first=page == 0,
+                size=size,
+                number=page,
+                numberOfElements=len(items_on_page),
+                empty=len(items_on_page) == 0
+            )
         )
-    )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 class VetCommentResponse(BaseModel):
     vet_comment: str
