@@ -232,7 +232,7 @@ def construct_system_message(pet_profile, system):
         ran_num = random.randint(1,5) # 1/5 확률로 선택
         if ran_num == 3:
             logger.info('#### use sales prompt {} ####'.format(ran_num))
-            system = system + sales_prompt
+            system = system + sales_prompt + ingredient_prompt
         else: 
             logger.info('#### not to use sales prompt {} ####'.format(ran_num))
     try:
