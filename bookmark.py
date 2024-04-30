@@ -16,7 +16,15 @@ bookmark_collection = mongo_db["bookmarks"]
 def bookmark_set(user_id:int, doc_id:int, title:str, content:str, image_url:str, link_url:str):
     logger.debug('set_bookmark')
     summary = content[:50]
-    data = {"user_id":user_id, "doc_id":doc_id, "title":title, "summary":summary, "image_url":image_url, "link_url":link_url}
+    data = {
+                "user_id":user_id, 
+                "doc_id":doc_id, 
+                "title":title, 
+                "summary":summary, 
+                "image_url":image_url, 
+                "link_url":link_url, 
+                "time_stamp": datetime.now()
+            }
     result = bookmark_collection.count_documents({"user_id":user_id, "doc_id":doc_id})
     if result == 0: # 없음
         bookmark_collection.insert_one(data)
