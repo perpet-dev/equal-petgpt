@@ -152,6 +152,7 @@ class PetGPTQuestionListResponse(BaseModel):
 client = MongoClient(MONGODB)
 mongo_db = client.perpet_healthcheck
 collection = mongo_db["pet_images"]
+banner_collection = mongo_db["banners"]
 
 @app.post("/process-pet-image")
 async def process_pet_images(
@@ -344,35 +345,46 @@ async def main_banner_list(page: int = Query(0, ge=0), size: int = Query(5, ge=1
     # link_url: https://equal.pet/content/View/79
     # image_url: https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t1cSnF0N8xlW4Fj.png
 
-    banners = [
-        BannerItem(link_url="https://equal.pet/content/View/77", image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t4B9XEt74OltsmP.png"),
-        BannerItem(link_url="https://equal.pet/content/View/78", image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t7kI0C6MomZT0fM.png"),
-        BannerItem(link_url="https://equal.pet/content/View/79", image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t1cSnF0N8xlW4Fj.png"),
-    ]
+    results = banner_collection.find()
+    banner_lst = list(results)
+    banners = []
 
-    # Pagination logic
-    total_items = len(banners)
-    total_pages = (total_items + size - 1) // size
-    items_on_page = banners[page*size:(page+1)*size]
-
-    response_content = ResponseContent(
-        content=items_on_page,
-        totalPages=total_pages,
-        last=page >= total_pages - 1,
-        totalElements=total_items,
-        first=page == 0,
-        size=size,
-        number=page,
-        numberOfElements=len(items_on_page),
-        empty=len(items_on_page) == 0
-    )
+    try:
+        for banner in banner_lst:
+            banners.append(BannerItem(link_url=banner['link_url'], image_url=banner['image_url']))
     
-    return ApiResponse(
-        success=True,
-        code=200,
-        msg="Successfully retrieved banners",
-        data=response_content
-    )
+        # banners = [
+        #     BannerItem(link_url="https://equal.pet/content/View/77", image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t4B9XEt74OltsmP.png"),
+        #     BannerItem(link_url="https://equal.pet/content/View/78", image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t7kI0C6MomZT0fM.png"),
+        #     BannerItem(link_url="https://equal.pet/content/View/79", image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t1cSnF0N8xlW4Fj.png"),
+        # ]
+
+        # Pagination logic
+        total_items = len(banners)
+        total_pages = (total_items + size - 1) // size
+        items_on_page = banners[page*size:(page+1)*size]
+
+        response_content = ResponseContent(
+            content=items_on_page,
+            totalPages=total_pages,
+            last=page >= total_pages - 1,
+            totalElements=total_items,
+            first=page == 0,
+            size=size,
+            number=page,
+            numberOfElements=len(items_on_page),
+            empty=len(items_on_page) == 0
+        )
+        
+        return ApiResponse(
+            success=True,
+            code=200,
+            msg="Successfully retrieved banners",
+            data=response_content
+        )
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/pet-gpt-question-list/{pet_id}", response_model=ApiResponse[List[QuestionItem]])
 async def pet_gpt_question_list(pet_id: str, page: int = Query(0, ge=0), size: int = Query(3, ge=1)):
