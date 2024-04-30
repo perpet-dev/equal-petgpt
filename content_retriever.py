@@ -15,9 +15,12 @@ import pandas as pd
 import re
 import jsonlines
 import random
+from pymongo import MongoClient
+from datetime import datetime
 
 from subject_json import SUBJECT_JSON
 from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE, OPENAI_API_KEY, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX
+from config import MONGODB
 
 INDEX_NAME = 'equalapp2'
 BREEDS_DOG_TAG = '62'
@@ -45,13 +48,49 @@ class EqualContentRetriever():
         if not hasattr(cls, "_init"):
             logger.debug('EqualContentRetriever::init')
             self.index_name = index_name
-            self.category_dict = json.loads(SUBJECT_JSON)
+            #self.category_dict = json.loads(SUBJECT_JSON)
             self.contents_cache = []
+            # MongoDB setup
+            client = MongoClient(MONGODB)
+            mongo_db = client.perpet_healthcheck
+            self.subjects_collection = mongo_db["knowlege_subject"]
+            self.questions_collection = mongo_db["questions"]
+            #self.__put_subjects_to_mongo()
+            self.category_dict = self.__load_subjects_from_mongo()
             self.__category_content_cache()
             self.__load_breed_map()
             self.question_map = {}
             self.__load_questions_jsonl()
+            
             cls._init = True
+
+    def __put_subjects_to_mongo(self):
+        # put subject json from mongodb
+        logger.debug("EqualContentRetriever::__load_subject_json")
+
+        data = {
+            'subjects':SUBJECT_JSON, 
+            'time_stamp': datetime.now()
+        }
+        try:
+            self.subjects_collection.insert_one(data)
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+
+    def __load_subjects_from_mongo(self):
+        # load subject json from mongodb
+        logger.debug("EqualContentRetriever::__load_subject_json")
+
+        try:
+            subject_json = self.subjects_collection.find()
+            return json.loads(subject_json[0]['subjects'])
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+            return None
+
+    def __put_question_json_to_mongo(self):
+        logger.debug("EqualContentRetriever::__put_question_json_to_mongo")
+
 
     def __load_breed_map(self):
        logger.debug("EqualContentRetriever::__load_breed_map")

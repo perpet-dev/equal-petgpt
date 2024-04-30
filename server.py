@@ -637,12 +637,37 @@ async def get_contents(query: str, pet_id: int, tags: Optional[List[str]] = Quer
         
         return response
     except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/bookmark-content", response_model=BookmarkResponse)
-async def bookmark_content(content_id: str, auth_info: str):
+@app.post("/bookmark", response_model=BookmarkResponse)
+async def bookmark_content(user_id: str, content_id: str):
     # Placeholder for bookmarking logic
-    return BookmarkResponse(success=True)
+    logger.debug('set bookmark')
+    try:
+        logger.debug('set bookmark')
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    #return BookmarkResponse(success=True)
+
+@app.get("/get-bookmark", response_model=BookmarkResponse)
+async def get_bookmarks(user_id: str):
+    logger.debug('get_bookmarks')
+    try:
+        logger.debug('get bookmakrs')
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@app.delete("/bookmark", response_model=BookmarkResponse)
+async def delete_bookmark(user_id: str, content_id:str):
+    logger.debug('delete bookmark')
+    try:
+        logger.debug('delete')
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/get-pet-profile/{pet_id}", response_model=PetProfile)
 async def get_pet_profile(pet_id: int):
