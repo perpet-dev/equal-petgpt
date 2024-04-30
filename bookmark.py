@@ -13,38 +13,41 @@ client = MongoClient(MONGODB)
 mongo_db = client.perpet_healthcheck
 bookmark_collection = mongo_db["bookmarks"]
 
-def set_bookmark(user_id:int, content_id:int):
+def bookmark_set(user_id:int, doc_id:int, title:str, content:str, image_url:str, link_url:str):
     logger.debug('set_bookmark')
-    data = {"user_id":user_id, "content_id":content_id}
-    result = bookmark_collection.count_documents(data)
+    summary = content[:50]
+    data = {"user_id":user_id, "doc_id":doc_id, "title":title, "summary":summary, "image_url":image_url, "link_url":link_url}
+    result = bookmark_collection.count_documents({"user_id":user_id, "doc_id":doc_id})
     if result == 0: # 없음
         bookmark_collection.insert_one(data)
     return True
 
-def get_bookmarks(user_id:int):
+def bookmarks_get(user_id:int):
     logger.debug('get_bookmarks')
     results = bookmark_collection.find(filter={"user_id":user_id})
     return list(results)
 
-def delete_bookmarks(user_id:int, content_id:int):
+def bookmark_delete(user_id:int, doc_id:int):
     logger.debug('delete_bookmarks')
-    data = {"user_id":user_id, "content_id":content_id}
+    data = {"user_id":int(user_id), "doc_id":int(doc_id)}
     result = bookmark_collection.delete_one(data)
-    return result.acknowledged
+    logger.debug("result : {}".format(result))
+    return bool(result.acknowledged)
+
 
 if __name__ == "__main__":
-    set_bookmark(user_id=223, content_id=150)
-    set_bookmark(user_id=223, content_id=154)
-    set_bookmark(user_id=223, content_id=157)
-    set_bookmark(user_id=13, content_id=144)
-    set_bookmark(user_id=13, content_id=142)
-    set_bookmark(user_id=13, content_id=132)
+    bookmark_set(user_id=223, doc_id=150, title="제목", content="본문본문ggksjgdsljflsdjflds dsfjsdf ldsfjfdsl jfslkdsfjldfsjdsfjkldfsjlfsd ldfsj lfdslfdsj lfjdlfdsl jdfsl f jldsjfslfjdslfj slfds", image_url='', link_url='')
+    bookmark_set(user_id=223, doc_id=154, title="제목", content="본문본문ggksjgdsljflsdjflds dsfjsdf ldsfjfdsl jfslkdsfjldfsjdsfjkldfsjlfsd ldfsj lfdslfdsj lfjdlfdsl jdfsl f jldsjfslfjdslfj slfds", image_url='', link_url='')
+    bookmark_set(user_id=223, doc_id=157, title="제목", content="본문본문ggksjgdsljflsdjflds dsfjsdf ldsfjfdsl jfslkdsfjldfsjdsfjkldfsjlfsd ldfsj lfdslfdsj lfjdlfdsl jdfsl f jldsjfslfjdslfj slfds", image_url='', link_url='')
+    bookmark_set(user_id=13, doc_id=144, title="제목", content="본문본문ggksjgdsljflsdjflds dsfjsdf ldsfjfdsl jfslkdsfjldfsjdsfjkldfsjlfsd ldfsj lfdslfdsj lfjdlfdsl jdfsl f jldsjfslfjdslfj slfds", image_url='', link_url='')
+    bookmark_set(user_id=13, doc_id=142, title="제목", content="본문본문ggksjgdsljflsdjflds dsfjsdf ldsfjfdsl jfslkdsfjldfsjdsfjkldfsjlfsd ldfsj lfdslfdsj lfjdlfdsl jdfsl f jldsjfslfjdslfj slfds", image_url='', link_url='')
+    bookmark_set(user_id=13, doc_id=132, title="제목", content="본문본문ggksjgdsljflsdjflds dsfjsdf ldsfjfdsl jfslkdsfjldfsjdsfjkldfsjlfsd ldfsj lfdslfdsj lfjdlfdsl jdfsl f jldsjfslfjdslfj slfds", image_url='', link_url='')
     
-    print(get_bookmarks(user_id=223))
-    print(get_bookmarks(user_id=13))
+    print(bookmarks_get(user_id=223))
+    print(bookmarks_get(user_id=13))
 
-    delete_bookmarks(user_id=13, content_id=142)
-    print(get_bookmarks(user_id=13))
+    bookmark_delete(user_id=13, doc_id=142)
+    print(bookmarks_get(user_id=13))
 
-    delete_bookmarks(user_id=223, content_id=150)
-    print(get_bookmarks(user_id=223))
+    bookmark_delete(user_id=223, doc_id=150)
+    print(bookmarks_get(user_id=223))

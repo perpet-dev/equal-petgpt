@@ -250,6 +250,25 @@ class EqualContentRetriever():
                             'tag':res['metadata']['tag']})
         return result
 
+    def get_document(self, doc_id:int):
+        logger.debug('EqualContentRetriever::get_document => {}'.format(doc_id))
+        index = pc.Index(INDEX_NAME)
+        ret = index.query(
+                    id=str(doc_id),
+                    top_k=1, 
+                    include_metadata=True)
+        if len(ret['matches']) > 0:
+            return {
+                'doc_id':ret['matches'][0]['id'],
+                'title':ret['matches'][0]['metadata']['title'], 
+                'content':ret['matches'][0]['metadata']['content'],
+                'image_url':ret['matches'][0]['metadata']['image_url'],
+                'link_url':ret['matches'][0]['metadata']['source_url'],
+                'tag':ret['matches'][0]['metadata']['tag'], 
+            }
+        else:
+            return {}
+
     def get_random_questions(self, pet_type:str, breed:str='', top_n=3):
         logger.debug('EqualContentRetriever::__get_random_questions => {}, {}'.format(pet_type, breed))
         
@@ -497,8 +516,8 @@ if __name__ == "__main__":
                 output_file.write("{}\t{}\n".format(row[0], row[1]))
                 
 
-    # ret = contentRetriever.get_categories(breeds=BREEDS_DOG_TAG, pet_name='뽀삐')
-    # pprint.pprint(ret, indent=4)
+    ret = contentRetriever.get_categories(breeds=BREEDS_DOG_TAG, pet_name='뽀삐')
+    print(ret)
         
     # print('-'* 80)
     
@@ -506,8 +525,8 @@ if __name__ == "__main__":
     # # ret = contentRetriever.get_contents(query='', category='의학 정보', tags=['276', '65'])
     # print(ret)
     
-    # ret = contentRetriever.get_contents(query='', breeds= BREEDS_DOG_TAG, category='반려 생활')
-    # pprint.pprint(ret, indent=4)
+    ret = contentRetriever.get_contents(query='', breeds= BREEDS_DOG_TAG, category='반려 생활')
+    print(ret)
     # print('-'* 80)
 
     # ret = contentRetriever.get_contents(query='', breeds= BREEDS_CAT_TAG, category='반려 생활')

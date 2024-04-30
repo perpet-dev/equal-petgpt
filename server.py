@@ -18,7 +18,7 @@ from pymongo import MongoClient
 from py_eureka_client import eureka_client
 from config import PREFIXURL, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, OPENAI_API_KEY, PORT, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME
 from petprofile import PetProfile
-from bookmark import get_bookmarks, set_bookmark, delete_bookmarks
+from bookmark import bookmarks_get, bookmark_set, bookmark_delete
 
 # Configure logging
 # import logging
@@ -136,6 +136,10 @@ class BookmarkResponse(BaseModel):
 class BookmarkItem(BaseModel):
     user_id: int
     content_id : int
+    title : str
+    summary : str
+    image_url : str
+    link_url : str
 
 class QuestionItem(BaseModel):
     title: str
@@ -582,6 +586,17 @@ async def get_categories(pet_id: int, page: int = Query(0, ge=0), size: int = Qu
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.get("/document", response_model=ContentItem)
+async def get_document(doc_id: int):
+    try:
+        doc_ = contentRetriever.get_document(doc_id=doc_id)
+        return ContentItem(doc_id= doc_['doc_id'], title=doc_['title'], content=doc_['content'], 
+                           image_url=doc_['image_url'], link_url=doc_['link_url'], tag=doc_['tag'],
+                           filter='', use_filter=False)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))    
+
 @app.get("/contents/", response_model=ApiResponse[List[ContentItem]])
 async def get_contents(query: str, pet_id: int, tags: Optional[List[str]] = Query(None),  page: int = 0, size: int = 3):
     # Assuming the 'tags' parameter can accept a list of strings
@@ -644,30 +659,39 @@ async def get_contents(query: str, pet_id: int, tags: Optional[List[str]] = Quer
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/bookmark", response_model=BookmarkResponse)
-async def bookmark_content(user_id: int, content_id: int):
+async def set_bookmark(user_id: int, content_id: int):
     # Placeholder for bookmarking logic
     logger.debug('set bookmark')
     try:
-        set_bookmark(user_id=user_id, content_id=content_id)
+        doc = contentRetriever.get_document(doc_id=content_id)
+        if doc['doc_id'] == str(content_id):
+            ret = bookmark_set(user_id=user_id, doc_id=content_id, title=doc['title'], content=doc['content'], image_url=doc['image_url'], link_url=doc['link_url'])
+        else:
+            ret = False
+        return BookmarkResponse(success=ret)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     #return BookmarkResponse(success=True)
 
-@app.get("/get-bookmark", response_model=BookmarkResponse)
+@app.get("/bookmark", response_model=List[BookmarkItem])
 async def get_bookmarks(user_id: int):
     logger.debug('get_bookmarks')
     try:
-        results = get_bookmarks(user_id=user_id)
+        bookmarks = []
+        results = bookmarks_get(user_id=user_id)
         # result => list
+        for result in results:
+            bookmarks.append(BookmarkItem(user_id=result['user_id'], content_id=result['doc_id'], title=result['title'], summary=result['summary'], image_url=result['image_url'], link_url=result['link_url']))
+        return bookmarks
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
 
 @app.delete("/bookmark", response_model=BookmarkResponse)
 async def delete_bookmark(user_id: str, content_id:str):
     logger.debug('delete bookmark')
     try:
-        delete_bookmark(user_id=user_id, content_id=content_id)
+        ret = bookmark_delete(user_id=user_id, doc_id=content_id)
+        return BookmarkResponse(success=ret)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
