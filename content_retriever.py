@@ -91,6 +91,8 @@ class EqualContentRetriever():
     def __put_question_json_to_mongo(self):
         logger.debug("EqualContentRetriever::__put_question_json_to_mongo")
 
+    def __load_questions_from_mongo(self):
+        logger.debug("EqualContentRetriever::__load_questions_from_mongo")
 
     def __load_breed_map(self):
        logger.debug("EqualContentRetriever::__load_breed_map")

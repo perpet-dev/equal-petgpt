@@ -18,6 +18,7 @@ from pymongo import MongoClient
 from py_eureka_client import eureka_client
 from config import PREFIXURL, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, OPENAI_API_KEY, PORT, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME
 from petprofile import PetProfile
+from bookmark import get_bookmarks, set_bookmark, delete_bookmarks
 
 # Configure logging
 # import logging
@@ -132,6 +133,10 @@ class ApiResponse(GenericModel, Generic[T]):
 class BookmarkResponse(BaseModel):
     success: bool
 
+class BookmarkItem(BaseModel):
+    user_id: int
+    content_id : int
+
 class QuestionItem(BaseModel):
     title: str
     question_id: str
@@ -143,7 +148,6 @@ class PetGPTQuestionListResponse(BaseModel):
 client = MongoClient(MONGODB)
 mongo_db = client.perpet_healthcheck
 collection = mongo_db["pet_images"]
-
 
 @app.post("/process-pet-image")
 async def process_pet_images(
@@ -640,22 +644,21 @@ async def get_contents(query: str, pet_id: int, tags: Optional[List[str]] = Quer
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/bookmark", response_model=BookmarkResponse)
-async def bookmark_content(user_id: str, content_id: str):
+async def bookmark_content(user_id: int, content_id: int):
     # Placeholder for bookmarking logic
     logger.debug('set bookmark')
     try:
-        logger.debug('set bookmark')
-
+        set_bookmark(user_id=user_id, content_id=content_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     #return BookmarkResponse(success=True)
 
 @app.get("/get-bookmark", response_model=BookmarkResponse)
-async def get_bookmarks(user_id: str):
+async def get_bookmarks(user_id: int):
     logger.debug('get_bookmarks')
     try:
-        logger.debug('get bookmakrs')
-
+        results = get_bookmarks(user_id=user_id)
+        # result => list
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
@@ -664,7 +667,7 @@ async def get_bookmarks(user_id: str):
 async def delete_bookmark(user_id: str, content_id:str):
     logger.debug('delete bookmark')
     try:
-        logger.debug('delete')
+        delete_bookmark(user_id=user_id, content_id=content_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
