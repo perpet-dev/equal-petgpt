@@ -19,6 +19,7 @@ from py_eureka_client import eureka_client
 from config import PREFIXURL, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, OPENAI_API_KEY, PORT, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME
 from petprofile import PetProfile
 from bookmark import bookmarks_get, bookmark_set, bookmark_delete
+from packaging.version import Version
 
 # Configure logging
 # import logging
@@ -141,6 +142,14 @@ class BookmarkItem(BaseModel):
     image_url : str
     link_url : str
 
+class VersionItem(BaseModel):
+    force_update : bool
+    platform : str
+    version : str
+    build_no : int
+    release_date : str
+    release_note : str
+
 class QuestionItem(BaseModel):
     title: str
     question_id: str
@@ -153,6 +162,28 @@ client = MongoClient(MONGODB)
 mongo_db = client.perpet_healthcheck
 collection = mongo_db["pet_images"]
 banner_collection = mongo_db["banners"]
+version_collection = mongo_db["versions"]
+
+@app.get("/version")
+async def version(platform:str, version:str, build_no:int):
+    versions = []
+    platform = platform.lower()
+    try:
+        if platform == 'ios' or platform == 'android':
+            result = version_collection.find(filter={"platform":platform}).sort({'release_date':-1}).limit(1)
+            if Version(result[0]['version']) > Version(version):
+                force_update = True
+            elif Version(result[0]['version']) == Version(version) and result[0]['build_no'] > build_no:
+                force_update = True
+            else:
+                force_update = False
+            versions.append(VersionItem(force_update=force_update, platform=result[0]['platform'], version=result[0]['version'], build_no=result[0]['build_no'], release_date=result[0]['release_date'], release_note=result[0]['release_note']))
+            return versions
+        else:
+            raise HTTPException(status_code=400, detail='plafrom should be ios or android')
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/process-pet-image")
 async def process_pet_images(
@@ -332,6 +363,8 @@ class BannerItem(BaseModel):
 # class BannerResponse(BaseModel):
 #     total_page: int
 #     list: List[BannerItem]
+
+
 #메인 배너 리스트
 @app.get("/main-banner-list", response_model=ApiResponse[List[BannerItem]])
 async def main_banner_list(page: int = Query(0, ge=0), size: int = Query(5, ge=1)):
