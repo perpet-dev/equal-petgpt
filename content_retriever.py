@@ -56,11 +56,15 @@ class EqualContentRetriever():
             self.subjects_collection = mongo_db["knowlege_subject"]
             self.questions_collection = mongo_db["questions"]
             #self.__put_subjects_to_mongo()
+            #self.__put_question_json_to_mongo()
+            self.question_map = {}
+            self.__load_questions_from_mongo()
+            #self.__load_questions_jsonl()
+            
             self.category_dict = self.__load_subjects_from_mongo()
             self.__category_content_cache()
             self.__load_breed_map()
-            self.question_map = {}
-            self.__load_questions_jsonl()
+            
             
             cls._init = True
 
@@ -90,9 +94,21 @@ class EqualContentRetriever():
 
     def __put_question_json_to_mongo(self):
         logger.debug("EqualContentRetriever::__put_question_json_to_mongo")
+        with jsonlines.open("questions.jsonl") as jsonl_f:
+            for line in jsonl_f.iter():
+                # put mongo db 
+                self.questions_collection.insert_one(line)
 
     def __load_questions_from_mongo(self):
         logger.debug("EqualContentRetriever::__load_questions_from_mongo")
+        questions = self.questions_collection.find()
+        self.question_map.clear()
+        for question in questions:
+            key_ = "{}_{}".format(question['type'], question['breed'].replace(' ', ''))
+            if key_ in self.question_map:
+                self.question_map[key_] = self.question_map[key_] + '\n' + question['question']
+            else:
+                self.question_map[key_] = question['question']
 
     def __load_breed_map(self):
        logger.debug("EqualContentRetriever::__load_breed_map")
