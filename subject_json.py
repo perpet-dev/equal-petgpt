@@ -214,7 +214,7 @@ SUBJECT_JSON = """
                 {
                     "doc_id": 484,
                     "title": "콩팥 질환이 있는 반려견은 간식을 먹어도 될까?",
-                    "use_filter":false,
+                    "use_filter":false,482
                     "filter": []
                 },
                 {

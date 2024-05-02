@@ -22,7 +22,7 @@ from subject_json import SUBJECT_JSON
 from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE, OPENAI_API_KEY, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX
 from config import MONGODB
 
-INDEX_NAME = 'equalapp2'
+INDEX_NAME = 'equalapp3'
 BREEDS_DOG_TAG = '62'
 BREEDS_CAT_TAG = '276'
 BREEDS_NONE = ''
@@ -36,8 +36,8 @@ client = OpenAI(api_key = OPENAI_API_KEY)
 pc = Pinecone(PINECONE_API_KEY)
 spec = ServerlessSpec(cloud='aws', region='us-west-2')  
 
-#PINECONE_SQL = "select perpet.mcard.top as category, perpet.mcard.id as id, perpet.mcard.tag, perpet.mcard.image as image , perpet.mcard.main_title as title, perpet.mcard.summary as summary,  GROUP_CONCAT(perpet.mcard_sub.sub_title SEPARATOR ' ') as sub_title,  GROUP_CONCAT(perpet.mcard_sub.text SEPARATOR ' ') as sub_text FROM perpet.mcard, perpet.mcard_sub where perpet.mcard.id = perpet.mcard_sub.mcard_id GROUP BY perpet.mcard_sub.mcard_id"
-PINECONE_SQL = "select perpet.mcard.top as category, perpet.mcard.id as id, perpet.mcard.tag, perpet.mcard.image as image , perpet.mcard.main_title as title, perpet.mcard.summary as summary,  GROUP_CONCAT(perpet.mcard_sub.sub_title SEPARATOR ' ') as sub_title,  GROUP_CONCAT(perpet.mcard_sub.text SEPARATOR ' ') as sub_text FROM perpet.mcard, perpet.mcard_sub where perpet.mcard.id > 481 and  perpet.mcard.id = perpet.mcard_sub.mcard_id GROUP BY perpet.mcard_sub.mcard_id"
+PINECONE_SQL = "select perpet.mcard.top as category, perpet.mcard.id as id, perpet.mcard.tag, perpet.mcard.image as image , perpet.mcard.main_title as title, perpet.mcard.summary as summary,  GROUP_CONCAT(perpet.mcard_sub.sub_title SEPARATOR ' ') as sub_title,  GROUP_CONCAT(perpet.mcard_sub.text SEPARATOR ' ') as sub_text FROM perpet.mcard, perpet.mcard_sub where perpet.mcard.id = perpet.mcard_sub.mcard_id GROUP BY perpet.mcard_sub.mcard_id"
+#PINECONE_SQL = "select perpet.mcard.top as category, perpet.mcard.id as id, perpet.mcard.tag, perpet.mcard.image as image , perpet.mcard.main_title as title, perpet.mcard.summary as summary,  GROUP_CONCAT(perpet.mcard_sub.sub_title SEPARATOR ' ') as sub_title,  GROUP_CONCAT(perpet.mcard_sub.text SEPARATOR ' ') as sub_text FROM perpet.mcard, perpet.mcard_sub where perpet.mcard.id > 481 and  perpet.mcard.id = perpet.mcard_sub.mcard_id GROUP BY perpet.mcard_sub.mcard_id"
 
 
 class EqualContentRetriever():
@@ -172,7 +172,8 @@ class EqualContentRetriever():
                                             'title':ret['matches'][0]['metadata']['title'], 
                                             'content':ret['matches'][0]['metadata']['content'],
                                             'image_url':ret['matches'][0]['metadata']['image_url'],
-                                            'link_url':ret['matches'][0]['metadata']['source_url'],
+                                            'source_url':ret['matches'][0]['metadata']['source_url'],
+                                            'link_url':ret['matches'][0]['metadata']['link_url'],
                                             'tag':ret['matches'][0]['metadata']['tag'], 
                                             'filter':'', 
                                             'use_filter':use_filter
@@ -184,7 +185,8 @@ class EqualContentRetriever():
                                             'title':ret['matches'][0]['metadata']['title'], 
                                             'content':ret['matches'][0]['metadata']['content'],
                                             'image_url':ret['matches'][0]['metadata']['image_url'],
-                                            'link_url':ret['matches'][0]['metadata']['source_url'],
+                                            'source_url':ret['matches'][0]['metadata']['source_url'],
+                                            'link_url':ret['matches'][0]['metadata']['link_url'],
                                             'tag':ret['matches'][0]['metadata']['tag'], 
                                             'filter': str(filter),
                                             'use_filter':use_filter
@@ -229,13 +231,14 @@ class EqualContentRetriever():
             lines_batch = text_dataset['content'][i: i+batch_size]
             ids_batch = text_dataset['id'][i: i+batch_size]
             source_batch = text_dataset['source_url'][i:i+batch_size]
+            link_batch = text_dataset['link_url'][i:i+batch_size]
             images_batch = text_dataset['image_url'][i:i+batch_size]
             tags_batch = text_dataset['tag'][i:i+batch_size]
             titles_batch = text_dataset['title'][i:i+batch_size]
             categories_batch = text_dataset['category'][i:i+batch_size]
             res = client.embeddings.create(input=lines_batch, model=OPENAI_EMBEDDING_MODEL_NAME) # create embeddings
             embeds = [record.embedding for record in res.data]
-            meta = [{'category': categories_batch[n], 'title':titles_batch[n], 'tag':tags_batch[n], 'content': lines_batch[n], 'source_url':source_batch[n], 'image_url':images_batch[n]} for n in range(0, len(categories_batch))] # prep metadata and upsert batch
+            meta = [{'category': categories_batch[n], 'title':titles_batch[n], 'tag':tags_batch[n], 'content': lines_batch[n], 'source_url':source_batch[n], 'link_url':link_batch[n],'image_url':images_batch[n]} for n in range(0, len(categories_batch))] # prep metadata and upsert batch
             to_upsert = zip(ids_batch, embeds, meta)
             index.upsert(vectors=list(to_upsert)) # upsert to Pinecone
 
@@ -263,12 +266,15 @@ class EqualContentRetriever():
         ###
         for res in ret['matches']:
             if res['score'] >= MATCH_SCORE_CUTOFF:
-                result.append({'doc_id':res['id'], 
-                            'title':res['metadata']['title'], 
-                            'content':res['metadata']['content'], 
-                            'image_url':res['metadata']['image_url'], 
-                            'link_url':res['metadata']['source_url'], 
-                            'tag':res['metadata']['tag']})
+                result.append({
+                                'doc_id':res['id'], 
+                                'title':res['metadata']['title'], 
+                                'content':res['metadata']['content'], 
+                                'image_url':res['metadata']['image_url'], 
+                                'source_url':res['metadata']['source_url'],
+                                'link_url':res['metadata']['link_url'], 
+                                'tag':res['metadata']['tag']
+                                })
         return result
 
     def get_document(self, doc_id:int):
@@ -284,7 +290,8 @@ class EqualContentRetriever():
                 'title':ret['matches'][0]['metadata']['title'], 
                 'content':ret['matches'][0]['metadata']['content'],
                 'image_url':ret['matches'][0]['metadata']['image_url'],
-                'link_url':ret['matches'][0]['metadata']['source_url'],
+                'source_url':ret['matches'][0]['metadata']['source_url'],
+                'link_url':ret['matches'][0]['metadata']['link_url'],
                 'tag':ret['matches'][0]['metadata']['tag'], 
             }
         else:
@@ -427,7 +434,7 @@ class EqualContentRetriever():
         sql = PINECONE_SQL
         cursor.execute(sql)
         result = cursor.fetchall()
-        categories, ids, tags, titles, images, contents, sources = [], [], [], [], [], [], []
+        categories, ids, tags, titles, images, contents, sources, links = [], [], [], [], [], [], [], []
 
         logger.info(">>> Total row to index : {}".format(len(result)))
 
@@ -438,9 +445,10 @@ class EqualContentRetriever():
             images.append(row[3])
             titles.append(row[4])
             contents.append(' '.join(row[4:]).replace('\n',' '))
-            sources.append('https://equal.pet/content/View/{}'.format(row[1]))
+            sources.append('https://equal.pet/content/ViewApp/{}'.format(row[1]))
+            links.append('https://equal.pet/content/View/{}'.format(row[1]))
 
-        data_dict = {'category':categories, 'id': ids, 'tag':tags, 'title':titles, 'content':contents, 'source_url':sources, 'image_url':images}
+        data_dict = {'category':categories, 'id': ids, 'tag':tags, 'title':titles, 'content':contents, 'source_url':sources, 'link_url': links, 'image_url':images}
         text_dataset = Dataset.from_dict(data_dict)
         self.__pinecone_index(text_dataset=text_dataset)
 
@@ -508,17 +516,17 @@ if __name__ == "__main__":
     db_port = 3307
 
     contentRetriever = EqualContentRetriever()
-    # contentRetriever.build_pincone_index(db_host=db_host, db_port=db_port, db_user=db_user, db_password=db_password, db_database=db_database)
+    #contentRetriever.build_pincone_index(db_host=db_host, db_port=db_port, db_user=db_user, db_password=db_password, db_database=db_database)
     #contentRetriever.build_question_jsonl(db_host=db_host, db_port=db_port, db_user=db_user, db_password=db_password, db_database=db_database)
-    # result = contentRetriever.get_random_questions('cat', '메인 쿤')
-    # print(result)
-    # result = contentRetriever.get_random_questions('cat')
-    # print(result)
-    # result = contentRetriever.get_random_questions('dog')
-    # print(result)
-    # contentRetriever.get_category_contents(pet_type='dog', )
-
-
+    
+    def random_question():
+        result = contentRetriever.get_random_questions('cat', '메인 쿤')
+        print(result)
+        result = contentRetriever.get_random_questions('cat')
+        print(result)
+        result = contentRetriever.get_random_questions('dog')
+        print(result)
+        contentRetriever.get_category_contents(pet_type='dog', )
 
     def tag_dump():
         sql = "select perpet.tag.id, perpet.tag.name as name from perpet.tag order by id"
@@ -541,8 +549,9 @@ if __name__ == "__main__":
                 output_file.write("{}\t{}\n".format(row[0], row[1]))
                 
 
-    #ret = contentRetriever.get_categories(breeds=BREEDS_DOG_TAG, pet_name='뽀삐')
-    #print(ret)
+    def test_categories():
+        ret = contentRetriever.get_categories(breeds=BREEDS_DOG_TAG, pet_name='뽀삐')
+        print(ret)
         
     # print('-'* 80)
     

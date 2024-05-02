@@ -1257,12 +1257,12 @@
 {"doc_id": 256, "type": "cat", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "고양이가 외로움을 느낄 때 어떻게 대처해야 하나요?"}
 {"doc_id": 256, "type": "cat", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "다른 동물들과의 상호작용이 고양이에게 외로움 해소에 도움이 될까요?"}
 {"doc_id": 256, "type": "cat", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "외로움을 느끼는 고양이의 행동 변화를 어떻게 관찰해야 하나요?"}
-{"doc_id": 256, "type": "cat", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "셀커크 렉스 고양이는 외로움을 많이 타나요?"}
-{"doc_id": 257, "type": "cat", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "셀커크 렉스 고양이는 몇 살이 되어야 어른이 되나요?"}
+    {"doc_id": 256, "type": "cat", "breed_tag": 495, "breed_id": 732, "breed": "셀커크 렉스", "question": "셀커크 렉스 고양이는 외로움을 많이 타나요?"}
+    {"doc_id": 257, "type": "cat", "breed_tag": 495, "breed_id": 732, "breed": "셀커크 렉스", "question": "셀커크 렉스 고양이는 몇 살이 되어야 어른이 되나요?"}
 {"doc_id": 257, "type": "cat", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "새끼 고양이의 젖니가 언제 빠지고 영구치로 대체되나요?"}
 {"doc_id": 257, "type": "cat", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "고양이의 성장과 성숙 단계에 대해 어떻게 이해해아 하나요?"}
 {"doc_id": 257, "type": "cat", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "고양이를 성장 단계별로 어떻게 관리해야 하나요?"}
-{"doc_id": 257, "type": "cat", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "셀커크 렉스 고양이는 몇 살이 되어야 어른이 되나요?"}
+    {"doc_id": 257, "type": "cat", "breed_tag": 495, "breed_id": 732, "breed": "셀커크 렉스", "question": "셀커크 렉스 고양이는 몇 살이 되어야 어른이 되나요?"}
 {"doc_id": 258, "type": "cat", "breed_tag": 126, "breed_id": 718, "breed": "메인쿤", "question": "메인 쿤 고양이는 어떤 크기로 성장하나요?"}
 {"doc_id": 258, "type": "cat", "breed_tag": 126, "breed_id": 718, "breed": "메인쿤", "question": "메인 쿤 고양이의 몸무게 범위는 어느 정도인가요?"}
 {"doc_id": 258, "type": "cat", "breed_tag": 126, "breed_id": 718, "breed": "메인쿤", "question": "메인 쿤 고양이의 외모적인 특징은 무엇인가요?"}
@@ -2095,12 +2095,12 @@
 {"doc_id": 378, "type": "dog", "breed_tag": 366, "breed_id": 103, "breed": "시츄", "question": "시추의 운동 계획을 수립할 때 어떤 요소를 고려해아 할까요?"}
 {"doc_id": 378, "type": "dog", "breed_tag": 366, "breed_id": 103, "breed": "시츄", "question": "시추를 위한 활발한 활동과 놀이의 중요성에 대해 설명해주세요."}
 {"doc_id": 378, "type": "dog", "breed_tag": 366, "breed_id": 103, "breed": "시츄", "question": "시츄에게 필요한 운동량은?"}
-{"doc_id": 379, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "파피용은 얼마나 많은 운동이 필요한가요?"}
-{"doc_id": 379, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "파피용을 위한 적합한 운동은 어떤 것이 있나요?"}
-{"doc_id": 379, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "운동을 통해 파피용의 어떤 면을 향상시킬 수 있나요?"}
-{"doc_id": 379, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "파피용의 정신적 및 신체적 건강을 증진시키기 위해 운동을 얼마나 자주 시켜야 하나요?"}
-{"doc_id": 379, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "파피용과 함께 활동하고 놀아줌으로써 어떤 점을 기대할 수 있나요?"}
-{"doc_id": 379, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "파피용은 운동을 많이 해야 하나요?"}
+    {"doc_id": 379, "type": "dog", "breed_tag": 651, "breed_id": 177, "breed": "빠삐용 (콘티넨탈 토이 스파니엘)", "question": "파피용은 얼마나 많은 운동이 필요한가요?"} 
+    {"doc_id": 379, "type": "dog", "breed_tag": 651, "breed_id": 177, "breed": "빠삐용 (콘티넨탈 토이 스파니엘)", "question": "파피용을 위한 적합한 운동은 어떤 것이 있나요?"}
+    {"doc_id": 379, "type": "dog", "breed_tag": 651, "breed_id": 177, "breed": "빠삐용 (콘티넨탈 토이 스파니엘)", "question": "운동을 통해 파피용의 어떤 면을 향상시킬 수 있나요?"}
+    {"doc_id": 379, "type": "dog", "breed_tag": 651, "breed_id": 177, "breed": "빠삐용 (콘티넨탈 토이 스파니엘)", "question": "파피용의 정신적 및 신체적 건강을 증진시키기 위해 운동을 얼마나 자주 시켜야 하나요?"}
+    {"doc_id": 379, "type": "dog", "breed_tag": 651, "breed_id": 177, "breed": "빠삐용 (콘티넨탈 토이 스파니엘)", "question": "파피용과 함께 활동하고 놀아줌으로써 어떤 점을 기대할 수 있나요?"}
+    {"doc_id": 379, "type": "dog", "breed_tag": 651, "breed_id": 177, "breed": "빠삐용 (콘티넨탈 토이 스파니엘)", "question": "파피용은 운동을 많이 해야 하나요?"}
 {"doc_id": 380, "type": "dog", "breed_tag": 88, "breed_id": 38, "breed": "말티즈", "question": "말티즈는 털이 덜 빠지는 특성을 가지고 있나요?"}
 {"doc_id": 380, "type": "dog", "breed_tag": 88, "breed_id": 38, "breed": "말티즈", "question": "말티즈의 털이 빠지지 않는 이유는 무엇인가요?"}
 {"doc_id": 380, "type": "dog", "breed_tag": 88, "breed_id": 38, "breed": "말티즈", "question": "말티즈의 털 관리에 어떤 점을 주의해아 할까요?"}
@@ -2288,25 +2288,25 @@
 {"doc_id": 402, "type": "dog", "breed_tag": 60, "breed_id": 176, "breed": "꼬똥 드 툴레아", "question": "어떤 시기에 프랑스가 마다가스카르를 식민지화하면서 꼬똥 드 뚤레아가 희귀한 품종으로 알려지게 되었나요?"}
 {"doc_id": 402, "type": "dog", "breed_tag": 60, "breed_id": 176, "breed": "꼬똥 드 툴레아", "question": "꼬똥 드 뚤레아는 어떤 별명을 얻었으며, 왜 그런 별명을 갖게 되었나요?"}
 {"doc_id": 402, "type": "dog", "breed_tag": 60, "breed_id": 176, "breed": "꼬똥 드 툴레아", "question": "꼬똥 드 뚤레아의 유래를 아시나요?"}
-{"doc_id": 403, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "올드 잉글리시 쉽독은 어느 정도의 운동량이 필요한가요?"}
-{"doc_id": 403, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "올드 잉글리시 쉽독의 훈련에 어떤 방법이 효과적인가요?"}
-{"doc_id": 403, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "어떤 종류의 활동이 올드 잉글리시 쉽독에게 좋은가요?"}
-{"doc_id": 403, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "올드 잉글리시 쉽독을 위한 재미있는 활동에는 무엇이 있나요?"}
-{"doc_id": 403, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "올드 잉글리시 쉽독은 어느 정도의 운동량이 필요한가요?"}
-{"doc_id": 404, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "올드 잉글리시 쉽독은 어떤 건강 문제에 취약한가요?"}
+    {"doc_id": 403, "type": "dog", "breed_tag": 561, "breed_id": 133, "breed": "올드 잉글리시 쉽독", "question": "올드 잉글리시 쉽독은 어느 정도의 운동량이 필요한가요?"}
+    {"doc_id": 403, "type": "dog", "breed_tag": 561, "breed_id": 133, "breed": "올드 잉글리시 쉽독", "question": "올드 잉글리시 쉽독의 훈련에 어떤 방법이 효과적인가요?"}
+    {"doc_id": 403, "type": "dog", "breed_tag": 561, "breed_id": 133, "breed": "올드 잉글리시 쉽독", "question": "어떤 종류의 활동이 올드 잉글리시 쉽독에게 좋은가요?"}
+    {"doc_id": 403, "type": "dog", "breed_tag": 561, "breed_id": 133, "breed": "올드 잉글리시 쉽독", "question": "올드 잉글리시 쉽독을 위한 재미있는 활동에는 무엇이 있나요?"}
+    {"doc_id": 403, "type": "dog", "breed_tag": 561, "breed_id": 133, "breed": "올드 잉글리시 쉽독", "question": "올드 잉글리시 쉽독은 어느 정도의 운동량이 필요한가요?"}
+    {"doc_id": 404, "type": "dog", "breed_tag": 561, "breed_id": 133, "breed": "올드 잉글리시 쉽독", "question": "올드 잉글리시 쉽독은 어떤 건강 문제에 취약한가요?"}
 {"doc_id": 404, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "고관절 이형성증은 어떤 증상을 보일 수 있나요?"}
 {"doc_id": 404, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "진행성 망막 위축증 (PRA)의 특징적인 증상은 무엇인가요?"}
 {"doc_id": 404, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "자가면역성 갑상선염의 주요 증상은 무엇인가요?"}
 {"doc_id": 404, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "운동 유발성 쓰러짐 (EIC)의 주요 증상은 무엇인가요?"}
 {"doc_id": 404, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "확장성 심근병증 (DCM)의 주요 증상은 어떻게 되나요?"}
 {"doc_id": 404, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "선천성 난청은 올드 잉글리시 쉽독에 어떤 영향을 미칠 수 있나요?"}
-{"doc_id": 404, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "올드 잉글리시 쉽독이 어떤 건강 문제에 취약한가요?"}
-{"doc_id": 405, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "올드 잉글리시 쉽독의 평균 수명은 어떻게 되나요?"}
-{"doc_id": 405, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "올드 잉글리시 쉽독은 어떤 건강 문제에 노출될 가능성이 있나요?"}
-{"doc_id": 405, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "올드 잉글리시 쉽독의 건강을 유지하기 위해 어떤 관리가 필요한가요?"}
-{"doc_id": 405, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "올드 잉글리시 쉽독의 성격적인 특징은 무엇인가요?"}
-{"doc_id": 405, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "올드 잉글리시 쉽독을 가정에 받아들이고자 한다면 어떤 준비가 필요한가요?"}
-{"doc_id": 405, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "올드 잉글리시 쉽독의 평균 수명은 어떻게 되나요?"}
+    {"doc_id": 404, "type": "dog", "breed_tag": 561, "breed_id": 133, "breed": "올드 잉글리시 쉽독", "question": "올드 잉글리시 쉽독이 어떤 건강 문제에 취약한가요?"} 
+    {"doc_id": 405, "type": "dog", "breed_tag": 561, "breed_id": 133, "breed": "올드 잉글리시 쉽독", "question": "올드 잉글리시 쉽독의 평균 수명은 어떻게 되나요?"}
+    {"doc_id": 405, "type": "dog", "breed_tag": 561, "breed_id": 133, "breed": "올드 잉글리시 쉽독", "question": "올드 잉글리시 쉽독은 어떤 건강 문제에 노출될 가능성이 있나요?"}
+    {"doc_id": 405, "type": "dog", "breed_tag": 561, "breed_id": 133, "breed": "올드 잉글리시 쉽독", "question": "올드 잉글리시 쉽독의 건강을 유지하기 위해 어떤 관리가 필요한가요?"}
+    {"doc_id": 405, "type": "dog", "breed_tag": 561, "breed_id": 133, "breed": "올드 잉글리시 쉽독", "question": "올드 잉글리시 쉽독의 성격적인 특징은 무엇인가요?"}
+    {"doc_id": 405, "type": "dog", "breed_tag": 561, "breed_id": 133, "breed": "올드 잉글리시 쉽독", "question": "올드 잉글리시 쉽독을 가정에 받아들이고자 한다면 어떤 준비가 필요한가요?"}
+    {"doc_id": 405, "type": "dog", "breed_tag": 561, "breed_id": 133, "breed": "올드 잉글리시 쉽독", "question": "올드 잉글리시 쉽독의 평균 수명은 어떻게 되나요?"}
 {"doc_id": 406, "type": "dog", "breed_tag": 492, "breed_id": 161, "breed": "진돗개", "question": "진돗개의 피부 관리에는 어떤 점을 주의해아 할까요?"}
 {"doc_id": 406, "type": "dog", "breed_tag": 492, "breed_id": 161, "breed": "진돗개", "question": "진돗개의 털 관리에 어떤 방법이 적합할까요?"}
 {"doc_id": 406, "type": "dog", "breed_tag": 492, "breed_id": 161, "breed": "진돗개", "question": "진돗개의 눈에서 이상을 발견했을 때 어떻게 해아 할까요?"}
@@ -2328,21 +2328,21 @@
 {"doc_id": 408, "type": "dog", "breed_tag": 492, "breed_id": 161, "breed": "진돗개", "question": "진돗개의 사회화 훈련이 왜 중요한가요?"}
 {"doc_id": 408, "type": "dog", "breed_tag": 492, "breed_id": 161, "breed": "진돗개", "question": "미국 한국 진돗개 협회는 어떤 특성을 조절하도록 권장하나요?"}
 {"doc_id": 408, "type": "dog", "breed_tag": 492, "breed_id": 161, "breed": "진돗개", "question": "진돗개 품종의 역사와 기원을 알고 싶어요"}
-{"doc_id": 409, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "페키니즈는 왜 자주 질까요?"}
-{"doc_id": 409, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "페키니즈가 짖는 이유는 무엇인가요?"}
-{"doc_id": 409, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "페키니즈의 짖는 습성을 조절하는 방법은 무엇인가요?"}
-{"doc_id": 409, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "페키니즈는 자주 짖을까요?"}
-{"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "골든두들을 위한 건강한 활동은 무엇인가요?"}
-{"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "골든두들이 즐길 수 있는 활동 중 어떤 것들이 있나요?"}
-{"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "골든두들을 위해 권장되는 산책 및 운동은 무엇인가요?"}
-{"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "골든두들의 체력과 건강을 향상시키기 위한 활동은 무엇이 있나요?"}
-{"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "골든두들에게 추천되는 수영 및 물놀이 활동은 무엇인가요?"}
-{"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "골든두들의 사냥 본능을 충족시키기 위한 놀이는 무엇인가요?"}
-{"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "다른 강아지와 함께 즐길 수 있는 골든두들의 놀이는 무엇이 있을까요?"}
-{"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "골든두들을 위한 민첩성 향상을 위한 훈련 활동은 어떤 것이 있을까요?"}
-{"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "골든두들이 안아주는 것을 즐기는 이유는 무엇인가요?"}
-{"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "골든두들의 놀이를 통해 스트레스 해소에 도움이 되는 활동은 무엇인가요?"}
-{"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "어떤 활동이 골든두들에게 적합한가요?"}
+    {"doc_id": 409, "type": "dog", "breed_tag": 636, "breed_id": 194, "breed": "페키니즈", "question": "페키니즈는 왜 자주 질까요?"}
+    {"doc_id": 409, "type": "dog", "breed_tag": 636, "breed_id": 194, "breed": "페키니즈", "question": "페키니즈가 짖는 이유는 무엇인가요?"}
+    {"doc_id": 409, "type": "dog", "breed_tag": 636, "breed_id": 194, "breed": "페키니즈", "question": "페키니즈의 짖는 습성을 조절하는 방법은 무엇인가요?"}
+    {"doc_id": 409, "type": "dog", "breed_tag": 636, "breed_id": 194, "breed": "페키니즈", "question": "페키니즈는 자주 짖을까요?"}
+    {"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "골든두들", "question": "골든두들을 위한 건강한 활동은 무엇인가요?"}
+    {"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "골든두들", "question": "골든두들이 즐길 수 있는 활동 중 어떤 것들이 있나요?"}
+    {"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "골든두들", "question": "골든두들을 위해 권장되는 산책 및 운동은 무엇인가요?"}
+    {"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "골든두들", "question": "골든두들의 체력과 건강을 향상시키기 위한 활동은 무엇이 있나요?"}
+    {"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "골든두들", "question": "골든두들에게 추천되는 수영 및 물놀이 활동은 무엇인가요?"}
+    {"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "골든두들", "question": "골든두들의 사냥 본능을 충족시키기 위한 놀이는 무엇인가요?"}
+    {"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "골든두들", "question": "다른 강아지와 함께 즐길 수 있는 골든두들의 놀이는 무엇이 있을까요?"}
+    {"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "골든두들", "question": "골든두들을 위한 민첩성 향상을 위한 훈련 활동은 어떤 것이 있을까요?"}
+    {"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "골든두들", "question": "골든두들이 안아주는 것을 즐기는 이유는 무엇인가요?"}
+    {"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "골든두들", "question": "골든두들의 놀이를 통해 스트레스 해소에 도움이 되는 활동은 무엇인가요?"}
+    {"doc_id": 410, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "골든두들", "question": "어떤 활동이 골든두들에게 적합한가요?"}
 {"doc_id": 411, "type": "dog", "breed_tag": 333, "breed_id": 20, "breed": "닥스훈트", "question": "닥스훈트는 다른 동물과 잘 지낼 수 있나요?"}
 {"doc_id": 411, "type": "dog", "breed_tag": 333, "breed_id": 20, "breed": "닥스훈트", "question": "닥스훈트와 다른 동물간의 관계를 조절하는데 어떤 방법이 좋을까요?"}
 {"doc_id": 411, "type": "dog", "breed_tag": 333, "breed_id": 20, "breed": "닥스훈트", "question": "닥스훈트의 호기심이 많아 다른 동물을 만날 때 주의해야 할 점은 무엇인가요?"}
@@ -2783,30 +2783,30 @@
 {"doc_id": 475, "type": "dog", "breed_tag": 182, "breed_id": 75, "breed": "비숑 프리제", "question": "비숑 프리제의 귀를 깨끗하게 관리하는 방법은 무엇인가요?"}
 {"doc_id": 475, "type": "dog", "breed_tag": 182, "breed_id": 75, "breed": "비숑 프리제", "question": "비숑 프리제의 피부를 건강하게 유지하는 방법은 무엇인가요?"}
 {"doc_id": 475, "type": "dog", "breed_tag": 182, "breed_id": 75, "breed": "비숑 프리제", "question": "비숑 프리제의 털 관리는 어떻게 해야 하나요?"}
-{"doc_id": 476, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어의 성격과 기질은 어떻게 되나요?"}
-{"doc_id": 476, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어는 어떤 활동이 좋을까요?"}
-{"doc_id": 476, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "어린 핏불 테리어의 적절한 훈련 방법은 무엇인가요?"}
-{"doc_id": 476, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어가 새로운 환경에서 과민 반응을 보일 때 대처 방법은 무엇인가요?"}
-{"doc_id": 476, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어를 건강하게 키우기 위한 규칙적인 운동 시간은 얼마나 필요한가요?"}
-{"doc_id": 476, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어와의 상호작용을 통해 신뢰와 애정을 쌓는 방법은 무엇인가요?"}
-{"doc_id": 476, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어의 성격과 기질은 어떻게 되나요?"}
-{"doc_id": 477, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어는 과체중이 되기 쉬운 품종인가요?"}
-{"doc_id": 477, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어의 과체중이 건강에 미치는 부정적인 영향은 무엇인가요?"}
-{"doc_id": 477, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어를 과체중으로부터 보호하기 위한 권장 사항은 무엇인가요?"}
-{"doc_id": 477, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어가 과체중인 경우 대처 방법은 어떻게 해야 하나요?"}
-{"doc_id": 477, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어가 과체중이 되기 쉬운 품종인가요?"}
-{"doc_id": 478, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어가 고관절 이형성증을 어떻게 발견할 수 있나요?"}
-{"doc_id": 478, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어의 고관절 이형성증은 어떻게 치료할 수 있나요?"}
-{"doc_id": 478, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어의 고관절 건강을 유지하기 위해 무엇을 식사에 포함해야 하나요?"}
-{"doc_id": 478, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어가 고관절 이형성증으로부터 보호받을 수 있는 운동은 무엇인가요?"}
-{"doc_id": 478, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "어떤 종류의 활동이 핏불 테리어의 고관절 건강에 도움이 될까요?"}
-{"doc_id": 478, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어가 겪을 수 있는 고관절 이형성증은 무엇인가요?"}
-{"doc_id": 479, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어의 평균 몸무게와 크기는 어떻게 되나요?"}
-{"doc_id": 479, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어의 털 특징과 색상에는 어떤 다양성이 있나요?"}
-{"doc_id": 479, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어의 눈, 귀, 머리, 이빨에 어떤 특징이 있나요?"}
-{"doc_id": 479, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어의 활동성과 외향성이 강조되는 이유는 무엇인가요?"}
-{"doc_id": 479, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어를 훌륭한 반려동물로 키우기 위해 필요한 관리 방법은 무엇인가요?"}
-{"doc_id": 479, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어의 신체적 특징은?"}
+    {"doc_id": 476, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어의 성격과 기질은 어떻게 되나요?"}
+    {"doc_id": 476, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어는 어떤 활동이 좋을까요?"}
+    {"doc_id": 476, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "어린 핏불 테리어의 적절한 훈련 방법은 무엇인가요?"}
+    {"doc_id": 476, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어가 새로운 환경에서 과민 반응을 보일 때 대처 방법은 무엇인가요?"}
+    {"doc_id": 476, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어를 건강하게 키우기 위한 규칙적인 운동 시간은 얼마나 필요한가요?"}
+    {"doc_id": 476, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어와의 상호작용을 통해 신뢰와 애정을 쌓는 방법은 무엇인가요?"}
+    {"doc_id": 476, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어의 성격과 기질은 어떻게 되나요?"}
+    {"doc_id": 477, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어는 과체중이 되기 쉬운 품종인가요?"}
+    {"doc_id": 477, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어의 과체중이 건강에 미치는 부정적인 영향은 무엇인가요?"}
+    {"doc_id": 477, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어를 과체중으로부터 보호하기 위한 권장 사항은 무엇인가요?"}
+    {"doc_id": 477, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어가 과체중인 경우 대처 방법은 어떻게 해야 하나요?"}
+    {"doc_id": 477, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어가 과체중이 되기 쉬운 품종인가요?"}
+    {"doc_id": 478, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어가 고관절 이형성증을 어떻게 발견할 수 있나요?"}
+    {"doc_id": 478, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어의 고관절 이형성증은 어떻게 치료할 수 있나요?"}
+    {"doc_id": 478, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어의 고관절 건강을 유지하기 위해 무엇을 식사에 포함해야 하나요?"}
+    {"doc_id": 478, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어가 고관절 이형성증으로부터 보호받을 수 있는 운동은 무엇인가요?"}
+    {"doc_id": 478, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "어떤 종류의 활동이 핏불 테리어의 고관절 건강에 도움이 될까요?"}
+    {"doc_id": 478, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어가 겪을 수 있는 고관절 이형성증은 무엇인가요?"}
+    {"doc_id": 479, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어의 평균 몸무게와 크기는 어떻게 되나요?"}
+    {"doc_id": 479, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어의 털 특징과 색상에는 어떤 다양성이 있나요?"}
+    {"doc_id": 479, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어의 눈, 귀, 머리, 이빨에 어떤 특징이 있나요?"}
+    {"doc_id": 479, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어의 활동성과 외향성이 강조되는 이유는 무엇인가요?"}
+    {"doc_id": 479, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어를 훌륭한 반려동물로 키우기 위해 필요한 관리 방법은 무엇인가요?"}
+    {"doc_id": 479, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어의 신체적 특징은?"}
 {"doc_id": 480, "type": "dog", "breed_tag": 494, "breed_id": 82, "breed": "샤페이", "question": "샤페이를 위한 눈 건강을 지키는 방법은 무엇인가요?"}
 {"doc_id": 480, "type": "dog", "breed_tag": 494, "breed_id": 82, "breed": "샤페이", "question": "샤페이의 눈 건강을 유지하기 위한 중요한 팁은 무엇인가요?"}
 {"doc_id": 480, "type": "dog", "breed_tag": 494, "breed_id": 82, "breed": "샤페이", "question": "샤페이의 눈을 깨끗하게 유지하는 방법은 무엇인가요?"}

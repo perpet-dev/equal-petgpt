@@ -87,6 +87,7 @@ class ContentItem(BaseModel):
     title: str
     content: str
     image_url: HttpUrl
+    source_url: HttpUrl
     link_url: HttpUrl
     tag: List[str] = []
 
