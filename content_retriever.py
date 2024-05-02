@@ -36,6 +36,10 @@ client = OpenAI(api_key = OPENAI_API_KEY)
 pc = Pinecone(PINECONE_API_KEY)
 spec = ServerlessSpec(cloud='aws', region='us-west-2')  
 
+#PINECONE_SQL = "select perpet.mcard.top as category, perpet.mcard.id as id, perpet.mcard.tag, perpet.mcard.image as image , perpet.mcard.main_title as title, perpet.mcard.summary as summary,  GROUP_CONCAT(perpet.mcard_sub.sub_title SEPARATOR ' ') as sub_title,  GROUP_CONCAT(perpet.mcard_sub.text SEPARATOR ' ') as sub_text FROM perpet.mcard, perpet.mcard_sub where perpet.mcard.id = perpet.mcard_sub.mcard_id GROUP BY perpet.mcard_sub.mcard_id"
+PINECONE_SQL = "select perpet.mcard.top as category, perpet.mcard.id as id, perpet.mcard.tag, perpet.mcard.image as image , perpet.mcard.main_title as title, perpet.mcard.summary as summary,  GROUP_CONCAT(perpet.mcard_sub.sub_title SEPARATOR ' ') as sub_title,  GROUP_CONCAT(perpet.mcard_sub.text SEPARATOR ' ') as sub_text FROM perpet.mcard, perpet.mcard_sub where perpet.mcard.id > 481 and  perpet.mcard.id = perpet.mcard_sub.mcard_id GROUP BY perpet.mcard_sub.mcard_id"
+
+
 class EqualContentRetriever():
     # Singleton 으로 구성
     def __new__(cls, *args, **kwargs):
@@ -48,13 +52,14 @@ class EqualContentRetriever():
         if not hasattr(cls, "_init"):
             logger.debug('EqualContentRetriever::init')
             self.index_name = index_name
-            #self.category_dict = json.loads(SUBJECT_JSON)
             self.contents_cache = []
             # MongoDB setup
             client = MongoClient(MONGODB)
             mongo_db = client.perpet_healthcheck
             self.subjects_collection = mongo_db["knowlege_subject"]
             self.questions_collection = mongo_db["questions"]
+            
+            #self.category_dict = json.loads(SUBJECT_JSON)
             #self.__put_subjects_to_mongo()
             #self.__put_question_json_to_mongo()
             self.question_map = {}
@@ -73,7 +78,7 @@ class EqualContentRetriever():
         logger.debug("EqualContentRetriever::__load_subject_json")
 
         data = {
-            'subjects':SUBJECT_JSON, 
+            'subjects':json.dumps(json.loads(SUBJECT_JSON), ensure_ascii=False), 
             'time_stamp': datetime.now()
         }
         try:
@@ -419,7 +424,7 @@ class EqualContentRetriever():
         # Creating a cursor object
         cursor = connection.cursor()
 
-        sql = "select perpet.mcard.top as category, perpet.mcard.id as id, perpet.mcard.tag, perpet.mcard.image as image , perpet.mcard.main_title as title, perpet.mcard.summary as summary,  GROUP_CONCAT(perpet.mcard_sub.sub_title SEPARATOR ' ') as sub_title,  GROUP_CONCAT(perpet.mcard_sub.text SEPARATOR ' ') as sub_text FROM perpet.mcard, perpet.mcard_sub where perpet.mcard.id = perpet.mcard_sub.mcard_id GROUP BY perpet.mcard_sub.mcard_id"
+        sql = PINECONE_SQL
         cursor.execute(sql)
         result = cursor.fetchall()
         categories, ids, tags, titles, images, contents, sources = [], [], [], [], [], [], []
@@ -503,13 +508,17 @@ if __name__ == "__main__":
     db_port = 3307
 
     contentRetriever = EqualContentRetriever()
+    # contentRetriever.build_pincone_index(db_host=db_host, db_port=db_port, db_user=db_user, db_password=db_password, db_database=db_database)
     #contentRetriever.build_question_jsonl(db_host=db_host, db_port=db_port, db_user=db_user, db_password=db_password, db_database=db_database)
-    result = contentRetriever.get_random_questions('cat', '메인 쿤')
-    print(result)
-    result = contentRetriever.get_random_questions('cat')
-    print(result)
-    result = contentRetriever.get_random_questions('dog')
-    print(result)
+    # result = contentRetriever.get_random_questions('cat', '메인 쿤')
+    # print(result)
+    # result = contentRetriever.get_random_questions('cat')
+    # print(result)
+    # result = contentRetriever.get_random_questions('dog')
+    # print(result)
+    # contentRetriever.get_category_contents(pet_type='dog', )
+
+
 
     def tag_dump():
         sql = "select perpet.tag.id, perpet.tag.name as name from perpet.tag order by id"
@@ -532,8 +541,8 @@ if __name__ == "__main__":
                 output_file.write("{}\t{}\n".format(row[0], row[1]))
                 
 
-    ret = contentRetriever.get_categories(breeds=BREEDS_DOG_TAG, pet_name='뽀삐')
-    print(ret)
+    #ret = contentRetriever.get_categories(breeds=BREEDS_DOG_TAG, pet_name='뽀삐')
+    #print(ret)
         
     # print('-'* 80)
     
@@ -541,8 +550,8 @@ if __name__ == "__main__":
     # # ret = contentRetriever.get_contents(query='', category='의학 정보', tags=['276', '65'])
     # print(ret)
     
-    ret = contentRetriever.get_contents(query='', breeds= BREEDS_DOG_TAG, category='반려 생활')
-    print(ret)
+    #ret = contentRetriever.get_contents(query='', breeds= BREEDS_DOG_TAG, category='반려 생활')
+    #print(ret)
     # print('-'* 80)
 
     # ret = contentRetriever.get_contents(query='', breeds= BREEDS_CAT_TAG, category='반려 생활')

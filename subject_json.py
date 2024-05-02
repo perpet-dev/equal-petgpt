@@ -198,6 +198,75 @@ SUBJECT_JSON = """
                     "title": "안전하게 즐길 수 있는 과일은 무엇이 있을까요?",
                     "use_filter":false,
                     "filter": []
+                }, 
+                {
+                    "doc_id": 482,
+                    "title": "강아지가 당근 먹어도 될까?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 483,
+                    "title": "강아지에게 고구마를 많이 줘도 괜찮을까?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 484,
+                    "title": "콩팥 질환이 있는 반려견은 간식을 먹어도 될까?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 485,
+                    "title": "강아지에게 망고를 줘도 괜찮을까요?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 486,
+                    "title": "강아지가 토마토를 먹어도 괜찮을까요?",
+                    "use_filter":false,
+                    "filter": []
+                }
+            ]
+        },
+        {
+            "type": "dog",
+            "no": 6,
+            "ver": "V2-01",
+            "sn": "DG006V2-01",
+            "subject": "여름철 {petName}에게 필요한 것은?",
+            "curations": [
+                {
+                    "doc_id": 487,
+                    "title": "여름철 댕댕이와 산책할 때 반드시 알아둬야 할 10가지",
+                    "use_filter":false,
+                    "filter": []
+                }, 
+                {
+                    "doc_id": 488,
+                    "title": "여름맞이 미용을 해주는 것이 좋을까요?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 489,
+                    "title": "여름철 특히 주의해야할 질환은?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 490,
+                    "title": "강아지도 햇빛에 화상을 입을 수 있나요?",
+                    "use_filter":false,
+                    "filter": []
+                },
+                {
+                    "doc_id": 491,
+                    "title": "수영장 속의 화학물질, 강아지에게 안전할까?",
+                    "use_filter":false,
+                    "filter": []
                 }
             ]
         },
