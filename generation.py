@@ -170,7 +170,7 @@ async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id
     await send_message_to_openai(model, pet_id, query, conversation, websocket)
     
 async def send_message_to_openai(model, pet_id, query, conversation, websocket):
-    logger.debug('send_message_to_openai')
+    logger.debug('send_message_to_openai : {}'.format(query))
     message_tot = ''
     # Synchronously call the OpenAI API without await
     client = OpenAI(
@@ -230,7 +230,7 @@ def construct_system_message(pet_profile, system):
 
     if USE_SALES_PROMPT:
         ran_num = random.randint(1,5) # 1/5 확률로 선택
-        if ran_num == 3:
+        if ran_num == 3 or ran_num == 5:
             logger.info('#### use sales prompt {} ####'.format(ran_num))
             system = system + sales_prompt + ingredient_prompt
         else: 

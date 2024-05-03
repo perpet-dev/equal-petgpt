@@ -297,9 +297,29 @@ class EqualContentRetriever():
             }
         else:
             return {}
-
+        
+    def question_related_to_nutrients(self, question:str):
+        logger.debug('EqualContentRetriever::question_related_to_nutrients : {}'.format(question))
+        client = OpenAI(
+            api_key = OPENAI_API_KEY,
+            organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
+        )
+        
+        completion = client.chat.completions.create(
+            model="gpt-3.5-turbo",#,"gpt-4", 
+            messages=[
+                {"role": "user", "content": f"Does question is related to nutrients, 영양제, nutrition, 영양,  nutritional supplements, 영양보충제? Answer YES or No. Here is the question: {question}"},
+            ]
+        )
+        logger.debug(completion.choices[0].message)
+        answer = completion.choices[0].message.content
+        if answer.lower() == 'yes':
+            return True
+        else:
+            return False
+        
     def get_random_questions(self, pet_type:str, breed:str='', top_n=3):
-        logger.debug('EqualContentRetriever::__get_random_questions => {}, {}'.format(pet_type, breed))
+        logger.debug('EqualContentRetriever::get_random_questions => {}, {}'.format(pet_type, breed))
         
         breed_question = ''
         use_breed = False
@@ -517,6 +537,33 @@ if __name__ == "__main__":
     db_port = 3307
 
     contentRetriever = EqualContentRetriever()
+
+    def test_question():
+        questions = [
+            "고양이가 이물을 섭식했을 때의 증상은 무엇인가요?",
+            "고양이가 이물을 삼키면 어떻게 대처해야 하나요?",
+            "이물 섭식으로 인한 긴급 상황 시 대처 방안은?",
+            "이물을 자주 먹는 고양이 보호자를 위한 팁?",
+            "이물을 섭식한 고양이가 있을 때 주의해야 할 사항은 무엇인가요?",
+            "고양이 이물 섭식을 예방하기 위해 보호자가 취할 수 있는 조치는 무엇인가요?",
+            "우리 고양이가 이물을 꿀꺽 삼켜버렸어요!",
+            "어떤 종류의 강아지 사료가 있으며 각각의 장단점은 무엇인가요?",
+            "건사료는 어떤 장점과 단점을 가지고 있나요?",
+            "습식사료는 어떤 장점과 단점을 가지고 있나요?",
+            "홈메이드 사료를 주는 것의 장단점은 무엇인가요?",
+            "생식(raw) 사료를 선택할 때 주의할 점은 무엇인가요?",
+            "화식을 주는 것의 장단점은 무엇인가요?",
+            "어떤 사료를 선택해야 하는지 결정하는 데 도움을 받는 방법은 무엇인가요?",
+            "사료를 선택할 때 주의해야 할 점은 무엇인가요?",
+            "우리 아이는 어떤 사료가 가장 잘 맞을까?",
+        ]
+
+        for question in questions:
+            ret = contentRetriever.question_related_to_nutrients(question)
+            print('{}:{}'.format(question, ret))
+
+    test_question()
+
     #contentRetriever.build_pincone_index(db_host=db_host, db_port=db_port, db_user=db_user, db_password=db_password, db_database=db_database)
     #contentRetriever.build_question_jsonl(db_host=db_host, db_port=db_port, db_user=db_user, db_password=db_password, db_database=db_database)
     
