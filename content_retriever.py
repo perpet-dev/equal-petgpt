@@ -61,7 +61,7 @@ class EqualContentRetriever():
             
             #self.category_dict = json.loads(SUBJECT_JSON)
             #self.__put_subjects_to_mongo()
-            self.__put_question_json_to_mongo()
+            #self.__put_question_json_to_mongo()
             self.question_map = {}
             self.__load_questions_from_mongo()
             #self.__load_questions_jsonl()
