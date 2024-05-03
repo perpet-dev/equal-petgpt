@@ -61,7 +61,7 @@ class EqualContentRetriever():
             
             #self.category_dict = json.loads(SUBJECT_JSON)
             #self.__put_subjects_to_mongo()
-            #self.__put_question_json_to_mongo()
+            self.__put_question_json_to_mongo()
             self.question_map = {}
             self.__load_questions_from_mongo()
             #self.__load_questions_jsonl()
@@ -102,6 +102,7 @@ class EqualContentRetriever():
         with jsonlines.open("questions.jsonl") as jsonl_f:
             for line in jsonl_f.iter():
                 # put mongo db 
+                print(line['question'])
                 self.questions_collection.insert_one(line)
 
     def __load_questions_from_mongo(self):
