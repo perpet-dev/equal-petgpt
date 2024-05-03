@@ -130,7 +130,7 @@ class ApiResponse(GenericModel, Generic[T]):
     success: bool
     code: int
     msg: str
-    data: ResponseContent[T]
+    data: Optional[ResponseContent[T]]=None
 
 class BookmarkResponse(BaseModel):
     success: bool
@@ -141,6 +141,7 @@ class BookmarkItem(BaseModel):
     title : str
     summary : str
     image_url : str
+    source_url : str
     link_url : str
 
 class VersionItem(BaseModel):
@@ -178,8 +179,21 @@ async def version(platform:str, version:str, build_no:int):
                 force_update = True
             else:
                 force_update = False
-            versions.append(VersionItem(force_update=force_update, platform=result[0]['platform'], version=result[0]['version'], build_no=result[0]['build_no'], release_date=result[0]['release_date'], release_note=result[0]['release_note']))
-            return versions
+            #versions.append(VersionItem(force_update=force_update, platform=result[0]['platform'], version=result[0]['version'], build_no=result[0]['build_no'], release_date=result[0]['release_date'], release_note=result[0]['release_note']))
+            version_item = VersionItem(force_update=force_update, platform=result[0]['platform'], version=result[0]['version'], build_no=result[0]['build_no'], release_date=result[0]['release_date'], release_note=result[0]['release_note'])
+
+            # return ApiResponse(
+            #     success=True,
+            #     code=200,
+            #     msg="Successfully retrieved version",
+            #     data=ResponseContent(version_item)
+            # )
+            return {
+                'success':True,
+                'code':200,
+                'msg':"Successfully retrieved version",
+                'data':version_item
+                }
         else:
             raise HTTPException(status_code=400, detail='plafrom should be ios or android')
 
@@ -704,43 +718,90 @@ async def get_contents(query: str, pet_id: int, tags: Optional[List[str]] = Quer
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/bookmark", response_model=BookmarkResponse)
+@app.post("/bookmark", response_model=ApiResponse)
 async def set_bookmark(user_id: int, content_id: int):
     # Placeholder for bookmarking logic
     logger.debug('set bookmark')
     try:
         doc = contentRetriever.get_document(doc_id=content_id)
         if doc['doc_id'] == str(content_id):
-            ret = bookmark_set(user_id=user_id, doc_id=content_id, title=doc['title'], content=doc['content'], image_url=doc['image_url'], link_url=doc['link_url'])
+            ret = bookmark_set(user_id=user_id, doc_id=content_id, title=doc['title'], content=doc['content'], image_url=doc['image_url'], source_url=doc['source_url'], link_url=doc['link_url'])
         else:
             ret = False
-        return BookmarkResponse(success=ret)
+
+        if ret == True:
+            return ApiResponse(
+                success=ret,
+                code=200,
+                msg="Successfully Set bookmark"
+            )
+        else:
+            return ApiResponse(
+                success=ret,
+                code=500,
+                msg="Can not set bookmark"              
+            )
+
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     #return BookmarkResponse(success=True)
 
-@app.get("/bookmark", response_model=List[BookmarkItem])
-async def get_bookmarks(user_id: int):
+@app.get("/bookmark", response_model=ApiResponse[List[BookmarkItem]])
+async def get_bookmarks(user_id: int, page: int = 0, size: int = 1):
     logger.debug('get_bookmarks')
     try:
         bookmarks = []
         results = bookmarks_get(user_id=user_id)
         # result => list
         for result in results:
-            bookmarks.append(BookmarkItem(user_id=result['user_id'], content_id=result['doc_id'], title=result['title'], summary=result['summary'], image_url=result['image_url'], link_url=result['link_url']))
-        return bookmarks
+            bookmarks.append(BookmarkItem(user_id=result['user_id'], content_id=result['doc_id'], title=result['title'], summary=result['summary'], image_url=result['image_url'], source_url=result['source_url'], link_url=result['link_url']))
+        
+        # Pagination logic
+        total_items = len(bookmarks)
+        total_pages = (total_items + size - 1) // size
+        items_on_page = bookmarks[page*size:(page+1)*size]
+
+        response_content = ResponseContent(
+            content=items_on_page,
+            totalPages=total_pages,
+            last=page >= total_pages - 1,
+            totalElements=total_items,
+            first=page == 0,
+            size=size,
+            number=page,
+            numberOfElements=len(items_on_page),
+            empty=len(items_on_page) == 0
+        )
+        
+        return ApiResponse(
+            success=True,
+            code=200,
+            msg="Successfully get bookmarks",
+            data=response_content
+        )
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.delete("/bookmark", response_model=BookmarkResponse)
+@app.delete("/bookmark", response_model=ApiResponse)
 async def delete_bookmark(user_id: str, content_id:str):
     logger.debug('delete bookmark')
     try:
         ret = bookmark_delete(user_id=user_id, doc_id=content_id)
-        return BookmarkResponse(success=ret)
+        if ret == True:
+            return ApiResponse(success=True,
+            code=200,
+            msg="Successfully delete bookmark",
+            )
+        else:
+            return ApiResponse(
+                success=False,
+                code=500,
+                msg="Can not delete bookmark",
+            )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.get("/get-pet-profile/{pet_id}", response_model=PetProfile)
 async def get_pet_profile(pet_id: int):

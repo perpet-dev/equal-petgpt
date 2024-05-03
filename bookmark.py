@@ -13,7 +13,7 @@ client = MongoClient(MONGODB)
 mongo_db = client.perpet_healthcheck
 bookmark_collection = mongo_db["bookmarks"]
 
-def bookmark_set(user_id:int, doc_id:int, title:str, content:str, image_url:str, link_url:str):
+def bookmark_set(user_id:int, doc_id:int, title:str, content:str, image_url:str, source_url:str, link_url:str):
     logger.debug('set_bookmark')
     summary = content[:50]
     data = {
@@ -22,6 +22,7 @@ def bookmark_set(user_id:int, doc_id:int, title:str, content:str, image_url:str,
                 "title":title, 
                 "summary":summary, 
                 "image_url":image_url, 
+                "source_url":source_url,
                 "link_url":link_url, 
                 "time_stamp": datetime.now()
             }
