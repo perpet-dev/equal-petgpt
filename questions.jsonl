@@ -1023,8 +1023,8 @@
 {"doc_id": 475, "type": "dog", "breed_tag": 182, "breed_id": 75, "breed": "비숑 프리제", "question": "비숑 프리제의 피부를 건강하게 유지하는 방법은 무엇인가요?"}
 {"doc_id": 475, "type": "dog", "breed_tag": 182, "breed_id": 75, "breed": "비숑 프리제", "question": "비숑 프리제의 털 관리는 어떻게 해야 하나요?"}
 {"doc_id": 476, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어의 성격과 기질은 어떻게 되나요?"}
-{"doc_id": 478, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어가 겪을 수 있는 고관절 이형성증은 무엇인가요?"}
-{"doc_id": 479, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어의 평균 몸무게와 크기는 어떻게 되나요?"}
-{"doc_id": 479, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "", "question": "핏불 테리어의 눈, 귀, 머리, 이빨에 어떤 특징이 있나요?"}
+{"doc_id": 478, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어가 겪을 수 있는 고관절 이형성증은 무엇인가요?"}
+{"doc_id": 479, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어의 평균 몸무게와 크기는 어떻게 되나요?"}
+{"doc_id": 479, "type": "dog", "breed_tag": -1, "breed_id": -1, "breed": "핏불 테리어", "question": "핏불 테리어의 눈, 귀, 머리, 이빨에 어떤 특징이 있나요?"}
 {"doc_id": 480, "type": "dog", "breed_tag": 494, "breed_id": 82, "breed": "샤페이", "question": "샤페이의 눈을 건강하게 관리하는 방법은?"}
 {"doc_id": 481, "type": "dog", "breed_tag": 494, "breed_id": 82, "breed": "샤페이", "question": "샤페이의 피부를 건강하게 관리하는 방법에는 어떤 것들이 있나요?"}
