@@ -20,14 +20,8 @@ from config import PREFIXURL, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, OPENAI_AP
 from petprofile import PetProfile
 from bookmark import bookmarks_get, bookmark_set, bookmark_delete, bookmark_check
 from packaging.version import Version
+from content_retriever import EqualContentRetriever, BREEDS_DOG_TAG, BREEDS_CAT_TAG
 
-# Configure logging
-# import logging
-# import os
-# LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG").upper()
-# logging.basicConfig(level=LOG_LEVEL)
-# logger = logging.getLogger("uvicorn")
-# logger.setLevel(LOG_LEVEL)
 from config import LOG_NAME, LOG_FILE_NAME, LOGGING_LEVEL
 from log_util import LogUtil
 logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
@@ -63,14 +57,6 @@ gpt-4-1106-preview	$10.00 / 1M tokens	$30.00 / 1M tokens
 gpt-4-1106-vision-preview	$10.00 / 1M tokens	$30.00 / 1M tokens
 
 '''
-# Configure logging
-#import logging
-# LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG").upper()
-# logging.basicConfig(level=LOG_LEVEL)
-# logger = logging.getLogger("uvicorn")
-# logger.setLevel(LOG_LEVEL)
-# from log_util import LogUtil
-# logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 
 # static files directory for web app
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -81,7 +67,6 @@ async def healthreport(request: Request):
     return templates.TemplateResponse("chat.html", {"request": request, "query_params": request.query_params})
 
 # Models for input validation and serialization
-
 class ContentItem(BaseModel):
     doc_id:str
     title: str
@@ -99,21 +84,14 @@ class CategoryItem(BaseModel):
 class ContentRequest(BaseModel):
     content: str
 
+class BannerItem(BaseModel):
+    #배너 링크 url
+    link_url: HttpUrl
+    #배너 이미지
+    image_url: HttpUrl
 
 # Define a type variable for the GenericModel
 T = TypeVar('T')
-# class SortInfo(BaseModel):
-#     unsorted: bool
-#     sorted: bool
-#     empty: bool
-
-# class Pageable(BaseModel):
-#     sort: SortInfo
-#     pageNumber: int
-#     pageSize: int
-#     offset: int
-#     paged: bool
-#     unpaged: bool
 
 class ResponseContent(GenericModel, Generic[T]):
     content: T
@@ -166,6 +144,11 @@ collection = mongo_db["pet_images"]
 banner_collection = mongo_db["banners"]
 version_collection = mongo_db["versions"]
 
+# Assuming EqualContentRetriever is defined elsewhere and imported correctly
+contentRetriever = EqualContentRetriever()
+from petprofile import PetProfileRetriever
+petProfileRetriever = PetProfileRetriever()
+
 @app.get("/version")
 async def version(platform:str, version:str, build_no:int):
     versions = []
@@ -179,15 +162,9 @@ async def version(platform:str, version:str, build_no:int):
                 force_update = True
             else:
                 force_update = False
-            #versions.append(VersionItem(force_update=force_update, platform=result[0]['platform'], version=result[0]['version'], build_no=result[0]['build_no'], release_date=result[0]['release_date'], release_note=result[0]['release_note']))
+
             version_item = VersionItem(force_update=force_update, platform=result[0]['platform'], version=result[0]['version'], build_no=result[0]['build_no'], release_date=result[0]['release_date'], release_note=result[0]['release_note'])
 
-            # return ApiResponse(
-            #     success=True,
-            #     code=200,
-            #     msg="Successfully retrieved version",
-            #     data=ResponseContent(version_item)
-            # )
             return {
                 'success':True,
                 'code':200,
@@ -369,29 +346,10 @@ async def pet_knowledge_list(pet_id: str, page: int = Query(0, ge=0), items_per_
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-class BannerItem(BaseModel):
-    #배너 링크 url
-    link_url: HttpUrl
-    #배너 이미지
-    image_url: HttpUrl
-
-# class BannerResponse(BaseModel):
-#     total_page: int
-#     list: List[BannerItem]
-
-
 #메인 배너 리스트
 @app.get("/main-banner-list", response_model=ApiResponse[List[BannerItem]])
 async def main_banner_list(page: int = Query(0, ge=0), size: int = Query(5, ge=1)):
     logger.debug('main_banner_list')
-    # link_url: https://equal.pet/content/View/77
-    # image_url: https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t4B9XEt74OltsmP.png
-    
-    # link_url: https://equal.pet/content/View/78
-    # image_url: https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t7kI0C6MomZT0fM.png
-
-    # link_url: https://equal.pet/content/View/79
-    # image_url: https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t1cSnF0N8xlW4Fj.png
 
     results = banner_collection.find()
     banner_lst = list(results)
@@ -401,12 +359,6 @@ async def main_banner_list(page: int = Query(0, ge=0), size: int = Query(5, ge=1
         for banner in banner_lst:
             banners.append(BannerItem(link_url=banner['link_url'], image_url=banner['image_url']))
     
-        # banners = [
-        #     BannerItem(link_url="https://equal.pet/content/View/77", image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t4B9XEt74OltsmP.png"),
-        #     BannerItem(link_url="https://equal.pet/content/View/78", image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t7kI0C6MomZT0fM.png"),
-        #     BannerItem(link_url="https://equal.pet/content/View/79", image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t1cSnF0N8xlW4Fj.png"),
-        # ]
-
         # Pagination logic
         total_items = len(banners)
         total_pages = (total_items + size - 1) // size
@@ -598,14 +550,6 @@ async def startup_event():
     # Register with Eureka when the FastAPI app starts
     logger.info(f"Application startup: Registering PetGPT service on port {PORT} with Eureka at {EUREKA} and logging level: {LOGGING_LEVEL}")
     await register_with_eureka()
-
-# Assuming EqualContentRetriever is defined elsewhere and imported correctly
-from content_retriever import EqualContentRetriever, BREEDS_DOG_TAG, BREEDS_CAT_TAG
-
-contentRetriever = EqualContentRetriever()
-from petprofile import PetProfileRetriever
-petProfileRetriever = PetProfileRetriever()
-
 
 @app.get("/categories/", response_model=ApiResponse[List[dict]])
 async def get_categories(pet_id: int, page: int = Query(0, ge=0), size: int = Query(3, ge=1)):
@@ -821,8 +765,6 @@ async def delete_bookmark(user_id: str, content_id:str):
             )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
-
 
 @app.get("/get-pet-profile/{pet_id}", response_model=PetProfile)
 async def get_pet_profile(pet_id: int):
