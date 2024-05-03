@@ -31,6 +31,12 @@ def bookmark_set(user_id:int, doc_id:int, title:str, content:str, image_url:str,
         bookmark_collection.insert_one(data)
     return True
 
+def bookmark_check(user_id: int, doc_id:int):
+    result = bookmark_collection.count_documents({"user_id":user_id, "doc_id":doc_id})
+    if result == 0: 
+        return False
+    return True
+
 def bookmarks_get(user_id:int):
     logger.debug('get_bookmarks')
     results = bookmark_collection.find(filter={"user_id":user_id})

@@ -18,7 +18,7 @@ from pymongo import MongoClient
 from py_eureka_client import eureka_client
 from config import PREFIXURL, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, OPENAI_API_KEY, PORT, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME
 from petprofile import PetProfile
-from bookmark import bookmarks_get, bookmark_set, bookmark_delete
+from bookmark import bookmarks_get, bookmark_set, bookmark_delete, bookmark_check
 from packaging.version import Version
 
 # Configure logging
@@ -747,6 +747,25 @@ async def set_bookmark(user_id: int, content_id: int):
         raise HTTPException(status_code=500, detail=str(e))
     #return BookmarkResponse(success=True)
 
+@app.get("/check_bookmark", response_model=ApiResponse)
+async def check_bookmark(user_id: int, content_id:int):
+    logger.debug('check bookmark')
+    try:
+        ret = bookmark_check(user_id=user_id, doc_id=content_id)
+        if ret == True:
+            return ApiResponse(success=True,
+                code=200,
+                msg="Content is in bookmark",
+            )
+        else:
+            return ApiResponse(
+                success=False,
+                code=200,
+                msg="Content is not in bookmark",
+            )    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/bookmark", response_model=ApiResponse[List[BookmarkItem]])
 async def get_bookmarks(user_id: int, page: int = 0, size: int = 1):
     logger.debug('get_bookmarks')
@@ -802,6 +821,8 @@ async def delete_bookmark(user_id: str, content_id:str):
             )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
 
 @app.get("/get-pet-profile/{pet_id}", response_model=PetProfile)
 async def get_pet_profile(pet_id: int):
