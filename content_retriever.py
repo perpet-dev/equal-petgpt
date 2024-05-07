@@ -69,8 +69,7 @@ class EqualContentRetriever():
             self.category_dict = self.__load_subjects_from_mongo()
             self.__category_content_cache()
             self.__load_breed_map()
-            
-            
+                        
             cls._init = True
 
     def __put_subjects_to_mongo(self):
@@ -298,25 +297,7 @@ class EqualContentRetriever():
         else:
             return {}
         
-    def question_related_to_nutrients(self, question:str):
-        logger.debug('EqualContentRetriever::question_related_to_nutrients : {}'.format(question))
-        client = OpenAI(
-            api_key = OPENAI_API_KEY,
-            organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
-        )
-        
-        completion = client.chat.completions.create(
-            model="gpt-3.5-turbo",#,"gpt-4", 
-            messages=[
-                {"role": "user", "content": f"Does question is related to nutrients, 영양제, nutrition, 영양,  nutritional supplements, 영양보충제? Answer YES or No. Here is the question: {question}"},
-            ]
-        )
-        logger.debug(completion.choices[0].message)
-        answer = completion.choices[0].message.content
-        if answer.lower() == 'yes':
-            return True
-        else:
-            return False
+    
         
     def get_random_questions(self, pet_type:str, breed:str='', top_n=3):
         logger.debug('EqualContentRetriever::get_random_questions => {}, {}'.format(pet_type, breed))
@@ -562,7 +543,7 @@ if __name__ == "__main__":
             ret = contentRetriever.question_related_to_nutrients(question)
             print('{}:{}'.format(question, ret))
 
-    test_question()
+    #test_question()
 
     #contentRetriever.build_pincone_index(db_host=db_host, db_port=db_port, db_user=db_user, db_password=db_password, db_database=db_database)
     #contentRetriever.build_question_jsonl(db_host=db_host, db_port=db_port, db_user=db_user, db_password=db_password, db_database=db_database)

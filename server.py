@@ -300,7 +300,7 @@ async def extract_questions(request: ContentRequest):
 
 # API Endpoints
 @app.get("/pet-knowledge-list/{pet_id}", response_model=ApiResponse[List[CategoryItem]])
-async def pet_knowledge_list(pet_id: str, page: int = Query(0, ge=0), items_per_page: int = Query(10, ge=1)):
+async def pet_knowledge_list(pet_id: int, page: int = Query(0, ge=0), items_per_page: int = Query(10, ge=1)):
     logger.debug('pet_knowledge_list : pet_id = {}'.format(pet_id))
     try:
         list = []
@@ -387,7 +387,7 @@ async def main_banner_list(page: int = Query(0, ge=0), size: int = Query(5, ge=1
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/pet-gpt-question-list/{pet_id}", response_model=ApiResponse[List[QuestionItem]])
-async def pet_gpt_question_list(pet_id: str, page: int = Query(0, ge=0), size: int = Query(3, ge=1)):
+async def pet_gpt_question_list(pet_id: int, page: int = Query(0, ge=0), size: int = Query(3, ge=1)):
     logger.debug(f"PetGPT Service for pet_id: {pet_id}")
     try:
         retriever = PetProfileRetriever()
@@ -603,6 +603,7 @@ async def get_document(doc_id: int):
 
 @app.get("/contents/", response_model=ApiResponse[List[ContentItem]])
 async def get_contents(query: str, pet_id: int, tags: Optional[List[str]] = Query(None),  page: int = 0, size: int = 3):
+    logger.debug('get_contents : {}'.format(query))
     # Assuming the 'tags' parameter can accept a list of strings
     # Convert query params to the format expected by your content retriever
     try:
