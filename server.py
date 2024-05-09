@@ -304,13 +304,18 @@ async def pet_knowledge_list(pet_id: int, page: int = Query(0, ge=0), items_per_
     logger.debug('pet_knowledge_list : pet_id = {}'.format(pet_id))
     try:
         list = []
-        retriever = PetProfileRetriever()
-        pet_profile = retriever.get_pet_profile(pet_id)
-        retriever.close()
-
-        pet_name = pet_profile.pet_name
-        pet_type = pet_profile.pet_type
-        pet_tag_id = pet_profile.tag_id
+        
+        if pet_id == -1:
+            pet_name = 'no_name'
+            pet_type = 'dog'
+            pet_tag_id = '-1'
+        else:
+            retriever = PetProfileRetriever()
+            pet_profile = retriever.get_pet_profile(pet_id)
+            retriever.close()
+            pet_name = pet_profile.pet_name
+            pet_type = pet_profile.pet_type
+            pet_tag_id = pet_profile.tag_id
 
         categories = contentRetriever.get_categories(pet_type=pet_type, pet_name=pet_name)
 
@@ -390,12 +395,16 @@ async def main_banner_list(page: int = Query(0, ge=0), size: int = Query(5, ge=1
 async def pet_gpt_question_list(pet_id: int, page: int = Query(0, ge=0), size: int = Query(3, ge=1)):
     logger.debug(f"PetGPT Service for pet_id: {pet_id}")
     try:
-        retriever = PetProfileRetriever()
-        pet_profile = retriever.get_pet_profile(pet_id)
-        retriever.close()
+        if pet_id == -1:
+            pet_type = 'dog'
+            pet_breed = ''
+        else:
+            retriever = PetProfileRetriever()
+            pet_profile = retriever.get_pet_profile(pet_id)
+            retriever.close()
 
-        pet_type = pet_profile.pet_type
-        pet_breed = pet_profile.breed
+            pet_type = pet_profile.pet_type
+            pet_breed = pet_profile.breed
 
         selected_questions = contentRetriever.get_random_questions(pet_type=pet_type, breed=pet_breed, top_n=size)
         questions = []
@@ -549,17 +558,21 @@ async def startup_event():
     logger.debug("This is a debug message of PetGPT Service.")
     # Register with Eureka when the FastAPI app starts
     logger.info(f"Application startup: Registering PetGPT service on port {PORT} with Eureka at {EUREKA} and logging level: {LOGGING_LEVEL}")
-    await register_with_eureka()
+    #await register_with_eureka()
 
 @app.get("/categories/", response_model=ApiResponse[List[dict]])
 async def get_categories(pet_id: int, page: int = Query(0, ge=0), size: int = Query(3, ge=1)):
     try:
-        retriever = PetProfileRetriever()
-        pet_profile = retriever.get_pet_profile(pet_id)
-        retriever.close()
+        if pet_id == -1:
+            pet_name = 'no_name'
+            pet_type = 'dog'
+        else:
+            retriever = PetProfileRetriever()
+            pet_profile = retriever.get_pet_profile(pet_id)
+            retriever.close()
 
-        pet_name = pet_profile.pet_name
-        pet_type = pet_profile.pet_type
+            pet_name = pet_profile.pet_name
+            pet_type = pet_profile.pet_type
 
         categories = contentRetriever.get_categories(pet_type=pet_type, pet_name=pet_name)  # Assume this returns all categories as List[str]
         
@@ -592,7 +605,7 @@ async def get_categories(pet_id: int, page: int = Query(0, ge=0), size: int = Qu
 
 
 @app.get("/document", response_model=ContentItem)
-async def get_document(doc_id: int):
+async def get_document(doc_id: int=Query(77, ge=77)):
     try:
         doc_ = contentRetriever.get_document(doc_id=doc_id)
         return ContentItem(doc_id= doc_['doc_id'], title=doc_['title'], content=doc_['content'], 
@@ -607,20 +620,24 @@ async def get_contents(query: str, pet_id: int, tags: Optional[List[str]] = Quer
     # Assuming the 'tags' parameter can accept a list of strings
     # Convert query params to the format expected by your content retriever
     try:
-        retriever = PetProfileRetriever()
-        pet_profile = retriever.get_pet_profile(pet_id)
-        retriever.close()
-
-        pet_type = pet_profile.pet_type
-
         tags_list = []
-        if tags:
-            for tag in tags:
-                if len(tag)>0:
-                    tags_list.append(tag)
+
+        if pet_id == -1:
+            pet_type = 'dog'
+        else:
+            retriever = PetProfileRetriever()
+            pet_profile = retriever.get_pet_profile(pet_id)
+            retriever.close()
+
+            pet_type = pet_profile.pet_type
+
+            if tags:
+                for tag in tags:
+                    if len(tag)>0:
+                        tags_list.append(tag)
+                
+            logger.info(f"tags_list: {tags_list}")
             
-        logger.info(f"tags_list: {tags_list}")
-        
         content_items = contentRetriever.get_query_contents(query=query, pet_type=pet_type, tags=tags_list)
 
         #if len(content_items) < 2 and pet_type != None: # No result or One result
