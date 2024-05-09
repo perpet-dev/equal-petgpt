@@ -18,7 +18,7 @@ from pymongo import MongoClient
 from py_eureka_client import eureka_client
 from config import PREFIXURL, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, OPENAI_API_KEY, PORT, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME
 from petprofile import PetProfile
-
+import asyncio
 # Configure logging
 # import logging
 # import os
@@ -430,7 +430,7 @@ async def create_vet_comment(pet_profile: PetProfile):
     skip mentionning supplements elements like 영양소인 오메가-3 지방산, 코엔자임 Q10, 아르기닌, 타우린, 항산화제, 비타민 B-복합체 because you will generate in another API.
 '''
     payload = {
-        "model": "gpt-4",  # or another model name as appropriate
+        "model": "gpt-3.5-turbo-0125",#"gpt-4",  # or another model name as appropriate
         "messages": [
             {"role": "system", "content": systemquestion},
             {"role": "user", "content": f"The pet's name is {pet_profile.pet_name}, type is {pet_profile.pet_type}, breed is {pet_profile.breed}, age is {pet_profile.age}."}
@@ -482,7 +482,7 @@ async def create_vet_comment(pet_profile: PetProfile):
     Don't forget to generate only up to 3 sentences.
 '''
     payload = {
-        "model": "gpt-4",  # Specify the correct model
+        "model": "gpt-3.5-turbo-0125", #"gpt-4",  # Specify the correct model
         "messages": [
             {"role": "system", "content": systemquestion},
             {"role": "user", "content": f"The pet's name is {pet_profile.pet_name}, type is {pet_profile.pet_type}, breed is {pet_profile.breed}, age is {pet_profile.age}."}
@@ -510,9 +510,18 @@ async def create_vet_comment(pet_profile: PetProfile):
 async def register_with_eureka():
     if PREFIXURL == "/petgpt-service":
         # Asynchronously register service with Eureka
-        await eureka_client.init_async(eureka_server=EUREKA,
-                                    app_name="petgpt-service",
-                                    instance_port=PORT)
+        try:
+            logger.debug(f"Registering with Eureka at {EUREKA}...")
+            await eureka_client.init_async(eureka_server=EUREKA,
+                                        app_name="petgpt-service",
+                                        instance_port=PORT)
+            logger.info("Registration with Eureka successful.")
+        except Exception as e:
+            logger.error(f"Failed to register with Eureka: {e}")
+
+# # Run the async function
+# loop = asyncio.get_event_loop()
+# loop.run_until_complete(register_with_eureka())
 
 from generation import (
     generation_websocket_endpoint_chatgpt
