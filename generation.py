@@ -86,7 +86,8 @@ system_txt = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes
     PetGPT will be given a pet profile including name, breed, age, weight and eventually parts where the pet maybe be need more care (like teeth, skin ...). \
     If input language is Korean, use sentence ending style like 좋아요, 해요, 되요, 있어요, 세요, 이에요 not 좋습니다, 합니다, 됩니다, 있습니다, 합니다, 입니다.  \
     And use emoji, emoticons if possible.\
-    If user ask about your identity, then answer you are tuned by 퍼펫 using OpenAI GPT-4 model and hundreds giga bytes of contents. "
+    If user ask about your identity, then answer you are tuned by 퍼펫 using OpenAI GPT-4 model and hundreds giga bytes of contents."
+  
 
 # Assuming API key and custom model/server configurations are set elsewhere
 # openai.api_key = "your-api-key"
@@ -148,7 +149,10 @@ async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id
             PetGPT will be given a pet profile including name, breed, age, weight and eventually parts where the pet maybe be need more care (like teeth, skin ...). \
             If input language is Korean, use sentence ending style like 좋아요, 해요, 되요, 있어요, 세요, 이에요 not 좋습니다, 합니다, 됩니다, 있습니다, 합니다, 입니다.  \
             And use emoji, emoticons if possible.\
-            If user ask about your identity, then answer you are tuned by 퍼펫 using OpenAI GPT-4 model and hundreds giga bytes of contents."
+            If user ask about your identity, then answer you are tuned by 퍼펫 using OpenAI GPT-4 model and hundreds giga bytes of contents.\
+            Also you should recommend '이퀄 영양제' for pet's health like salesman if user's question is related to pet nutrition.  \
+            Do not recommend '이퀄 영양제' if user's question is not related to pet nutrition. \
+            '이퀄 영양제' has '품종별 영양제' and '1:1 맞춤 영양제'"
 
     retriever = PetProfileRetriever()
     pet_profile = retriever.get_pet_profile(pet_id)
@@ -401,7 +405,7 @@ if __name__ == "__main__":
                 ]
 
     def petgpt_test(question, pet_name, pet_breed, pet_age, pet_weight):
-        system_txt = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in healthcare for dogs and cats to assist pet owners with a wide range of questions and challenges. \
+        system_txt2 = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in healthcare for dogs and cats to assist pet owners with a wide range of questions and challenges. \
             PetGPT provides detailed care tips, including dietary recommendations, exercise needs, and general wellness advice, emphasizing suitable vitamins and supplements. \
             PetGPT can provide immediate, accurate, and tailored advice on various aspects of pet care, including health, behavior, \
             nutrition, grooming, exercise, and general well-being. PetGPT's ability to access a vast database of information allows it \
@@ -425,11 +429,11 @@ if __name__ == "__main__":
             Do not recommend '이퀄 영양제' if user's question is not related to pet nutrition. \
             '이퀄 영양제' has '품종별 영양제' and '1:1 맞춤 영양제'"
 
-        sales_prompt = " Also you should recommend '이퀄 영양제' for pet's health like salesman. if user's question is related to pet nutrition. \
+        sales_prompt2 = " Also you should recommend '이퀄 영양제' for pet's health like salesman. if user's question is related to pet nutrition. \
                         Do not recommend '이퀄 영양제' if user's question is not related to pet nutrition.\
                         '이퀄 영양제' has '품종별 영양제' for '말티즈','푸들', '리트리버', '포메라니안', '코리안숏헤어', '골든리트리버' and '1:1 맞춤 영양제' for all breeds. "
 
-        ingredient_prompt = '''
+        ingredient_prompt2 = '''
                     '말티즈 품종별 영양제' has '가수분해연어', '콜라겐가수분해물(페타질)', 'L-카르니틴', '비타민B3(니코틴산아미드)', '비타민B6염산염', '비타민B9(엽산)', '비타민B12혼합제', '천연토코페롤' as major ingredients. \ 
                     '푸들 품종별 영양제' has '가수분해연어', '콜라겐가수분해물(페타질)', '로즈마리추출물등복합물', '밀크씨슬', '천연토코페롤' as major ingredients. 
                     '골든리트리버 품종별 영양제' has '가수분해연어', '콜라겐가수분해물(페타질)', '하이드로커큐민', 'L-카르니틴', '천연토코페롤' as major ingredients. 
@@ -456,9 +460,9 @@ if __name__ == "__main__":
         model =  'gpt-4' # 'gpt-3.5-turbo'
         
         #ad_prompt = " Also you should recommend '이퀄 영양제' for pet's health like salesman if query is related to nutrition. '이퀄 영양제' has '품종별 영양제' for '말티즈','푸들', '리트리버', '포메라니안', '코리안숏헤어', '골든리트리버' and '1:1 맞춤 영양제' for all breeds'"
-        system_txt = system_txt + sales_prompt + ingredient_prompt
+        prompt = system_txt + sales_prompt + ingredient_prompt
 
-        system_message = {"role": "system", "content": system_txt  + ' pet name: {}, pet breed: {}, pet age: {}, pet weight: {}'.format(pet_name, pet_breed, pet_age, pet_weight)}
+        system_message = {"role": "system", "content": prompt  + ' pet name: {}, pet breed: {}, pet age: {}, pet weight: {}'.format(pet_name, pet_breed, pet_age, pet_weight)}
         #conversation_with_system = [system_message] + conversation
         #message_stream_id = str(uuid.uuid4())
         #conversation = prepare_messages_for_openai(conversation_with_system)
