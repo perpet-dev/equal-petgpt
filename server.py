@@ -18,7 +18,8 @@ from pymongo import MongoClient
 from py_eureka_client import eureka_client
 from config import PREFIXURL, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, OPENAI_API_KEY, PORT, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME
 from petprofile import PetProfile
-import asynciofrom bookmark import bookmarks_get, bookmark_set, bookmark_delete, bookmark_check
+import asyncio
+from bookmark import bookmarks_get, bookmark_set, bookmark_delete, bookmark_check
 from packaging.version import Version
 from content_retriever import EqualContentRetriever, BREEDS_DOG_TAG, BREEDS_CAT_TAG
 
@@ -567,7 +568,9 @@ async def startup_event():
     logger.debug("This is a debug message of PetGPT Service.")
     # Register with Eureka when the FastAPI app starts
     logger.info(f"Application startup: Registering PetGPT service on port {PORT} with Eureka at {EUREKA} and logging level: {LOGGING_LEVEL}")
-    #await register_with_eureka()
+    await register_with_eureka()
+    #register_with_eureka()
+    logger.info(f"Application startup: Registering PetGPT done")
 
 @app.get("/categories/", response_model=ApiResponse[List[dict]])
 async def get_categories(pet_id: int, page: int = Query(0, ge=0), size: int = Query(3, ge=1)):
