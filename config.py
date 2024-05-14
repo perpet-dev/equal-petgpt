@@ -4,6 +4,7 @@ import logging.config
 LOGGING_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG')
 PORT = int(os.getenv('PORT', 9090))
 EUREKA = os.getenv('EUREKA_CLIENT_SERVICEURL_DEFAULTZONE', "http://dev.promptinsight.ai:10001/eureka") 
+#EUREKA = os.getenv('EUREKA_CLIENT_SERVICEURL_DEFAULTZONE', "http://43.203.217.43:10001/eureka") 
 PREFIXURL="/petgpt-service"
 #PREFIXURL="/"
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"

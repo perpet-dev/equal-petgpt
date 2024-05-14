@@ -18,6 +18,7 @@ from pymongo import MongoClient
 from py_eureka_client import eureka_client
 from config import PREFIXURL, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, OPENAI_API_KEY, PORT, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME
 from petprofile import PetProfile
+import asyncio
 from bookmark import bookmarks_get, bookmark_set, bookmark_delete, bookmark_check
 from packaging.version import Version
 from content_retriever import EqualContentRetriever, BREEDS_DOG_TAG, BREEDS_CAT_TAG
@@ -459,7 +460,11 @@ async def create_vet_comment(pet_profile: PetProfile):
     skip mentionning supplements elements like 영양소인 오메가-3 지방산, 코엔자임 Q10, 아르기닌, 타우린, 항산화제, 비타민 B-복합체 because you will generate in another API.
 '''
     payload = {
+<<<<<<< HEAD
         "model": "gpt-4-turbo", #"gpt-4",  # or another model name as appropriate
+=======
+        "model": "gpt-3.5-turbo-0125",#"gpt-4",  # or another model name as appropriate
+>>>>>>> 60c3519e80a797a5912c7035fa0197a0a7156081
         "messages": [
             {"role": "system", "content": systemquestion},
             {"role": "user", "content": f"The pet's name is {pet_profile.pet_name}, type is {pet_profile.pet_type}, breed is {pet_profile.breed}, age is {pet_profile.age}."}
@@ -511,7 +516,11 @@ async def create_vet_comment(pet_profile: PetProfile):
     Don't forget to generate only up to 3 sentences.
 '''
     payload = {
+<<<<<<< HEAD
         "model": "gpt-4-turbo", #"gpt-4",  # Specify the correct model
+=======
+        "model": "gpt-3.5-turbo-0125", #"gpt-4",  # Specify the correct model
+>>>>>>> 60c3519e80a797a5912c7035fa0197a0a7156081
         "messages": [
             {"role": "system", "content": systemquestion},
             {"role": "user", "content": f"The pet's name is {pet_profile.pet_name}, type is {pet_profile.pet_type}, breed is {pet_profile.breed}, age is {pet_profile.age}."}
@@ -539,9 +548,18 @@ async def create_vet_comment(pet_profile: PetProfile):
 async def register_with_eureka():
     if PREFIXURL == "/petgpt-service":
         # Asynchronously register service with Eureka
-        await eureka_client.init_async(eureka_server=EUREKA,
-                                    app_name="petgpt-service",
-                                    instance_port=PORT)
+        try:
+            logger.debug(f"Registering with Eureka at {EUREKA}...")
+            await eureka_client.init_async(eureka_server=EUREKA,
+                                        app_name="petgpt-service",
+                                        instance_port=PORT)
+            logger.info("Registration with Eureka successful.")
+        except Exception as e:
+            logger.error(f"Failed to register with Eureka: {e}")
+
+# # Run the async function
+# loop = asyncio.get_event_loop()
+# loop.run_until_complete(register_with_eureka())
 
 from generation import (
     generation_websocket_endpoint_chatgpt
@@ -558,7 +576,9 @@ async def startup_event():
     logger.debug("This is a debug message of PetGPT Service.")
     # Register with Eureka when the FastAPI app starts
     logger.info(f"Application startup: Registering PetGPT service on port {PORT} with Eureka at {EUREKA} and logging level: {LOGGING_LEVEL}")
-    #await register_with_eureka()
+    await register_with_eureka()
+    #register_with_eureka()
+    logger.info(f"Application startup: Registering PetGPT done")
 
 @app.get("/categories/", response_model=ApiResponse[List[dict]])
 async def get_categories(pet_id: int, page: int = Query(0, ge=0), size: int = Query(3, ge=1)):
