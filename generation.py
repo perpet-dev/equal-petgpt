@@ -278,7 +278,7 @@ async def handle_websocket_messages(websocket: WebSocket, data: dict):
             messages.insert(0, system_message)
     
     # Determine if the message contains images
-    model = "gpt-4-vision-preview" if any(m.get("type") == "image_url" for m in messages if isinstance(m, dict)) else "gpt-4"
+    model = "gpt-4-vision-preview" if any(m.get("type") == "image_url" for m in messages if isinstance(m, dict)) else "gpt-4-turbo"
     logger.debug(f"Should send messages: {messages}")
 
     try:
@@ -389,19 +389,19 @@ if __name__ == "__main__":
     # petgpt prompt tuning
 
     questions = [
-                "너는 누가 만들었어?",
-                # "장난감 교체의 적기는 어떻게 결정해야 하나요?",
-                # "고양이가 가구를 긁는 것을 막기 위해 혼내거나 체벌해서는 안 되는 이유는 무엇인가요?",
-                # "고양이들 간의 갈등이 있을 때 집사가 할 수 있는 역할은 무엇인가요?",
-                # "고양이도 우울증에 걸릴 수 있나요?",
-                # "고양이에게 상자는 어떻게 스트레스 완화를 도와줄까요?",
-                # "겨울철 산책 시간을 어느 정도로 제한해야 할까요?",
-                # "노령 고양이의 구강 건강은 왜 중요한가요?",
-                # "고양이가 통증을 느낄 때 어떤 증상이나 행동을 보일까요?",
-                # "우리 고양이가 이물을 꿀꺽 삼켜버렸어요!",
-                # "어떤 종류의 강아지 사료가 있으며 각각의 장단점은 무엇인가요?",
-                # "습식사료는 어떤 장점과 단점을 가지고 있나요?",
-                # "홈메이드 사료를 주는 것의 장단점은 무엇인가요?",
+                #"너는 누가 만들었어?",
+                "장난감 교체의 적기는 어떻게 결정해야 하나요?",
+                "고양이가 가구를 긁는 것을 막기 위해 혼내거나 체벌해서는 안 되는 이유는 무엇인가요?",
+                "고양이들 간의 갈등이 있을 때 집사가 할 수 있는 역할은 무엇인가요?",
+                "고양이도 우울증에 걸릴 수 있나요?",
+                "고양이에게 상자는 어떻게 스트레스 완화를 도와줄까요?",
+                "겨울철 산책 시간을 어느 정도로 제한해야 할까요?",
+                "노령 고양이의 구강 건강은 왜 중요한가요?",
+                "고양이가 통증을 느낄 때 어떤 증상이나 행동을 보일까요?",
+                "우리 고양이가 이물을 꿀꺽 삼켜버렸어요!",
+                "어떤 종류의 강아지 사료가 있으며 각각의 장단점은 무엇인가요?",
+                "습식사료는 어떤 장점과 단점을 가지고 있나요?",
+                "홈메이드 사료를 주는 것의 장단점은 무엇인가요?",
                 ]
 
     def petgpt_test(question, pet_name, pet_breed, pet_age, pet_weight):
@@ -457,7 +457,7 @@ if __name__ == "__main__":
                     '''
 
      
-        model =  'gpt-4' # 'gpt-3.5-turbo'
+        model =  'gpt-4-turbo' #-turbo' #'gpt-4' # 'gpt-3.5-turbo'
         
         #ad_prompt = " Also you should recommend '이퀄 영양제' for pet's health like salesman if query is related to nutrition. '이퀄 영양제' has '품종별 영양제' for '말티즈','푸들', '리트리버', '포메라니안', '코리안숏헤어', '골든리트리버' and '1:1 맞춤 영양제' for all breeds'"
         prompt = system_txt + sales_prompt + ingredient_prompt
