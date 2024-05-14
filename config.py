@@ -6,11 +6,8 @@ PORT = int(os.getenv('PORT', 9090))
 EUREKA = os.getenv('EUREKA_CLIENT_SERVICEURL_DEFAULTZONE', "http://dev.promptinsight.ai:10001/eureka") 
 #EUREKA = os.getenv('EUREKA_CLIENT_SERVICEURL_DEFAULTZONE', "http://43.203.217.43:10001/eureka") 
 PREFIXURL="/petgpt-service"
-#PREFIXURL="/"
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 OPENAI_ORG = "org-oMDD9ptBReP4GSSW5lMD1wv6"
-#OPENAI_PROJ = "proj_53iQPsXhng6a2LlQCDyjov7r" #OpenAI-Project:
-#OPENAI_API_KEY = "sk-proj-l09F9gQ1haggz5Cn0KvzT3BlbkFJF5H1N2WSJokrNb7FUB05"
 OPENAI_PROJ = "proj_cfKAM38EYeptw1DVgvQ1K3xm"
 OPENAI_API_KEY = "sk-proj-0CpN18GYzMl614IG7TonT3BlbkFJmAkkvleEPkZ3hqP1K24E"
 

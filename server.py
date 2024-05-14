@@ -569,7 +569,6 @@ async def startup_event():
     # Register with Eureka when the FastAPI app starts
     logger.info(f"Application startup: Registering PetGPT service on port {PORT} with Eureka at {EUREKA} and logging level: {LOGGING_LEVEL}")
     await register_with_eureka()
-    #register_with_eureka()
     logger.info(f"Application startup: Registering PetGPT done")
 
 @app.get("/categories/", response_model=ApiResponse[List[dict]])
