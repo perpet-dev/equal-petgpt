@@ -22,7 +22,7 @@ from subject_json import SUBJECT_JSON
 from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE, OPENAI_API_KEY, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX
 from config import MONGODB
 
-INDEX_NAME = 'equalapp3'
+INDEX_NAME = 'equalapp-240514'
 BREEDS_DOG_TAG = '62'
 BREEDS_CAT_TAG = '276'
 BREEDS_NONE = ''
@@ -446,7 +446,7 @@ class EqualContentRetriever():
             tags.append([x for x in row[2].split(',') if x])
             images.append(row[3])
             titles.append(row[4])
-            contents.append(' '.join(row[4:]).replace('\n',' '))
+            contents.append(' '.join(row[6:]).replace('\n',' '))
             sources.append('https://equal.pet/content/ViewApp/{}'.format(row[1]))
             links.append('https://equal.pet/content/View/{}'.format(row[1]))
 
@@ -599,7 +599,7 @@ if __name__ == "__main__":
     # ret = contentRetriever.get_contents(query='예방접종 어떻게 해요?', breeds=BREEDS_DOG_TAG)
     # pprint.pprint(ret)
    
-    # #contentRetriever.build_index()
+    #contentRetriever.build_index()
     # #ret = contentRetriever.get_contents2(breeds=BREEDS_DOG_TAG, sn='DG011V2-01', tags=[])
     # #print(ret)
     #tag_dump()
