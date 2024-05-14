@@ -23,9 +23,32 @@ client = MongoClient(MONGODB)
 mongo_db = client.perpet_healthcheck
 petgpt_collection = mongo_db["petgpt_logs"]
 
-sales_prompt = " Also you should recommend '이퀄 영양제' for pet's health like salesman. \
-                '이퀄 영양제' has '품종별 영양제' for '말티즈','푸들', '리트리버', '포메라니안', '코리안숏헤어', '골든리트리버' and '1:1 맞춤 영양제' for all breeds. \
-                Do not mention about incredients of '이퀄 영양제' , '품종별 영양제' and '1:1 맞춤 영양제'"
+sales_prompt = " Also you should recommend '이퀄 영양제' for pet's health like salesman. if user's question is related to pet nutrition. \
+                 Do not recommend '이퀄 영양제' if user's question is not related to pet nutrition.\
+                '이퀄 영양제' has '품종별 영양제' for '말티즈','푸들', '리트리버', '포메라니안', '코리안숏헤어', '골든리트리버' and '1:1 맞춤 영양제' for all breeds. "
+
+ingredient_prompt = '''
+                    '말티즈 품종별 영양제' has '가수분해연어', '콜라겐가수분해물(페타질)', 'L-카르니틴', '비타민B3(니코틴산아미드)', '비타민B6염산염', '비타민B9(엽산)', '비타민B12혼합제', '천연토코페롤' as major ingredients. \ 
+                    '푸들 품종별 영양제' has '가수분해연어', '콜라겐가수분해물(페타질)', '로즈마리추출물등복합물', '밀크씨슬', '천연토코페롤' as major ingredients. 
+                    '골든리트리버 품종별 영양제' has '가수분해연어', '콜라겐가수분해물(페타질)', '하이드로커큐민', 'L-카르니틴', '천연토코페롤' as major ingredients. 
+                    '코리안숏헤어 품종별 영양제' has '가수분해연어', 'L-라이신', 'Bacillus subtilis', '다이제자임(효소혼합물함유)', '비타민B3(니코틴산아미드)', '비타민B6염산염', '비타민B9(엽산)', '비타민B12혼합제', '천연토코페롤' as major ingredients.
+                    '이퀄 아미노산 스틱 연어 고양이' has '연어', '치커리뿌리추출물(이눌린)', '프락토올리고당', 'Bacillus subtilis', 'L-아르기닌', 'L-라이신', '타우린', '비타민합제 (비타민A, 비타민B3, 비타민E 등)', '미네랄합제(아연, 철, 망간 등)' as major ingredients.
+                    '이퀄 아미노산 스틱 참치 고양이' has '참치', '치커리뿌리추출물(이눌린)', '프락토올리고당','Bacillus subtilis', 'L-아르기닌', 'L-라이신', '타우린', '비타민합제 (비타민A, 비타민B3, 비타민E 등)', '미네랄합제(아연, 철, 망간 등)' as major ingredients.
+                    '이퀄 아미노산 스틱 닭안심 고양이' has '닭안심', '치커리뿌리추출물(이눌린)', '프락토올리고당','Bacillus subtilis', 'L-아르기닌', 'L-라이신', '타우린', '비타민합제 (비타민A, 비타민B3, 비타민E 등)', '미네랄합제(아연, 철, 망간 등)' as major ingredients.
+                    '이퀄 아미노산 스틱 연어 강아지' has '연어', '치커리뿌리추출물(이눌린)', '프락토올리고당', 'L-로이신', 'Bacillus subtilis', 'L-아르기닌', 'L-라이신', '타우린', '비타민합제(비타민A, 비타민B3, 비타민E 등)', '미네랄합제(아연, 철, 망간 등)' as major ingredient.
+                    '이퀄 오메가3 스틱' has '치커리뿌리추출물', 'rTG오메가3', '프락토올리고당','천연토코페롤' as major ingredients. 
+                    '이퀄 관절 건강' has '콜라겐가수분해물(페타질)', '옵티엠에스엠' as major ingredients.
+                    '이퀄 호흡기 건강' has '결정셀룰로오스', '케르세틴', '브로멜라인', '도라지추출분말' as major ingredients.
+                    '이퀄 심장 건강' has '결정셀룰로오스', '타우린', 'L- 카르니틴', '코엔자임Q10', '산화마그네슘' as major ingredients. 
+                    '이퀄 항산화' has '글루콘산아연', '비타민E', '엥게비타지에스에이치(글루타치온2.5%)', '코엔자임Q10', '헤마토코쿠스분말', '셀레늄' as major ingredients.
+                    '이퀄 유산균' has 'Bacillus subtilis', '건조효모(Saccharomyces cerevisiae)', 'EC-12' as major ingredients.
+                    '이퀄 비타민B' has '비타민B1염산염',  '비타민B3(니코틴산아미드)', '비타민B5(판토텐산칼슘)', '비타민B12혼합제', '비타민B2', '비타민B6염산염', '비타민B9(엽산)' as major ingredients.
+                    '이퀄 구강 건강' has '동결건조프로폴리스', '스피루리나분말', '베타글루칸', '아스코필럼 노도섬' as major ingredients. 
+                    '이퀄 긴장 완화' has '유단백가수분해물(락티움)', 'L-테아닌', '유익균배양물(GABA)', 'L-트립토판' as major ingredients. 
+                    '이퀄 뇌 건강' has '하이드로커큐민', '포스파티딜세린', 'L-아르기닌', '페룰린산' as major ingredients. 
+                    '이퀄 비뇨기 건강' has 'N-아세틸글루코사민', '비타민B6염산염' as major ingredients.  
+                    '이퀄 간 건강' has '밀크씨슬', '엥게비타지에스에이치(글루타치온2.5%)' as major ingredients 
+                    '''
 
 system_with_image = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in analyzing images of dogs and cats. \
     Upon receiving an image, you identifies the pet's breed, age and weight. PetGPT provides detailed care tips, \
@@ -148,7 +171,7 @@ async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id
     await send_message_to_openai(model, pet_id, query, conversation, websocket)
     
 async def send_message_to_openai(model, pet_id, query, conversation, websocket):
-    logger.debug('send_message_to_openai')
+    logger.debug('send_message_to_openai : {}'.format(query))
     message_tot = ''
     # Synchronously call the OpenAI API without await
     client = OpenAI(
@@ -166,7 +189,6 @@ async def send_message_to_openai(model, pet_id, query, conversation, websocket):
     # iterate through the stream of events
     try:
         logger.debug("Generation WebSocket to ChatGPT.")
-        save_to_petgpt_log(pet_id,"test question", "test answer")
         for chunk in response:
             chunk_message = chunk.choices[0].delta.content  # extract the message
             if  chunk_message is not None:
@@ -208,12 +230,14 @@ def construct_system_message(pet_profile, system):
     logger.debug(str(pet_profile))
 
     if USE_SALES_PROMPT:
-        ran_num = random.randint(1,5) # 1/5 확률로 선택
-        if ran_num == 3:
-            logger.info('#### use sales prompt {} ####'.format(ran_num))
-            system = system + sales_prompt
-        else: 
-            logger.info('#### not to use sales prompt {} ####'.format(ran_num))
+        logger.info('#### use sales prompt  ####')
+        system = system + sales_prompt + ingredient_prompt
+        # ran_num = random.randint(1,5) # 1/5 확률로 선택
+        # if ran_num == 3 or ran_num == 5:
+        #     logger.info('#### use sales prompt {} ####'.format(ran_num))
+        #     system = system + sales_prompt + ingredient_prompt
+        # else: 
+        #     logger.info('#### not to use sales prompt {} ####'.format(ran_num))
     try:
         if 'error' in pet_profile:
             return {"role": "system", "content": system}  
@@ -358,6 +382,21 @@ async def generation_websocket_endpoint_chatgpt(websocket: WebSocket, pet_id: st
 if __name__ == "__main__":
     # petgpt prompt tuning
 
+    questions = [
+                "장난감 교체의 적기는 어떻게 결정해야 하나요?",
+                "고양이가 가구를 긁는 것을 막기 위해 혼내거나 체벌해서는 안 되는 이유는 무엇인가요?",
+                "고양이들 간의 갈등이 있을 때 집사가 할 수 있는 역할은 무엇인가요?",
+                "고양이도 우울증에 걸릴 수 있나요?",
+                "고양이에게 상자는 어떻게 스트레스 완화를 도와줄까요?",
+                "겨울철 산책 시간을 어느 정도로 제한해야 할까요?",
+                "노령 고양이의 구강 건강은 왜 중요한가요?",
+                "고양이가 통증을 느낄 때 어떤 증상이나 행동을 보일까요?",
+                "우리 고양이가 이물을 꿀꺽 삼켜버렸어요!",
+                "어떤 종류의 강아지 사료가 있으며 각각의 장단점은 무엇인가요?",
+                "습식사료는 어떤 장점과 단점을 가지고 있나요?",
+                "홈메이드 사료를 주는 것의 장단점은 무엇인가요?",
+                ]
+
     def petgpt_test(question, pet_name, pet_breed, pet_age, pet_weight):
         system_txt = "You are 'PetGPT', a friendly and enthusiastic GPT that specializes in healthcare for dogs and cats to assist pet owners with a wide range of questions and challenges. \
             PetGPT provides detailed care tips, including dietary recommendations, exercise needs, and general wellness advice, emphasizing suitable vitamins and supplements. \
@@ -378,15 +417,42 @@ if __name__ == "__main__":
             PetGPT will be given a pet profile including name, breed, age, weight and eventually parts where the pet maybe be need more care (like teeth, skin ...). \
             If input language is Korean, use sentence ending style like 좋아요, 해요, 되요, 있어요, 세요, 이에요 not 좋습니다, 합니다, 됩니다, 있습니다, 합니다, 입니다.  \
             And use emoji, emoticons if possible. \
-            Also you should recommend '이퀄 영양제' for pet's health like salesman. \
+            Also you should recommend '이퀄 영양제' for pet's health like salesman if user's question is related to pet nutrition.  \
+            Do not recommend '이퀄 영양제' if user's question is not related to pet nutrition. \
             '이퀄 영양제' has '품종별 영양제' and '1:1 맞춤 영양제'"
 
-        
+        sales_prompt = " Also you should recommend '이퀄 영양제' for pet's health like salesman. if user's question is related to pet nutrition. \
+                        Do not recommend '이퀄 영양제' if user's question is not related to pet nutrition.\
+                        '이퀄 영양제' has '품종별 영양제' for '말티즈','푸들', '리트리버', '포메라니안', '코리안숏헤어', '골든리트리버' and '1:1 맞춤 영양제' for all breeds. "
+
+        ingredient_prompt = '''
+                    '말티즈 품종별 영양제' has '가수분해연어', '콜라겐가수분해물(페타질)', 'L-카르니틴', '비타민B3(니코틴산아미드)', '비타민B6염산염', '비타민B9(엽산)', '비타민B12혼합제', '천연토코페롤' as major ingredients. \ 
+                    '푸들 품종별 영양제' has '가수분해연어', '콜라겐가수분해물(페타질)', '로즈마리추출물등복합물', '밀크씨슬', '천연토코페롤' as major ingredients. 
+                    '골든리트리버 품종별 영양제' has '가수분해연어', '콜라겐가수분해물(페타질)', '하이드로커큐민', 'L-카르니틴', '천연토코페롤' as major ingredients. 
+                    '코리안숏헤어 품종별 영양제' has '가수분해연어', 'L-라이신', 'Bacillus subtilis', '다이제자임(효소혼합물함유)', '비타민B3(니코틴산아미드)', '비타민B6염산염', '비타민B9(엽산)', '비타민B12혼합제', '천연토코페롤' as major ingredients.
+                    '이퀄 아미노산 스틱 연어 고양이' has '연어', '치커리뿌리추출물(이눌린)', '프락토올리고당', 'Bacillus subtilis', 'L-아르기닌', 'L-라이신', '타우린', '비타민합제 (비타민A, 비타민B3, 비타민E 등)', '미네랄합제(아연, 철, 망간 등)' as major ingredients.
+                    '이퀄 아미노산 스틱 참치 고양이' has '참치', '치커리뿌리추출물(이눌린)', '프락토올리고당','Bacillus subtilis', 'L-아르기닌', 'L-라이신', '타우린', '비타민합제 (비타민A, 비타민B3, 비타민E 등)', '미네랄합제(아연, 철, 망간 등)' as major ingredients.
+                    '이퀄 아미노산 스틱 닭안심 고양이' has '닭안심', '치커리뿌리추출물(이눌린)', '프락토올리고당','Bacillus subtilis', 'L-아르기닌', 'L-라이신', '타우린', '비타민합제 (비타민A, 비타민B3, 비타민E 등)', '미네랄합제(아연, 철, 망간 등)' as major ingredients.
+                    '이퀄 아미노산 스틱 연어 강아지' has '연어', '치커리뿌리추출물(이눌린)', '프락토올리고당', 'L-로이신', 'Bacillus subtilis', 'L-아르기닌', 'L-라이신', '타우린', '비타민합제(비타민A, 비타민B3, 비타민E 등)', '미네랄합제(아연, 철, 망간 등)' as major ingredient.
+                    '이퀄 오메가3 스틱' has '치커리뿌리추출물', 'rTG오메가3', '프락토올리고당','천연토코페롤' as major ingredients. 
+                    '이퀄 관절 건강' has '콜라겐가수분해물(페타질)', '옵티엠에스엠' as major ingredients.
+                    '이퀄 호흡기 건강' has '결정셀룰로오스', '케르세틴', '브로멜라인', '도라지추출분말' as major ingredients.
+                    '이퀄 심장 건강' has '결정셀룰로오스', '타우린', 'L- 카르니틴', '코엔자임Q10', '산화마그네슘' as major ingredients. 
+                    '이퀄 항산화' has '글루콘산아연', '비타민E', '엥게비타지에스에이치(글루타치온2.5%)', '코엔자임Q10', '헤마토코쿠스분말', '셀레늄' as major ingredients.
+                    '이퀄 유산균' has 'Bacillus subtilis', '건조효모(Saccharomyces cerevisiae)', 'EC-12' as major ingredients.
+                    '이퀄 비타민B' has '비타민B1염산염',  '비타민B3(니코틴산아미드)', '비타민B5(판토텐산칼슘)', '비타민B12혼합제', '비타민B2', '비타민B6염산염', '비타민B9(엽산)' as major ingredients.
+                    '이퀄 구강 건강' has '동결건조프로폴리스', '스피루리나분말', '베타글루칸', '아스코필럼 노도섬' as major ingredients. 
+                    '이퀄 긴장 완화' has '유단백가수분해물(락티움)', 'L-테아닌', '유익균배양물(GABA)', 'L-트립토판' as major ingredients. 
+                    '이퀄 뇌 건강' has '하이드로커큐민', '포스파티딜세린', 'L-아르기닌', '페룰린산' as major ingredients. 
+                    '이퀄 비뇨기 건강' has 'N-아세틸글루코사민', '비타민B6염산염' as major ingredients.  
+                    '이퀄 간 건강' has '밀크씨슬', '엥게비타지에스에이치(글루타치온2.5%)' as major ingredients 
+                    '''
+
      
-        model = 'gpt-4'
+        model =  'gpt-4' # 'gpt-3.5-turbo'
         
-        ad_prompt = " Also you should recommend '이퀄 영양제' for pet's health like salesman if query is related to nutrition. '이퀄 영양제' has '품종별 영양제' for '말티즈','푸들', '리트리버', '포메라니안', '코리안숏헤어', '골든리트리버' and '1:1 맞춤 영양제' for all breeds'"
-        system_txt = system_txt + ad_prompt
+        #ad_prompt = " Also you should recommend '이퀄 영양제' for pet's health like salesman if query is related to nutrition. '이퀄 영양제' has '품종별 영양제' for '말티즈','푸들', '리트리버', '포메라니안', '코리안숏헤어', '골든리트리버' and '1:1 맞춤 영양제' for all breeds'"
+        system_txt = system_txt + sales_prompt + ingredient_prompt
 
         system_message = {"role": "system", "content": system_txt  + ' pet name: {}, pet breed: {}, pet age: {}, pet weight: {}'.format(pet_name, pet_breed, pet_age, pet_weight)}
         #conversation_with_system = [system_message] + conversation
@@ -412,10 +478,36 @@ if __name__ == "__main__":
         print(response)
         response.choices[0].message.content
 
-    question = '나이 들어 가면서 건강이 약해지는 것 같아요. 어떻게 할까요?'
+    def check_nutrition_question(text):
+        prompt = 'Is following text is related to nutrition : here is text {}'.format(text)
+        client = OpenAI(
+            organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
+            api_key=OPENAI_API_KEY
+        )
+        model = 'gpt-3.5-turbo'
+
+        response = client.chat.completions.create(
+            model = model,
+            messages=[
+                {"role": "system", "content": system_txt }, 
+                {"role":"user", "content":"Here is the content: {}".format(question)}
+            ],
+            temperature=0,
+            max_tokens=1024,
+            #stream=True
+        )
+
+        print(response)
+        response.choices[0].message.content
+
+    #question = '나이 들어 가면서 눈 건강이 약해지는 것 같아요. 어떻게 할까요?'
     #question = '닥터훈트의 관절 건강 관리 방법은?'
     #question = '고양이도 우울증에 걸리나요?'
+    #question = '강아지에게 괜찮은 장남감은?'
     
     # 이름: 똘이, 견종: 리트리버, 나이: 7살, 몸무게: 12kg, 
-    petgpt_test(question, pet_name='똘이', pet_breed='리트리버', pet_age='7', pet_weight='12kg')
+    for question in questions:
+        print(question)
+        petgpt_test(question, pet_name='추추', pet_breed='말티즈', pet_age='4', pet_weight='6kg')
     #prepare_messages_for_openai(messages=[{"role":"system","content":"$message","pet_id":13, "timestamp":"$timeStamp"}])
+    #check_nutrition_question(question)

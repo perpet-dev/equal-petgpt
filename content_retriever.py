@@ -15,11 +15,14 @@ import pandas as pd
 import re
 import jsonlines
 import random
+from pymongo import MongoClient
+from datetime import datetime
 
 from subject_json import SUBJECT_JSON
 from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE, OPENAI_API_KEY, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX
+from config import MONGODB
 
-INDEX_NAME = 'equalapp2'
+INDEX_NAME = 'equalapp3'
 BREEDS_DOG_TAG = '62'
 BREEDS_CAT_TAG = '276'
 BREEDS_NONE = ''
@@ -33,6 +36,10 @@ client = OpenAI(api_key = OPENAI_API_KEY)
 pc = Pinecone(PINECONE_API_KEY)
 spec = ServerlessSpec(cloud='aws', region='us-west-2')  
 
+PINECONE_SQL = "select perpet.mcard.top as category, perpet.mcard.id as id, perpet.mcard.tag, perpet.mcard.image as image , perpet.mcard.main_title as title, perpet.mcard.summary as summary,  GROUP_CONCAT(perpet.mcard_sub.sub_title SEPARATOR ' ') as sub_title,  GROUP_CONCAT(perpet.mcard_sub.text SEPARATOR ' ') as sub_text FROM perpet.mcard, perpet.mcard_sub where perpet.mcard.id = perpet.mcard_sub.mcard_id GROUP BY perpet.mcard_sub.mcard_id"
+#PINECONE_SQL = "select perpet.mcard.top as category, perpet.mcard.id as id, perpet.mcard.tag, perpet.mcard.image as image , perpet.mcard.main_title as title, perpet.mcard.summary as summary,  GROUP_CONCAT(perpet.mcard_sub.sub_title SEPARATOR ' ') as sub_title,  GROUP_CONCAT(perpet.mcard_sub.text SEPARATOR ' ') as sub_text FROM perpet.mcard, perpet.mcard_sub where perpet.mcard.id > 481 and  perpet.mcard.id = perpet.mcard_sub.mcard_id GROUP BY perpet.mcard_sub.mcard_id"
+
+
 class EqualContentRetriever():
     # Singleton 으로 구성
     def __new__(cls, *args, **kwargs):
@@ -45,13 +52,68 @@ class EqualContentRetriever():
         if not hasattr(cls, "_init"):
             logger.debug('EqualContentRetriever::init')
             self.index_name = index_name
-            self.category_dict = json.loads(SUBJECT_JSON)
             self.contents_cache = []
+            # MongoDB setup
+            client = MongoClient(MONGODB)
+            mongo_db = client.perpet_healthcheck
+            self.subjects_collection = mongo_db["knowlege_subject"]
+            self.questions_collection = mongo_db["questions"]
+            
+            #self.category_dict = json.loads(SUBJECT_JSON)
+            #self.__put_subjects_to_mongo()
+            #self.__put_question_json_to_mongo()
+            self.question_map = {}
+            self.__load_questions_from_mongo()
+            #self.__load_questions_jsonl()
+            
+            self.category_dict = self.__load_subjects_from_mongo()
             self.__category_content_cache()
             self.__load_breed_map()
-            self.question_map = {}
-            self.__load_questions_jsonl()
+                        
             cls._init = True
+
+    def __put_subjects_to_mongo(self):
+        # put subject json from mongodb
+        logger.debug("EqualContentRetriever::__load_subject_json")
+
+        data = {
+            'subjects':json.dumps(json.loads(SUBJECT_JSON), ensure_ascii=False), 
+            'time_stamp': datetime.now()
+        }
+        try:
+            self.subjects_collection.insert_one(data)
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+
+    def __load_subjects_from_mongo(self):
+        # load subject json from mongodb
+        logger.debug("EqualContentRetriever::__load_subject_json")
+
+        try:
+            subject_json = self.subjects_collection.find()
+            return json.loads(subject_json[0]['subjects'])
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+            return None
+
+    def __put_question_json_to_mongo(self):
+        logger.debug("EqualContentRetriever::__put_question_json_to_mongo")
+        with jsonlines.open("questions.jsonl") as jsonl_f:
+            for line in jsonl_f.iter():
+                # put mongo db 
+                print(line['question'])
+                self.questions_collection.insert_one(line)
+
+    def __load_questions_from_mongo(self):
+        logger.debug("EqualContentRetriever::__load_questions_from_mongo")
+        questions = self.questions_collection.find()
+        self.question_map.clear()
+        for question in questions:
+            key_ = "{}_{}".format(question['type'], question['breed'].replace(' ', ''))
+            if key_ in self.question_map:
+                self.question_map[key_] = self.question_map[key_] + '\n' + question['question']
+            else:
+                self.question_map[key_] = question['question']
 
     def __load_breed_map(self):
        logger.debug("EqualContentRetriever::__load_breed_map")
@@ -110,7 +172,8 @@ class EqualContentRetriever():
                                             'title':ret['matches'][0]['metadata']['title'], 
                                             'content':ret['matches'][0]['metadata']['content'],
                                             'image_url':ret['matches'][0]['metadata']['image_url'],
-                                            'link_url':ret['matches'][0]['metadata']['source_url'],
+                                            'source_url':ret['matches'][0]['metadata']['source_url'],
+                                            'link_url':ret['matches'][0]['metadata']['link_url'],
                                             'tag':ret['matches'][0]['metadata']['tag'], 
                                             'filter':'', 
                                             'use_filter':use_filter
@@ -122,7 +185,8 @@ class EqualContentRetriever():
                                             'title':ret['matches'][0]['metadata']['title'], 
                                             'content':ret['matches'][0]['metadata']['content'],
                                             'image_url':ret['matches'][0]['metadata']['image_url'],
-                                            'link_url':ret['matches'][0]['metadata']['source_url'],
+                                            'source_url':ret['matches'][0]['metadata']['source_url'],
+                                            'link_url':ret['matches'][0]['metadata']['link_url'],
                                             'tag':ret['matches'][0]['metadata']['tag'], 
                                             'filter': str(filter),
                                             'use_filter':use_filter
@@ -167,13 +231,14 @@ class EqualContentRetriever():
             lines_batch = text_dataset['content'][i: i+batch_size]
             ids_batch = text_dataset['id'][i: i+batch_size]
             source_batch = text_dataset['source_url'][i:i+batch_size]
+            link_batch = text_dataset['link_url'][i:i+batch_size]
             images_batch = text_dataset['image_url'][i:i+batch_size]
             tags_batch = text_dataset['tag'][i:i+batch_size]
             titles_batch = text_dataset['title'][i:i+batch_size]
             categories_batch = text_dataset['category'][i:i+batch_size]
             res = client.embeddings.create(input=lines_batch, model=OPENAI_EMBEDDING_MODEL_NAME) # create embeddings
             embeds = [record.embedding for record in res.data]
-            meta = [{'category': categories_batch[n], 'title':titles_batch[n], 'tag':tags_batch[n], 'content': lines_batch[n], 'source_url':source_batch[n], 'image_url':images_batch[n]} for n in range(0, len(categories_batch))] # prep metadata and upsert batch
+            meta = [{'category': categories_batch[n], 'title':titles_batch[n], 'tag':tags_batch[n], 'content': lines_batch[n], 'source_url':source_batch[n], 'link_url':link_batch[n],'image_url':images_batch[n]} for n in range(0, len(categories_batch))] # prep metadata and upsert batch
             to_upsert = zip(ids_batch, embeds, meta)
             index.upsert(vectors=list(to_upsert)) # upsert to Pinecone
 
@@ -201,16 +266,41 @@ class EqualContentRetriever():
         ###
         for res in ret['matches']:
             if res['score'] >= MATCH_SCORE_CUTOFF:
-                result.append({'doc_id':res['id'], 
-                            'title':res['metadata']['title'], 
-                            'content':res['metadata']['content'], 
-                            'image_url':res['metadata']['image_url'], 
-                            'link_url':res['metadata']['source_url'], 
-                            'tag':res['metadata']['tag']})
+                result.append({
+                                'doc_id':res['id'], 
+                                'title':res['metadata']['title'], 
+                                'content':res['metadata']['content'], 
+                                'image_url':res['metadata']['image_url'], 
+                                'source_url':res['metadata']['source_url'],
+                                'link_url':res['metadata']['link_url'], 
+                                'tag':res['metadata']['tag']
+                                })
         return result
 
+    def get_document(self, doc_id:int):
+        logger.debug('EqualContentRetriever::get_document => {}'.format(doc_id))
+        index = pc.Index(INDEX_NAME)
+        ret = index.query(
+                    id=str(doc_id),
+                    top_k=1, 
+                    include_metadata=True)
+        if len(ret['matches']) > 0:
+            return {
+                'doc_id':ret['matches'][0]['id'],
+                'title':ret['matches'][0]['metadata']['title'], 
+                'content':ret['matches'][0]['metadata']['content'],
+                'image_url':ret['matches'][0]['metadata']['image_url'],
+                'source_url':ret['matches'][0]['metadata']['source_url'],
+                'link_url':ret['matches'][0]['metadata']['link_url'],
+                'tag':ret['matches'][0]['metadata']['tag'], 
+            }
+        else:
+            return {}
+        
+    
+        
     def get_random_questions(self, pet_type:str, breed:str='', top_n=3):
-        logger.debug('EqualContentRetriever::__get_random_questions => {}, {}'.format(pet_type, breed))
+        logger.debug('EqualContentRetriever::get_random_questions => {}, {}'.format(pet_type, breed))
         
         breed_question = ''
         use_breed = False
@@ -343,10 +433,10 @@ class EqualContentRetriever():
         # Creating a cursor object
         cursor = connection.cursor()
 
-        sql = "select perpet.mcard.top as category, perpet.mcard.id as id, perpet.mcard.tag, perpet.mcard.image as image , perpet.mcard.main_title as title, perpet.mcard.summary as summary,  GROUP_CONCAT(perpet.mcard_sub.sub_title SEPARATOR ' ') as sub_title,  GROUP_CONCAT(perpet.mcard_sub.text SEPARATOR ' ') as sub_text FROM perpet.mcard, perpet.mcard_sub where perpet.mcard.id = perpet.mcard_sub.mcard_id GROUP BY perpet.mcard_sub.mcard_id"
+        sql = PINECONE_SQL
         cursor.execute(sql)
         result = cursor.fetchall()
-        categories, ids, tags, titles, images, contents, sources = [], [], [], [], [], [], []
+        categories, ids, tags, titles, images, contents, sources, links = [], [], [], [], [], [], [], []
 
         logger.info(">>> Total row to index : {}".format(len(result)))
 
@@ -357,9 +447,10 @@ class EqualContentRetriever():
             images.append(row[3])
             titles.append(row[4])
             contents.append(' '.join(row[4:]).replace('\n',' '))
-            sources.append('https://equal.pet/content/View/{}'.format(row[1]))
+            sources.append('https://equal.pet/content/ViewApp/{}'.format(row[1]))
+            links.append('https://equal.pet/content/View/{}'.format(row[1]))
 
-        data_dict = {'category':categories, 'id': ids, 'tag':tags, 'title':titles, 'content':contents, 'source_url':sources, 'image_url':images}
+        data_dict = {'category':categories, 'id': ids, 'tag':tags, 'title':titles, 'content':contents, 'source_url':sources, 'link_url': links, 'image_url':images}
         text_dataset = Dataset.from_dict(data_dict)
         self.__pinecone_index(text_dataset=text_dataset)
 
@@ -427,13 +518,44 @@ if __name__ == "__main__":
     db_port = 3307
 
     contentRetriever = EqualContentRetriever()
+
+    def test_question():
+        questions = [
+            "고양이가 이물을 섭식했을 때의 증상은 무엇인가요?",
+            "고양이가 이물을 삼키면 어떻게 대처해야 하나요?",
+            "이물 섭식으로 인한 긴급 상황 시 대처 방안은?",
+            "이물을 자주 먹는 고양이 보호자를 위한 팁?",
+            "이물을 섭식한 고양이가 있을 때 주의해야 할 사항은 무엇인가요?",
+            "고양이 이물 섭식을 예방하기 위해 보호자가 취할 수 있는 조치는 무엇인가요?",
+            "우리 고양이가 이물을 꿀꺽 삼켜버렸어요!",
+            "어떤 종류의 강아지 사료가 있으며 각각의 장단점은 무엇인가요?",
+            "건사료는 어떤 장점과 단점을 가지고 있나요?",
+            "습식사료는 어떤 장점과 단점을 가지고 있나요?",
+            "홈메이드 사료를 주는 것의 장단점은 무엇인가요?",
+            "생식(raw) 사료를 선택할 때 주의할 점은 무엇인가요?",
+            "화식을 주는 것의 장단점은 무엇인가요?",
+            "어떤 사료를 선택해야 하는지 결정하는 데 도움을 받는 방법은 무엇인가요?",
+            "사료를 선택할 때 주의해야 할 점은 무엇인가요?",
+            "우리 아이는 어떤 사료가 가장 잘 맞을까?",
+        ]
+
+        for question in questions:
+            ret = contentRetriever.question_related_to_nutrients(question)
+            print('{}:{}'.format(question, ret))
+
+    #test_question()
+
+    #contentRetriever.build_pincone_index(db_host=db_host, db_port=db_port, db_user=db_user, db_password=db_password, db_database=db_database)
     #contentRetriever.build_question_jsonl(db_host=db_host, db_port=db_port, db_user=db_user, db_password=db_password, db_database=db_database)
-    result = contentRetriever.get_random_questions('cat', '메인 쿤')
-    print(result)
-    result = contentRetriever.get_random_questions('cat')
-    print(result)
-    result = contentRetriever.get_random_questions('dog')
-    print(result)
+    
+    def random_question():
+        result = contentRetriever.get_random_questions('cat', '메인 쿤')
+        print(result)
+        result = contentRetriever.get_random_questions('cat')
+        print(result)
+        result = contentRetriever.get_random_questions('dog')
+        print(result)
+        contentRetriever.get_category_contents(pet_type='dog', )
 
     def tag_dump():
         sql = "select perpet.tag.id, perpet.tag.name as name from perpet.tag order by id"
@@ -456,8 +578,9 @@ if __name__ == "__main__":
                 output_file.write("{}\t{}\n".format(row[0], row[1]))
                 
 
-    # ret = contentRetriever.get_categories(breeds=BREEDS_DOG_TAG, pet_name='뽀삐')
-    # pprint.pprint(ret, indent=4)
+    def test_categories():
+        ret = contentRetriever.get_categories(breeds=BREEDS_DOG_TAG, pet_name='뽀삐')
+        print(ret)
         
     # print('-'* 80)
     
@@ -465,8 +588,8 @@ if __name__ == "__main__":
     # # ret = contentRetriever.get_contents(query='', category='의학 정보', tags=['276', '65'])
     # print(ret)
     
-    # ret = contentRetriever.get_contents(query='', breeds= BREEDS_DOG_TAG, category='반려 생활')
-    # pprint.pprint(ret, indent=4)
+    #ret = contentRetriever.get_contents(query='', breeds= BREEDS_DOG_TAG, category='반려 생활')
+    #print(ret)
     # print('-'* 80)
 
     # ret = contentRetriever.get_contents(query='', breeds= BREEDS_CAT_TAG, category='반려 생활')

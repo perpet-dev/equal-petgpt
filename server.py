@@ -18,14 +18,10 @@ from pymongo import MongoClient
 from py_eureka_client import eureka_client
 from config import PREFIXURL, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, OPENAI_API_KEY, PORT, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME
 from petprofile import PetProfile
-import asyncio
-# Configure logging
-# import logging
-# import os
-# LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG").upper()
-# logging.basicConfig(level=LOG_LEVEL)
-# logger = logging.getLogger("uvicorn")
-# logger.setLevel(LOG_LEVEL)
+import asynciofrom bookmark import bookmarks_get, bookmark_set, bookmark_delete, bookmark_check
+from packaging.version import Version
+from content_retriever import EqualContentRetriever, BREEDS_DOG_TAG, BREEDS_CAT_TAG
+
 from config import LOG_NAME, LOG_FILE_NAME, LOGGING_LEVEL
 from log_util import LogUtil
 logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
@@ -61,14 +57,6 @@ gpt-4-1106-preview	$10.00 / 1M tokens	$30.00 / 1M tokens
 gpt-4-1106-vision-preview	$10.00 / 1M tokens	$30.00 / 1M tokens
 
 '''
-# Configure logging
-#import logging
-# LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG").upper()
-# logging.basicConfig(level=LOG_LEVEL)
-# logger = logging.getLogger("uvicorn")
-# logger.setLevel(LOG_LEVEL)
-# from log_util import LogUtil
-# logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 
 # static files directory for web app
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -79,12 +67,12 @@ async def healthreport(request: Request):
     return templates.TemplateResponse("chat.html", {"request": request, "query_params": request.query_params})
 
 # Models for input validation and serialization
-
 class ContentItem(BaseModel):
     doc_id:str
     title: str
     content: str
     image_url: HttpUrl
+    source_url: HttpUrl
     link_url: HttpUrl
     tag: List[str] = []
 
@@ -96,21 +84,14 @@ class CategoryItem(BaseModel):
 class ContentRequest(BaseModel):
     content: str
 
+class BannerItem(BaseModel):
+    #배너 링크 url
+    link_url: HttpUrl
+    #배너 이미지
+    image_url: HttpUrl
 
 # Define a type variable for the GenericModel
 T = TypeVar('T')
-# class SortInfo(BaseModel):
-#     unsorted: bool
-#     sorted: bool
-#     empty: bool
-
-# class Pageable(BaseModel):
-#     sort: SortInfo
-#     pageNumber: int
-#     pageSize: int
-#     offset: int
-#     paged: bool
-#     unpaged: bool
 
 class ResponseContent(GenericModel, Generic[T]):
     content: T
@@ -127,10 +108,27 @@ class ApiResponse(GenericModel, Generic[T]):
     success: bool
     code: int
     msg: str
-    data: ResponseContent[T]
+    data: Optional[ResponseContent[T]]=None
 
 class BookmarkResponse(BaseModel):
     success: bool
+
+class BookmarkItem(BaseModel):
+    user_id: int
+    content_id : int
+    title : str
+    summary : str
+    image_url : str
+    source_url : str
+    link_url : str
+
+class VersionItem(BaseModel):
+    force_update : bool
+    platform : str
+    version : str
+    build_no : int
+    release_date : str
+    release_note : str
 
 class QuestionItem(BaseModel):
     title: str
@@ -143,7 +141,41 @@ class PetGPTQuestionListResponse(BaseModel):
 client = MongoClient(MONGODB)
 mongo_db = client.perpet_healthcheck
 collection = mongo_db["pet_images"]
+banner_collection = mongo_db["banners"]
+version_collection = mongo_db["versions"]
 
+# Assuming EqualContentRetriever is defined elsewhere and imported correctly
+contentRetriever = EqualContentRetriever()
+from petprofile import PetProfileRetriever
+petProfileRetriever = PetProfileRetriever()
+
+@app.get("/version")
+async def version(platform:str, version:str, build_no:int):
+    versions = []
+    platform = platform.lower()
+    try:
+        if platform == 'ios' or platform == 'android':
+            result = version_collection.find(filter={"platform":platform}).sort({'release_date':-1}).limit(1)
+            if Version(result[0]['version']) > Version(version):
+                force_update = True
+            elif Version(result[0]['version']) == Version(version) and result[0]['build_no'] > build_no:
+                force_update = True
+            else:
+                force_update = False
+
+            version_item = VersionItem(force_update=force_update, platform=result[0]['platform'], version=result[0]['version'], build_no=result[0]['build_no'], release_date=result[0]['release_date'], release_note=result[0]['release_note'])
+
+            return {
+                'success':True,
+                'code':200,
+                'msg':"Successfully retrieved version",
+                'data':version_item
+                }
+        else:
+            raise HTTPException(status_code=400, detail='plafrom should be ios or android')
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/process-pet-image")
 async def process_pet_images(
@@ -268,17 +300,22 @@ async def extract_questions(request: ContentRequest):
 
 # API Endpoints
 @app.get("/pet-knowledge-list/{pet_id}", response_model=ApiResponse[List[CategoryItem]])
-async def pet_knowledge_list(pet_id: str, page: int = Query(0, ge=0), items_per_page: int = Query(10, ge=1)):
+async def pet_knowledge_list(pet_id: int, page: int = Query(0, ge=0), items_per_page: int = Query(10, ge=1)):
     logger.debug('pet_knowledge_list : pet_id = {}'.format(pet_id))
     try:
         list = []
-        retriever = PetProfileRetriever()
-        pet_profile = retriever.get_pet_profile(pet_id)
-        retriever.close()
-
-        pet_name = pet_profile.pet_name
-        pet_type = pet_profile.pet_type
-        pet_tag_id = pet_profile.tag_id
+        
+        if pet_id == -1:
+            pet_name = 'no_name'
+            pet_type = 'dog'
+            pet_tag_id = '-1'
+        else:
+            retriever = PetProfileRetriever()
+            pet_profile = retriever.get_pet_profile(pet_id)
+            retriever.close()
+            pet_name = pet_profile.pet_name
+            pet_type = pet_profile.pet_type
+            pet_tag_id = pet_profile.tag_id
 
         categories = contentRetriever.get_categories(pet_type=pet_type, pet_name=pet_name)
 
@@ -314,68 +351,60 @@ async def pet_knowledge_list(pet_id: str, page: int = Query(0, ge=0), items_per_
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-class BannerItem(BaseModel):
-    #배너 링크 url
-    link_url: HttpUrl
-    #배너 이미지
-    image_url: HttpUrl
-
-# class BannerResponse(BaseModel):
-#     total_page: int
-#     list: List[BannerItem]
 #메인 배너 리스트
 @app.get("/main-banner-list", response_model=ApiResponse[List[BannerItem]])
 async def main_banner_list(page: int = Query(0, ge=0), size: int = Query(5, ge=1)):
     logger.debug('main_banner_list')
-    # link_url: https://equal.pet/content/View/77
-    # image_url: https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t4B9XEt74OltsmP.png
+
+    results = banner_collection.find()
+    banner_lst = list(results)
+    banners = []
+
+    try:
+        for banner in banner_lst:
+            banners.append(BannerItem(link_url=banner['link_url'], image_url=banner['image_url']))
     
-    # link_url: https://equal.pet/content/View/78
-    # image_url: https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t7kI0C6MomZT0fM.png
+        # Pagination logic
+        total_items = len(banners)
+        total_pages = (total_items + size - 1) // size
+        items_on_page = banners[page*size:(page+1)*size]
 
-    # link_url: https://equal.pet/content/View/79
-    # image_url: https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t1cSnF0N8xlW4Fj.png
-
-    banners = [
-        BannerItem(link_url="https://equal.pet/content/View/77", image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t4B9XEt74OltsmP.png"),
-        BannerItem(link_url="https://equal.pet/content/View/78", image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t7kI0C6MomZT0fM.png"),
-        BannerItem(link_url="https://equal.pet/content/View/79", image_url="https://perpet-s3-bucket-live.s3.ap-northeast-2.amazonaws.com/2023/11/29/t1cSnF0N8xlW4Fj.png"),
-    ]
-
-    # Pagination logic
-    total_items = len(banners)
-    total_pages = (total_items + size - 1) // size
-    items_on_page = banners[page*size:(page+1)*size]
-
-    response_content = ResponseContent(
-        content=items_on_page,
-        totalPages=total_pages,
-        last=page >= total_pages - 1,
-        totalElements=total_items,
-        first=page == 0,
-        size=size,
-        number=page,
-        numberOfElements=len(items_on_page),
-        empty=len(items_on_page) == 0
-    )
+        response_content = ResponseContent(
+            content=items_on_page,
+            totalPages=total_pages,
+            last=page >= total_pages - 1,
+            totalElements=total_items,
+            first=page == 0,
+            size=size,
+            number=page,
+            numberOfElements=len(items_on_page),
+            empty=len(items_on_page) == 0
+        )
+        
+        return ApiResponse(
+            success=True,
+            code=200,
+            msg="Successfully retrieved banners",
+            data=response_content
+        )
     
-    return ApiResponse(
-        success=True,
-        code=200,
-        msg="Successfully retrieved banners",
-        data=response_content
-    )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/pet-gpt-question-list/{pet_id}", response_model=ApiResponse[List[QuestionItem]])
-async def pet_gpt_question_list(pet_id: str, page: int = Query(0, ge=0), size: int = Query(3, ge=1)):
+async def pet_gpt_question_list(pet_id: int, page: int = Query(0, ge=0), size: int = Query(3, ge=1)):
     logger.debug(f"PetGPT Service for pet_id: {pet_id}")
     try:
-        retriever = PetProfileRetriever()
-        pet_profile = retriever.get_pet_profile(pet_id)
-        retriever.close()
+        if pet_id == -1:
+            pet_type = 'dog'
+            pet_breed = ''
+        else:
+            retriever = PetProfileRetriever()
+            pet_profile = retriever.get_pet_profile(pet_id)
+            retriever.close()
 
-        pet_type = pet_profile.pet_type
-        pet_breed = pet_profile.breed
+            pet_type = pet_profile.pet_type
+            pet_breed = pet_profile.breed
 
         selected_questions = contentRetriever.get_random_questions(pet_type=pet_type, breed=pet_breed, top_n=size)
         questions = []
@@ -538,25 +567,21 @@ async def startup_event():
     logger.debug("This is a debug message of PetGPT Service.")
     # Register with Eureka when the FastAPI app starts
     logger.info(f"Application startup: Registering PetGPT service on port {PORT} with Eureka at {EUREKA} and logging level: {LOGGING_LEVEL}")
-    await register_with_eureka()
-
-# Assuming EqualContentRetriever is defined elsewhere and imported correctly
-from content_retriever import EqualContentRetriever, BREEDS_DOG_TAG, BREEDS_CAT_TAG
-
-contentRetriever = EqualContentRetriever()
-from petprofile import PetProfileRetriever
-petProfileRetriever = PetProfileRetriever()
-
+    #await register_with_eureka()
 
 @app.get("/categories/", response_model=ApiResponse[List[dict]])
 async def get_categories(pet_id: int, page: int = Query(0, ge=0), size: int = Query(3, ge=1)):
     try:
-        retriever = PetProfileRetriever()
-        pet_profile = retriever.get_pet_profile(pet_id)
-        retriever.close()
+        if pet_id == -1:
+            pet_name = 'no_name'
+            pet_type = 'dog'
+        else:
+            retriever = PetProfileRetriever()
+            pet_profile = retriever.get_pet_profile(pet_id)
+            retriever.close()
 
-        pet_name = pet_profile.pet_name
-        pet_type = pet_profile.pet_type
+            pet_name = pet_profile.pet_name
+            pet_type = pet_profile.pet_type
 
         categories = contentRetriever.get_categories(pet_type=pet_type, pet_name=pet_name)  # Assume this returns all categories as List[str]
         
@@ -587,25 +612,41 @@ async def get_categories(pet_id: int, page: int = Query(0, ge=0), size: int = Qu
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.get("/document", response_model=ContentItem)
+async def get_document(doc_id: int=Query(77, ge=77)):
+    try:
+        doc_ = contentRetriever.get_document(doc_id=doc_id)
+        return ContentItem(doc_id= doc_['doc_id'], title=doc_['title'], content=doc_['content'], 
+                           image_url=doc_['image_url'], link_url=doc_['link_url'], tag=doc_['tag'],
+                           filter='', use_filter=False)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))    
+
 @app.get("/contents/", response_model=ApiResponse[List[ContentItem]])
 async def get_contents(query: str, pet_id: int, tags: Optional[List[str]] = Query(None),  page: int = 0, size: int = 3):
+    logger.debug('get_contents : {}'.format(query))
     # Assuming the 'tags' parameter can accept a list of strings
     # Convert query params to the format expected by your content retriever
     try:
-        retriever = PetProfileRetriever()
-        pet_profile = retriever.get_pet_profile(pet_id)
-        retriever.close()
-
-        pet_type = pet_profile.pet_type
-
         tags_list = []
-        if tags:
-            for tag in tags:
-                if len(tag)>0:
-                    tags_list.append(tag)
+
+        if pet_id == -1:
+            pet_type = 'dog'
+        else:
+            retriever = PetProfileRetriever()
+            pet_profile = retriever.get_pet_profile(pet_id)
+            retriever.close()
+
+            pet_type = pet_profile.pet_type
+
+            if tags:
+                for tag in tags:
+                    if len(tag)>0:
+                        tags_list.append(tag)
+                
+            logger.info(f"tags_list: {tags_list}")
             
-        logger.info(f"tags_list: {tags_list}")
-        
         content_items = contentRetriever.get_query_contents(query=query, pet_type=pet_type, tags=tags_list)
 
         #if len(content_items) < 2 and pet_type != None: # No result or One result
@@ -646,12 +687,111 @@ async def get_contents(query: str, pet_id: int, tags: Optional[List[str]] = Quer
         
         return response
     except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/bookmark-content", response_model=BookmarkResponse)
-async def bookmark_content(content_id: str, auth_info: str):
+@app.post("/bookmark", response_model=ApiResponse)
+async def set_bookmark(user_id: int, content_id: int):
     # Placeholder for bookmarking logic
-    return BookmarkResponse(success=True)
+    logger.debug('set bookmark')
+    try:
+        doc = contentRetriever.get_document(doc_id=content_id)
+        if doc['doc_id'] == str(content_id):
+            ret = bookmark_set(user_id=user_id, doc_id=content_id, title=doc['title'], content=doc['content'], image_url=doc['image_url'], source_url=doc['source_url'], link_url=doc['link_url'])
+        else:
+            ret = False
+
+        if ret == True:
+            return ApiResponse(
+                success=ret,
+                code=200,
+                msg="Successfully Set bookmark"
+            )
+        else:
+            return ApiResponse(
+                success=ret,
+                code=500,
+                msg="Can not set bookmark"              
+            )
+
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    #return BookmarkResponse(success=True)
+
+@app.get("/check_bookmark", response_model=ApiResponse)
+async def check_bookmark(user_id: int, content_id:int):
+    logger.debug('check bookmark')
+    try:
+        ret = bookmark_check(user_id=user_id, doc_id=content_id)
+        if ret == True:
+            return ApiResponse(success=True,
+                code=200,
+                msg="Content is in bookmark",
+            )
+        else:
+            return ApiResponse(
+                success=False,
+                code=200,
+                msg="Content is not in bookmark",
+            )    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/bookmark", response_model=ApiResponse[List[BookmarkItem]])
+async def get_bookmarks(user_id: int, page: int = 0, size: int = 1):
+    logger.debug('get_bookmarks')
+    try:
+        bookmarks = []
+        results = bookmarks_get(user_id=user_id)
+        # result => list
+        for result in results:
+            bookmarks.append(BookmarkItem(user_id=result['user_id'], content_id=result['doc_id'], title=result['title'], summary=result['summary'], image_url=result['image_url'], source_url=result['source_url'], link_url=result['link_url']))
+        
+        # Pagination logic
+        total_items = len(bookmarks)
+        total_pages = (total_items + size - 1) // size
+        items_on_page = bookmarks[page*size:(page+1)*size]
+
+        response_content = ResponseContent(
+            content=items_on_page,
+            totalPages=total_pages,
+            last=page >= total_pages - 1,
+            totalElements=total_items,
+            first=page == 0,
+            size=size,
+            number=page,
+            numberOfElements=len(items_on_page),
+            empty=len(items_on_page) == 0
+        )
+        
+        return ApiResponse(
+            success=True,
+            code=200,
+            msg="Successfully get bookmarks",
+            data=response_content
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/bookmark", response_model=ApiResponse)
+async def delete_bookmark(user_id: str, content_id:str):
+    logger.debug('delete bookmark')
+    try:
+        ret = bookmark_delete(user_id=user_id, doc_id=content_id)
+        if ret == True:
+            return ApiResponse(success=True,
+            code=200,
+            msg="Successfully delete bookmark",
+            )
+        else:
+            return ApiResponse(
+                success=False,
+                code=500,
+                msg="Can not delete bookmark",
+            )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/get-pet-profile/{pet_id}", response_model=PetProfile)
 async def get_pet_profile(pet_id: int):
