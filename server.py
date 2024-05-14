@@ -459,7 +459,7 @@ async def create_vet_comment(pet_profile: PetProfile):
     skip mentionning supplements elements like 영양소인 오메가-3 지방산, 코엔자임 Q10, 아르기닌, 타우린, 항산화제, 비타민 B-복합체 because you will generate in another API.
 '''
     payload = {
-        "model": "gpt-4",  # or another model name as appropriate
+        "model": "gpt-4-turbo", #"gpt-4",  # or another model name as appropriate
         "messages": [
             {"role": "system", "content": systemquestion},
             {"role": "user", "content": f"The pet's name is {pet_profile.pet_name}, type is {pet_profile.pet_type}, breed is {pet_profile.breed}, age is {pet_profile.age}."}
@@ -511,7 +511,7 @@ async def create_vet_comment(pet_profile: PetProfile):
     Don't forget to generate only up to 3 sentences.
 '''
     payload = {
-        "model": "gpt-4",  # Specify the correct model
+        "model": "gpt-4-turbo", #"gpt-4",  # Specify the correct model
         "messages": [
             {"role": "system", "content": systemquestion},
             {"role": "user", "content": f"The pet's name is {pet_profile.pet_name}, type is {pet_profile.pet_type}, breed is {pet_profile.breed}, age is {pet_profile.age}."}
