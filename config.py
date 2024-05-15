@@ -9,7 +9,8 @@ PREFIXURL="/petgpt-service"
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 OPENAI_ORG = "org-oMDD9ptBReP4GSSW5lMD1wv6"
 OPENAI_PROJ = "proj_cfKAM38EYeptw1DVgvQ1K3xm"
-OPENAI_API_KEY = "sk-proj-0CpN18GYzMl614IG7TonT3BlbkFJmAkkvleEPkZ3hqP1K24E"
+#OPENAI_API_KEY = "sk-proj-0CpN18GYzMl614IG7TonT3BlbkFJmAkkvleEPkZ3hqP1K24E"
+OPENAI_API_KEY = "sk-proj-IflClp49epIOSBVKlmcrT3BlbkFJNWifAmYTHOqV6Tw2wJjL"
 
 OPENAI_EMBEDDING_MODEL_NAME = 'text-embedding-3-small'
 OPENAI_EMBEDDING_DIMENSION = 1536
