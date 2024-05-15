@@ -15,10 +15,7 @@ if [ -z "$IMAGE_TAG" ]; then
     exit 1
 fi
 
-# Build Docker image
-docker build --no-cache -t ${REGISTRY_REPO} .
-
-# Tag and push the image to the repository
-docker tag ${REGISTRY_REPO}:latest ${REGISTRY_REPO}:${IMAGE_TAG}
-docker push ${REGISTRY_REPO}:${IMAGE_TAG}
-docker push ${REGISTRY_REPO}:latest
+# Build Docker image for multiple platforms
+docker buildx build --platform linux/amd64,linux/arm64 --no-cache -t ${REGISTRY_REPO}:${IMAGE_TAG} --push .
+# Tag the image with the latest tag and push
+docker buildx build --platform linux/amd64,linux/arm64 --no-cache -t ${REGISTRY_REPO}:latest --push .

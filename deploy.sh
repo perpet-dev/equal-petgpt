@@ -1,6 +1,7 @@
 #!/bin/bash
 # Enable error handling
 set -e
+
 # Set variables
 REGION="ap-northeast-2"
 ACCOUNT_ID="868615245439"
@@ -12,16 +13,13 @@ REGISTRY_REPO="${ECR}/${REPO_NAME}"
 read -p "Please enter the project version (default is 'latest'): " IMAGE_TAG
 IMAGE_TAG=${IMAGE_TAG:-latest}
 
-# Build Docker image
-docker build --no-cache -t "${REGISTRY_REPO}" .
-
 # ECR login
 PASSWORD=$(aws ecr get-login-password --region "${REGION}")
 echo "${PASSWORD}" | docker login --username AWS --password-stdin "${ECR}"
 
-# Tag and push the image
+# Build and push Docker image for multiple platforms
 if [ "${IMAGE_TAG}" != "latest" ]; then
-    docker tag "${REGISTRY_REPO}:latest" "${REGISTRY_REPO}:${IMAGE_TAG}"
-    docker push "${REGISTRY_REPO}:${IMAGE_TAG}"
+    docker buildx build --platform linux/amd64,linux/arm64 --no-cache -t "${REGISTRY_REPO}:${IMAGE_TAG}" --push .
 fi
-docker push "${REGISTRY_REPO}:latest"
+
+docker buildx build --platform linux/amd64,linux/arm64 --no-cache -t "${REGISTRY_REPO}:latest" --push .
