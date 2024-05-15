@@ -8,7 +8,6 @@ import uvicorn
 from pydantic import BaseModel, HttpUrl
 from pydantic.generics import GenericModel
 from typing import Generic, TypeVar, List, Optional
-from config import PORT, EUREKA, MONGODB
 from datetime import datetime
 import base64
 import openai
@@ -16,7 +15,7 @@ from openai import OpenAI
 import aiohttp
 from pymongo import MongoClient
 from py_eureka_client import eureka_client
-from config import PREFIXURL, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, OPENAI_API_KEY, PORT, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME
+from config import PORT, EUREKA, MONGODB, PREFIXURL, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, OPENAI_API_KEY, PORT, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME, WEBSOCKET_URL
 from petprofile import PetProfile
 import asyncio
 from bookmark import bookmarks_get, bookmark_set, bookmark_delete, bookmark_check
@@ -65,7 +64,8 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get("/petgpt", response_class=HTMLResponse)
 async def healthreport(request: Request):
-    return templates.TemplateResponse("chat.html", {"request": request, "query_params": request.query_params})
+    websocket_url = WEBSOCKET_URL
+    return templates.TemplateResponse("chat.html", {"request": request, "websocket_url": websocket_url, "query_params": request.query_params})
 
 # Models for input validation and serialization
 class ContentItem(BaseModel):

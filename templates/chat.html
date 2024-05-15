@@ -484,8 +484,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function connect() {
         let petId = document.getElementById("petId").value;
-        //ws = new WebSocket(`ws://0.0.0.0:9090/ws/generation/${petId}`);
-        ws = new WebSocket(`ws://dev.promptinsight.ai:10002/petgpt-service/ws/generation/${petId}`);
+        let ws = new WebSocket(`{{ websocket_url }}${petId}`);
+        //ws = new WebSocket(`ws://dev.promptinsight.ai:10002/petgpt-service/ws/generation/${petId}`);
     
         ws.onopen = () => {
             console.log("Connected to WebSocket");
