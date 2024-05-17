@@ -8,8 +8,8 @@ from typing import Generic, TypeVar, List, Optional
 from config import LOG_FILE_NAME, LOGGING_LEVEL, LOG_NAME
 from log_util import LogUtil
 logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
-# import logging
-# logger = logging.getLogger(__name__)
+import logging
+logger = logging.getLogger(__name__)
 
 
 class Supplement(BaseModel):
@@ -42,7 +42,7 @@ class PetProfile(BaseModel):
 from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE
 class PetProfileRetriever():
     def __init__(self, db_host=DB_HOST, db_port=DB_PORT, db_user=DB_USER, db_password = DB_PASSWORD, db_database=DB_DATABASE):
-        print('Initializing PetProfileRetriever')
+        logger.debug('Initializing PetProfileRetriever')
         try:
             # Establishing a connection to MariaDB
             self.connection = mysql.connector.connect(
@@ -54,15 +54,15 @@ class PetProfileRetriever():
             )
             # Creating a cursor object
             self.cursor = self.connection.cursor()
-            print('Database connection successfully established.')
+            logger.debug('Database connection successfully established.')
         except Error as e:
-            print(f"Error connecting to MariaDB Platform: {e}")
+            logger.debug(f"Error connecting to MariaDB Platform: {e}")
             self.connection = None
             self.cursor = None
 
     def get_pet_profile(self, pet_id):
         if not self.cursor:
-            print("Connection was not established.")
+            logger.debug("Connection was not established.")
             return None
         
         sql = """
@@ -114,7 +114,7 @@ class PetProfileRetriever():
         if self.connection:
             self.cursor.close()
             self.connection.close()
-            print("Database connection closed.")
+            logger.debug("Database connection closed.")
 
     def process_pet_body_form(self, pet_profile):
         body_form_codes = {

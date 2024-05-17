@@ -10,7 +10,7 @@ from petprofile import PetProfileRetriever
 petProfileRetriever = PetProfileRetriever()
 
 def on_message(ws, pet_id, message):
-    print("on_message\n")
+    #print("on_message\n")
     global accumulated_message
     data = json.loads(message) 
     

@@ -12,7 +12,7 @@ import uuid
 from fastapi import WebSocket, WebSocketDisconnect
 from petprofile import PetProfileRetriever
 
-from config import LOG_NAME, LOGGING_LEVEL, LOG_FILE_NAME
+from config import GPT4DEFAULT, GPT4VISIOMMODEL, LOG_NAME, LOGGING_LEVEL, LOG_FILE_NAME
 
 from log_util import LogUtil
 logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
@@ -278,7 +278,7 @@ async def handle_websocket_messages(websocket: WebSocket, data: dict):
             messages.insert(0, system_message)
     
     # Determine if the message contains images
-    model = "gpt-4-vision-preview" if any(m.get("type") == "image_url" for m in messages if isinstance(m, dict)) else "gpt-4-turbo"
+    model = GPT4VISIOMMODEL if any(m.get("type") == "image_url" for m in messages if isinstance(m, dict)) else GPT4DEFAULT
     logger.debug(f"Should send messages: {messages}")
 
     try:
@@ -366,7 +366,7 @@ async def generation_websocket_endpoint_chatgpt(websocket: WebSocket, pet_id: st
                 continue
 
             # Choose the model based on whether an image is included
-            model = "gpt-4-vision-preview" if contains_image else "gpt-4-0125-preview"
+            model = GPT4VISIOMMODEL if contains_image else GPT4DEFAULT
             
             try: 
                 # if contains_image:
@@ -457,7 +457,7 @@ if __name__ == "__main__":
                     '''
 
      
-        model =  'gpt-4-turbo' #-turbo' #'gpt-4' # 'gpt-3.5-turbo'
+        model =  GPT4DEFAULT#'gpt-4-turbo' #-turbo' #'gpt-4' # 'gpt-3.5-turbo'
         
         #ad_prompt = " Also you should recommend '이퀄 영양제' for pet's health like salesman if query is related to nutrition. '이퀄 영양제' has '품종별 영양제' for '말티즈','푸들', '리트리버', '포메라니안', '코리안숏헤어', '골든리트리버' and '1:1 맞춤 영양제' for all breeds'"
         prompt = system_txt + sales_prompt + ingredient_prompt
@@ -468,7 +468,7 @@ if __name__ == "__main__":
         #conversation = prepare_messages_for_openai(conversation_with_system)
 
         client = OpenAI(
-            organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
+            organization=OPENAI_ORG,
             api_key=OPENAI_API_KEY
         )
 
@@ -483,13 +483,13 @@ if __name__ == "__main__":
             #stream=True
         )
 
-        print(response)
+        logger.debug(response)
         response.choices[0].message.content
 
     def check_nutrition_question(text):
         prompt = 'Is following text is related to nutrition : here is text {}'.format(text)
         client = OpenAI(
-            organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
+            organization=OPENAI_ORG,
             api_key=OPENAI_API_KEY
         )
         model = 'gpt-3.5-turbo'
@@ -498,14 +498,14 @@ if __name__ == "__main__":
             model = model,
             messages=[
                 {"role": "system", "content": system_txt }, 
-                {"role":"user", "content":"Here is the content: {}".format(question)}
+                {"role":"user", "content":"Here is the content: {}".format(prompt)}
             ],
             temperature=0,
             max_tokens=1024,
             #stream=True
         )
 
-        print(response)
+        logger.debug(response)
         response.choices[0].message.content
 
     #question = '나이 들어 가면서 눈 건강이 약해지는 것 같아요. 어떻게 할까요?'
@@ -513,9 +513,9 @@ if __name__ == "__main__":
     #question = '고양이도 우울증에 걸리나요?'
     #question = '강아지에게 괜찮은 장남감은?'
     
-    # 이름: 똘이, 견종: 리트리버, 나이: 7살, 몸무게: 12kg, 
-    for question in questions:
-        print(question)
-        petgpt_test(question, pet_name='추추', pet_breed='말티즈', pet_age='4', pet_weight='6kg')
-    #prepare_messages_for_openai(messages=[{"role":"system","content":"$message","pet_id":13, "timestamp":"$timeStamp"}])
-    #check_nutrition_question(question)
+    # # 이름: 똘이, 견종: 리트리버, 나이: 7살, 몸무게: 12kg, 
+    # for question in questions:
+    #     logger.debug(question)
+    #     petgpt_test(question, pet_name='추추', pet_breed='말티즈', pet_age='4', pet_weight='6kg')
+    # #prepare_messages_for_openai(messages=[{"role":"system","content":"$message","pet_id":13, "timestamp":"$timeStamp"}])
+    # #check_nutrition_question(question)

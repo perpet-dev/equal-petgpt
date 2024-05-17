@@ -15,7 +15,7 @@ from openai import OpenAI
 import aiohttp
 from pymongo import MongoClient
 from py_eureka_client import eureka_client
-from config import PORT, EUREKA, MONGODB, PREFIXURL, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, OPENAI_API_KEY, PORT, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME, WEBSOCKET_URL
+from config import GPT4DEFAULT, PORT, EUREKA, MONGODB, PREFIXURL, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, OPENAI_API_KEY, GPT4VISIOMMODEL, PORT, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME, WEBSOCKET_URL
 from petprofile import PetProfile
 import asyncio
 from bookmark import bookmarks_get, bookmark_set, bookmark_delete, bookmark_check
@@ -221,7 +221,7 @@ async def process_pet_images(
     
     url = "https://api.openai.com/v1/chat/completions"
     payload = {
-        "model": "gpt-4-vision-preview",
+        "model": GPT4VISIOMMODEL,#"gpt-4-vision-preview",
         "messages": messages,
         "max_tokens": 500
     }
@@ -263,7 +263,7 @@ def save_to_database(user_id: int, pet_name: str, image_data: List[str]):
         else:
             return {"message": "No changes made to the images"}
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         raise HTTPException(status_code=500, detail="Failed to save or update image data")
     
 @app.post("/extract-questions")
@@ -286,17 +286,17 @@ async def extract_questions(request: ContentRequest):
         Output should be in Korean language.    
         '''
     client = OpenAI(
-        organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
+        organization=OPENAI_ORG,
         api_key=OPENAI_API_KEY
     )
     completion = client.chat.completions.create(
-        model="gpt-4",  #"gpt-3.5-turbo",#,"gpt-4", 
+        model=GPT4DEFAULT,  #"gpt-3.5-turbo",#,"gpt-4", 
         messages=[
             {"role": "system", "content": f"{systemquestion}"},
             {"role": "user", "content": f"Here is the content: {content_to_analyze}"},
         ]
     )
-    print(completion.choices[0].message)
+    logger.debug(completion.choices[0].message)
     return {"message": f"{completion.choices[0].message.content}"}
 
 # API Endpoints
@@ -460,7 +460,7 @@ async def create_vet_comment(pet_profile: PetProfile):
     skip mentionning supplements elements like 영양소인 오메가-3 지방산, 코엔자임 Q10, 아르기닌, 타우린, 항산화제, 비타민 B-복합체 because you will generate in another API.
 '''
     payload = {
-        "model": "gpt-3.5-turbo-0125",#"gpt-4",  # or another model name as appropriate
+        "model": GPT4DEFAULT,#"gpt-4",  # or another model name as appropriate
         "messages": [
             {"role": "system", "content": systemquestion},
             {"role": "user", "content": f"The pet's name is {pet_profile.pet_name}, type is {pet_profile.pet_type}, breed is {pet_profile.breed}, age is {pet_profile.age}."}
@@ -512,7 +512,7 @@ async def create_vet_comment(pet_profile: PetProfile):
     Don't forget to generate only up to 3 sentences.
 '''
     payload = {
-        "model": "gpt-3.5-turbo-0125", #"gpt-4",  # Specify the correct model
+        "model": GPT4DEFAULT,#"gpt-3.5-turbo-0125", #"gpt-4",  # Specify the correct model
         "messages": [
             {"role": "system", "content": systemquestion},
             {"role": "user", "content": f"The pet's name is {pet_profile.pet_name}, type is {pet_profile.pet_type}, breed is {pet_profile.breed}, age is {pet_profile.age}."}
@@ -548,24 +548,16 @@ async def register_with_eureka():
             logger.info("Registration with Eureka successful.")
         except Exception as e:
             logger.error(f"Failed to register with Eureka: {e}")
-
-# # Run the async function
-# loop = asyncio.get_event_loop()
-# loop.run_until_complete(register_with_eureka())
-
+            raise HTTPException(status_code=500, detail="Failed to register with Eureka")
+        
 from generation import (
     generation_websocket_endpoint_chatgpt
-    #websocket_endpoint
 )
 app.websocket("/ws/generation/{pet_id}")(generation_websocket_endpoint_chatgpt)
-#app.websocket("/ws/generation")(websocket_endpoint)
-
 
 @app.on_event("startup")
 async def startup_event():
-    import logging 
-    logger.setLevel(logging.DEBUG)
-    logger.debug("This is a debug message of PetGPT Service.")
+    logger.setLevel(LOGGING_LEVEL)
     # Register with Eureka when the FastAPI app starts
     logger.info(f"Application startup: Registering PetGPT service on port {PORT} with Eureka at {EUREKA} and logging level: {LOGGING_LEVEL}")
     await register_with_eureka()
@@ -806,9 +798,10 @@ async def get_pet_profile(pet_id: int):
         logger.debug(f"pet_profile: {pet_profile}")
         return pet_profile
     else:
+        logger.error(f"Pet profile not found for pet_id: {pet_id}")
         raise HTTPException(status_code=404, detail="Pet profile not found")
 
 if __name__ == "__main__":
     import uvicorn
-    print(f"Starting server on port {PORT} with Eureka server: {EUREKA}")
+    logger.info(f"Starting server on port {PORT} with Eureka server: {EUREKA}")
     uvicorn.run("server:app", host="0.0.0.0", port=PORT, workers=4, log_level="debug")

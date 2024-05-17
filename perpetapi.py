@@ -1,15 +1,12 @@
 # Path: perpetapi.py
 import requests
-from config import LOG_FILE_NAME, LOGGING_LEVEL, LOG_NAME
+from config import LOG_FILE_NAME, LOGGING_LEVEL, LOG_NAME, EQUALAPIURL
 from log_util import LogUtil
 logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 
-# The base URL or proxy-client where your service is hosted
-base_url =  "https://api.equal.pet"
-
 def login(user_id, channel_type):
     # The URL to which the request is sent
-    url = f"{base_url}/user-service/v1/auth/social"
+    url = f"{EQUALAPIURL}/user-service/v1/auth/social"
 
     # The JSON data you want to send with the request
     data = {
@@ -24,7 +21,7 @@ def login(user_id, channel_type):
     if response.status_code == 200:
         # Parsing the JSON response
         json_response = response.json()
-        print("Login Successful:", json_response)
+        logger.debug("Login Successful:", json_response)
         return {
             "accessToken": json_response["data"]["accessToken"],
             "user_id": json_response["data"]["id"],
@@ -32,7 +29,7 @@ def login(user_id, channel_type):
             "refreshToken": json_response["data"]["refreshToken"]
         }
     else:
-        print("Login Failed:", response.status_code)
+        logger.error("Login Failed:", response.status_code)
         return {
             "success": False,
             "message": "Login failed"
@@ -40,7 +37,7 @@ def login(user_id, channel_type):
     
 def getPetInfoList(access_token):
     # Endpoint for the GET request
-    endpoint = f"{base_url}/user-service/v1/pet/list"
+    endpoint = f"{EQUALAPIURL}/user-service/v1/pet/list"
     # Headers including the Authorization header with the Bearer token
     headers = {
         "Authorization": f"Bearer {access_token}"
@@ -61,19 +58,19 @@ def getPetInfoList(access_token):
     if response.status_code == 200:
         # Parsing the JSON response
         json_response = response.json()
-        print("Request Successful:", json_response)
+        logger.debug("Request Successful:", json_response)
     else:
-        print("Request Failed:", response.status_code)
+        logger.error("Request Failed:", response.status_code)
         # Checking if the request was successful
 
 # Example usage
 # user_id = "001539.a6d68bcd08e24b40bd2fcd25832e8ab9.0344"
 # channel_type = "APPLE"
 
-channel_type = "KAKAO"
-user_id = "3058651892"
+# channel_type = "KAKAO"
+# user_id = "3058651892"
 
-login_details = login(user_id, channel_type)
-if login_details:
-    getPetInfoList(login_details["accessToken"])
+# login_details = login(user_id, channel_type)
+# if login_details:
+#     getPetInfoList(login_details["accessToken"])
 

@@ -68,7 +68,7 @@ engine = create_engine(DATABASE_URL, echo=True)
 Session = sessionmaker(bind=engine)
 session = Session()
 
-for pet in session.query(Pet).join(User).join(Breeds).all():
-    print(f"Pet Name: {pet.name}, Owner Name: {pet.owner.nickname}, Breed: {pet.breed.name}, age: {pet.age}")
+# for pet in session.query(Pet).join(User).join(Breeds).all():
+#     print(f"Pet Name: {pet.name}, Owner Name: {pet.owner.nickname}, Breed: {pet.breed.name}, age: {pet.age}")
 
 

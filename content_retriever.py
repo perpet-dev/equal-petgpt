@@ -19,7 +19,7 @@ from pymongo import MongoClient
 from datetime import datetime
 
 from subject_json import SUBJECT_JSON
-from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE, OPENAI_API_KEY, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, PINECONE_API_KEY, PINECONE_INDEX
+from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE, OPENAI_API_KEY, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, OPENAI_ORG, PINECONE_API_KEY, PINECONE_INDEX
 from config import MONGODB
 
 INDEX_NAME = 'equalapp-240514'
@@ -101,7 +101,7 @@ class EqualContentRetriever():
         with jsonlines.open("questions.jsonl") as jsonl_f:
             for line in jsonl_f.iter():
                 # put mongo db 
-                print(line['question'])
+                logger.debug(line['question'])
                 self.questions_collection.insert_one(line)
 
     def __load_questions_from_mongo(self):
@@ -132,12 +132,9 @@ class EqualContentRetriever():
 
     def __generate_questions(self, system_question:str, content_to_analyze:str):
         logger.debug('EqualContentRetriever::__generate_questions')
-        
-        OPENAI_API_KEY="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"
-        
         client = OpenAI(
             api_key = OPENAI_API_KEY,
-            organization='org-oMDD9ptBReP4GSSW5lMD1wv6',
+            organization=OPENAI_ORG,
         )
         
         completion = client.chat.completions.create(
@@ -541,7 +538,7 @@ if __name__ == "__main__":
 
         for question in questions:
             ret = contentRetriever.question_related_to_nutrients(question)
-            print('{}:{}'.format(question, ret))
+            logger.debug('{}:{}'.format(question, ret))
 
     #test_question()
 
@@ -550,11 +547,11 @@ if __name__ == "__main__":
     
     def random_question():
         result = contentRetriever.get_random_questions('cat', '메인 쿤')
-        print(result)
+        logger.debug(result)
         result = contentRetriever.get_random_questions('cat')
-        print(result)
+        logger.debug(result)
         result = contentRetriever.get_random_questions('dog')
-        print(result)
+        logger.debug(result)
         contentRetriever.get_category_contents(pet_type='dog', )
 
     def tag_dump():
@@ -580,7 +577,7 @@ if __name__ == "__main__":
 
     def test_categories():
         ret = contentRetriever.get_categories(breeds=BREEDS_DOG_TAG, pet_name='뽀삐')
-        print(ret)
+        logger.debug(ret)
         
     # print('-'* 80)
     

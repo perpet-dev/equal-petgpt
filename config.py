@@ -7,9 +7,11 @@ WEBSOCKET_URL = os.getenv('WEBSOCKET_URL', "ws://dev.promptinsight.ai:10002/petg
 EUREKA = os.getenv('EUREKA_CLIENT_SERVICEURL_DEFAULTZONE', "http://dev.promptinsight.ai:10001/eureka") 
 PREFIXURL= os.getenv('PREFIXURL', "/petgpt-service")
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
-OPENAI_ORG = "org-oMDD9ptBReP4GSSW5lMD1wv6"
-OPENAI_PROJ = "proj_cfKAM38EYeptw1DVgvQ1K3xm"
+OPENAI_ORG = os.getenv('OPENAI_ORG', "org-oMDD9ptBReP4GSSW5lMD1wv6")
+OPENAI_PROJ = os.getenv('OPENAI_PROJ', "proj_cfKAM38EYeptw1DVgvQ1K3xm")
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', "sk-proj-IflClp49epIOSBVKlmcrT3BlbkFJNWifAmYTHOqV6Tw2wJjL") 
+GPT4VISIOMMODEL = os.getenv('GPT4VISIOMMODEL', "gpt-4o") #gpt-4-vision-preview
+GPT4DEFAULT = os.getenv('GPT4DEFAULT', "gpt-4o") #gpt-4-turbo
 OPENAI_EMBEDDING_MODEL_NAME = 'text-embedding-3-small'
 OPENAI_EMBEDDING_DIMENSION = 1536
 PINECONE_API_KEY =  os.getenv('PINECONE_API_KEY', 'dcce7d00-5f7f-48bf-8b19-33480e74ad12')
@@ -40,6 +42,5 @@ DB_PORT = int(os.getenv('DB_PORT', 3306))
 LOG_NAME = 'EqualPetGPT'
 LOG_FILE_NAME = './log/petgpt.log'
 USE_SALES_PROMPT = True
-
-
+EQUALAPIURL = os.getenv('EQUALAPIURL', "https://api2.equal.pet")
 

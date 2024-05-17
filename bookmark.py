@@ -50,19 +50,19 @@ def bookmark_delete(user_id:int, doc_id:int):
     return bool(result.acknowledged)
 
 
-if __name__ == "__main__":
-    bookmark_set(user_id=223, doc_id=150, title="제목", content="본문본문ggksjgdsljflsdjflds dsfjsdf ldsfjfdsl jfslkdsfjldfsjdsfjkldfsjlfsd ldfsj lfdslfdsj lfjdlfdsl jdfsl f jldsjfslfjdslfj slfds", image_url='', link_url='')
-    bookmark_set(user_id=223, doc_id=154, title="제목", content="본문본문ggksjgdsljflsdjflds dsfjsdf ldsfjfdsl jfslkdsfjldfsjdsfjkldfsjlfsd ldfsj lfdslfdsj lfjdlfdsl jdfsl f jldsjfslfjdslfj slfds", image_url='', link_url='')
-    bookmark_set(user_id=223, doc_id=157, title="제목", content="본문본문ggksjgdsljflsdjflds dsfjsdf ldsfjfdsl jfslkdsfjldfsjdsfjkldfsjlfsd ldfsj lfdslfdsj lfjdlfdsl jdfsl f jldsjfslfjdslfj slfds", image_url='', link_url='')
-    bookmark_set(user_id=13, doc_id=144, title="제목", content="본문본문ggksjgdsljflsdjflds dsfjsdf ldsfjfdsl jfslkdsfjldfsjdsfjkldfsjlfsd ldfsj lfdslfdsj lfjdlfdsl jdfsl f jldsjfslfjdslfj slfds", image_url='', link_url='')
-    bookmark_set(user_id=13, doc_id=142, title="제목", content="본문본문ggksjgdsljflsdjflds dsfjsdf ldsfjfdsl jfslkdsfjldfsjdsfjkldfsjlfsd ldfsj lfdslfdsj lfjdlfdsl jdfsl f jldsjfslfjdslfj slfds", image_url='', link_url='')
-    bookmark_set(user_id=13, doc_id=132, title="제목", content="본문본문ggksjgdsljflsdjflds dsfjsdf ldsfjfdsl jfslkdsfjldfsjdsfjkldfsjlfsd ldfsj lfdslfdsj lfjdlfdsl jdfsl f jldsjfslfjdslfj slfds", image_url='', link_url='')
+# if __name__ == "__main__":
+#     bookmark_set(user_id=223, doc_id=150, title="제목", content="본문본문ggksjgdsljflsdjflds dsfjsdf ldsfjfdsl jfslkdsfjldfsjdsfjkldfsjlfsd ldfsj lfdslfdsj lfjdlfdsl jdfsl f jldsjfslfjdslfj slfds", image_url='', link_url='')
+#     bookmark_set(user_id=223, doc_id=154, title="제목", content="본문본문ggksjgdsljflsdjflds dsfjsdf ldsfjfdsl jfslkdsfjldfsjdsfjkldfsjlfsd ldfsj lfdslfdsj lfjdlfdsl jdfsl f jldsjfslfjdslfj slfds", image_url='', link_url='')
+#     bookmark_set(user_id=223, doc_id=157, title="제목", content="본문본문ggksjgdsljflsdjflds dsfjsdf ldsfjfdsl jfslkdsfjldfsjdsfjkldfsjlfsd ldfsj lfdslfdsj lfjdlfdsl jdfsl f jldsjfslfjdslfj slfds", image_url='', link_url='')
+#     bookmark_set(user_id=13, doc_id=144, title="제목", content="본문본문ggksjgdsljflsdjflds dsfjsdf ldsfjfdsl jfslkdsfjldfsjdsfjkldfsjlfsd ldfsj lfdslfdsj lfjdlfdsl jdfsl f jldsjfslfjdslfj slfds", image_url='', link_url='')
+#     bookmark_set(user_id=13, doc_id=142, title="제목", content="본문본문ggksjgdsljflsdjflds dsfjsdf ldsfjfdsl jfslkdsfjldfsjdsfjkldfsjlfsd ldfsj lfdslfdsj lfjdlfdsl jdfsl f jldsjfslfjdslfj slfds", image_url='', link_url='')
+#     bookmark_set(user_id=13, doc_id=132, title="제목", content="본문본문ggksjgdsljflsdjflds dsfjsdf ldsfjfdsl jfslkdsfjldfsjdsfjkldfsjlfsd ldfsj lfdslfdsj lfjdlfdsl jdfsl f jldsjfslfjdslfj slfds", image_url='', link_url='')
     
-    print(bookmarks_get(user_id=223))
-    print(bookmarks_get(user_id=13))
+#     print(bookmarks_get(user_id=223))
+#     print(bookmarks_get(user_id=13))
 
-    bookmark_delete(user_id=13, doc_id=142)
-    print(bookmarks_get(user_id=13))
+#     bookmark_delete(user_id=13, doc_id=142)
+#     print(bookmarks_get(user_id=13))
 
-    bookmark_delete(user_id=223, doc_id=150)
-    print(bookmarks_get(user_id=223))
+#     bookmark_delete(user_id=223, doc_id=150)
+#     print(bookmarks_get(user_id=223))
