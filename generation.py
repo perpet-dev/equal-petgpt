@@ -223,7 +223,7 @@ async def openai_chat_api_request(model: str, messages: List[dict]):
         "model": model,
         "messages": messages
     }
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as session:
         async with session.post(OPENAI_API_URL, json=payload, headers=headers) as response:
             if response.status == 200:
                 return await response.json()

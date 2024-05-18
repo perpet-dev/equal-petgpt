@@ -27,4 +27,4 @@ ENV PORT 10070
 # CMD can still use variable substitution in the shell form
 #CMD ["python", "server.py"]
 #CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", $PORT, "--workers", "4"]
-CMD uvicorn server:app --host 0.0.0.0 --port $PORT --workers 4
+CMD uvicorn server:app --host 0.0.0.0 --port $PORT --workers 5 --limit-concurrency 100 --timeout-keep-alive 5

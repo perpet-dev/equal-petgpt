@@ -231,7 +231,7 @@ async def process_pet_images(
         "Authorization": f"Bearer {OPENAI_API_KEY}",
         "OpenAI-Project": f"{OPENAI_PROJ}"
     }
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as session:
         async with session.post(url, json=payload, headers=headers) as response:
             result = await response.json()
             logger.debug(result)
@@ -475,7 +475,7 @@ async def create_vet_comment(pet_profile: PetProfile):
     
     logger.debug(f"payload:{payload}")
     logger.debug(f"headers:{headers}")
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as session:
         async with session.post(OPENAI_API_URL, json=payload, headers=headers) as response:
             if response.status != 200:
                 raise HTTPException(status_code=response.status, detail="Error calling OpenAI API")
@@ -526,7 +526,7 @@ async def create_vet_comment(pet_profile: PetProfile):
     }
 
     # Use aiohttp to make asynchronous HTTP requests
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as session:
         async with session.post(OPENAI_API_URL, json=payload, headers=headers) as response:
             if response.status != 200:
                 logger.error(f"Error calling OpenAI API: {response.status}")
