@@ -6,6 +6,7 @@ PORT = int(os.getenv('PORT', 9090))
 WEBSOCKET_URL = os.getenv('WEBSOCKET_URL', "ws://dev.promptinsight.ai:10002/petgpt-service/ws/generation/")
 EUREKA = os.getenv('EUREKA_CLIENT_SERVICEURL_DEFAULTZONE', "http://dev.promptinsight.ai:10001/eureka") 
 PREFIXURL= os.getenv('PREFIXURL', "/petgpt-service")
+#PREFIXURL= os.getenv('PREFIXURL', "/")
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 OPENAI_ORG = os.getenv('OPENAI_ORG', "org-oMDD9ptBReP4GSSW5lMD1wv6")
 OPENAI_PROJ = os.getenv('OPENAI_PROJ', "proj_cfKAM38EYeptw1DVgvQ1K3xm")
@@ -44,3 +45,8 @@ LOG_FILE_NAME = './log/petgpt.log'
 USE_SALES_PROMPT = True
 EQUALAPIURL = os.getenv('EQUALAPIURL', "https://api2.equal.pet")
 
+import socket
+HOSTNAME = socket.gethostname()
+IP_ADDRESS = socket.gethostbyname(HOSTNAME)
+# Define the fetch URL for sending notifications
+FETCH_URL_NOTIF = "http://dev.promptinsight.ai:10002/petgpt-service/send-notification"

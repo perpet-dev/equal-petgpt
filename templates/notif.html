@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Send Notification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 40px;
+        }
+        .form-container, .result-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            display: grid;
+            gap: 10px;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .required::after {
+            content: " *";
+            color: red;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: none;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+    <script>
+        let fetchUrl = '';
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Fetch configuration settings
+            const configResponse = await fetch('config');
+            const configData = await configResponse.json();
+            fetchUrl = configData.fetch_url_notif;
+            console.log('Fetch URL:', fetchUrl);
+            const requiredFields = {
+                petRegistration: ['pet_id', 'user_id'],
+                questionnaire: ['pet_id', 'user_id'],
+                questionnaireComplete: ['pet_id', 'examId', 'user_id'],
+                newArticle: ['content_id', 'user_id'],
+                event: ['user_id', 'link'],
+                notice: ['user_id'],
+                unknown: ['title', 'message', 'action', 'link', 'user_id']
+            };
+
+            const allFields = ['pet_id', 'content_id', 'examId', 'digest_words', 'user_id', 'title', 'message', 'action', 'link'];
+
+            function updateFormFields() {
+                const notifName = document.getElementById('notifName').value;
+                const fields = requiredFields[notifName] || requiredFields['unknown'];
+                
+                // Hide all fields
+                allFields.forEach(field => {
+                    document.getElementById(field + '_container').classList.add('hidden');
+                    document.getElementById(field).required = false;
+                });
+
+                // Show required fields
+                fields.forEach(field => {
+                    document.getElementById(field + '_container').classList.remove('hidden');
+                    document.getElementById(field).required = true;
+                });
+            }
+
+            document.getElementById('notifName').addEventListener('change', updateFormFields);
+            updateFormFields();  // Initialize form fields on page load
+        });
+
+        async function sendNotification(event) {
+            event.preventDefault();
+
+            const data = {
+                user_id: document.getElementById("user_id").value,
+                title: document.getElementById("title").value,
+                message: document.getElementById("message").value,
+                action: document.getElementById("action").value,
+                link: document.getElementById("link").value
+            };
+
+            // Optional fields
+            const pet_id = document.getElementById("pet_id").value;
+            const notifName = document.getElementById("notifName").value;
+            const content_id = document.getElementById("content_id").value;
+            const examId = document.getElementById("examId").value;
+            const digest_words = document.getElementById("digest_words").value;
+
+            // Add optional fields only if they are not empty
+            if (pet_id) data.pet_id = pet_id;
+            if (notifName) data.notifName = notifName;
+            if (content_id) data.content_id = content_id;
+            if (examId) data.examId = examId;
+            if (digest_words) data.digest_words = digest_words;
+
+            const response = await fetch(fetchUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+            document.getElementById("result").value = JSON.stringify(result, null, 2);
+        }
+    </script>
+</head>
+<body>
+    <h1>Send Notification</h1>
+    <div class="container">
+        <div class="form-container">
+            <form onsubmit="sendNotification(event)">
+                <div id="notifName_container">
+                    <label for="notifName" class="required">Notification Name:</label>
+                    <select id="notifName" name="notifName" required>
+                        <option value="unknown">default</option>
+                        <option value="petRegistration">petRegistration</option>
+                        <option value="questionnaire">heathcheck</option>
+                        <option value="questionnaireComplete">reportCompleted</option>
+                        <option value="newArticle">newArticle</option>
+                        <option value="event">event</option>
+                        <option value="notice">notice</option>
+                        <option value="subscription">subscription</option>
+                    </select>
+                </div>
+
+                <div id="user_id_container" class="hidden">
+                    <label for="user_id" class="required">User ID:</label>
+                    <input type="text" id="user_id" name="user_id" required>
+                </div>
+
+                <div id="title_container" class="hidden">
+                    <label for="title" class="required">Title:</label>
+                    <input type="text" id="title" name="title">
+                </div>
+
+                <div id="message_container" class="hidden">
+                    <label for="message" class="required">Message:</label>
+                    <input type="text" id="message" name="message">
+                </div>
+
+                <div id="action_container" class="hidden">
+                    <label for="action" class="required">Action:</label>
+                    <select id="action" name="action">
+                        <option value="deeplink">deeplink</option>
+                        <option value="inAppBrowser">inAppBrowser</option>
+                        <option value="osBrowser">osBrowser</option>
+                    </select>
+                </div>
+
+                <div id="link_container" class="hidden">
+                    <label for="link" class="required">Link:</label>
+                    <input type="text" id="link" name="link">
+                </div>
+
+                <div id="pet_id_container" class="hidden">
+                    <label for="pet_id">Pet ID:</label>
+                    <input type="text" id="pet_id" name="pet_id">
+                </div>
+
+                <div id="content_id_container" class="hidden">
+                    <label for="content_id">Content ID:</label>
+                    <input type="text" id="content_id" name="content_id">
+                </div>
+
+                <div id="examId_container" class="hidden">
+                    <label for="examId">Exam ID:</label>
+                    <input type="text" id="examId" name="examId">
+                </div>
+
+                <div id="digest_words_container" class="hidden">
+                    <label for="digest_words">Digest Words:</label>
+                    <input type="text" id="digest_words" name="digest_words">
+                </div>
+
+                <input type="submit" value="Send Notification">
+            </form>
+        </div>
+        <div class="result-container">
+            <h2>Result</h2>
+            <textarea id="result" rows="20" readonly></textarea>
+        </div>
+    </div>
+</body>
+</html>

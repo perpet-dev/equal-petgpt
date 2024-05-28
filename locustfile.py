@@ -26,20 +26,20 @@ class UserBehavior(TaskSet):
         start_time = time.time()
 
         try:
-            with open('/Users/ivanpro/Dropbox/Equal/img/gr.jpeg', 'rb') as file1:
+            with open('/Users/ivanpro/Dropbox/Equal/img/nc.jpg', 'rb') as file1:
                 with closing(file1) as f1:
                     files = [
-                        ('petImages', ('gr.jpeg', f1, 'image/jpeg'))
+                        ('petImages', ('nc.jpg', f1, 'image/jpeg'))
                     ]
 
                     data = {
                         'pet_name': 'Buddy',
-                        'user_id': random.randint(1, 1000)  # Simulate different user IDs
+                        'user_id': 204 #random.randint(1, 1000)  # Simulate different user IDs
                     }
 
                     print("Data:", data)
 
-                    timeout = httpx.Timeout(60.0, read=60.0)  # Increase timeout to 30 seconds
+                    timeout = httpx.Timeout(10.0, read=10.0)  # Increase timeout to 30 seconds
                     async with httpx.AsyncClient(timeout=timeout) as client:
                         response = await client.post(url, data=data, files=files)
                         response.raise_for_status()
@@ -68,8 +68,8 @@ class UserBehavior(TaskSet):
 class WebsiteUser(HttpUser):
     tasks = [UserBehavior]
     wait_time = between(1, 5)
-    host = "http://0.0.0.0:9090"
+    host = "https://api2.equal.pet/petgpt-service"
 
 if __name__ == "__main__":
     import os
-    os.system("locust -f locustfile.py --host=http://0.0.0.0:9090 --users 10 --spawn-rate 5")
+    os.system("locust -f locustfile.py --host=https://api2.equal.pet/petgpt-service --users 10 --spawn-rate 5")

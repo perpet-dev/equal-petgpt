@@ -9,13 +9,14 @@ REPO_NAME="dev/petgpt-service"
 REGISTRY_REPO="${REGISTRY}/${REPO_NAME}"
 
 # Prompt the user for project version
-read -p "Please enter the project version: " IMAGE_TAG
-if [ -z "$IMAGE_TAG" ]; then
-    echo "Error: No version input provided. Exiting..."
-    exit 1
-fi
+# Prompt user for project version
+read -p "Please enter the project version (default is 'latest'): " IMAGE_TAG
+IMAGE_TAG=${IMAGE_TAG:-latest}
 
-# Build Docker image for multiple platforms
-docker buildx build --platform linux/amd64,linux/arm64 --no-cache -t ${REGISTRY_REPO}:${IMAGE_TAG} --push .
-# Tag the image with the latest tag and push
-docker buildx build --platform linux/amd64,linux/arm64 --no-cache -t ${REGISTRY_REPO}:latest --push .
+# Build and push Docker image with inline cache
+docker buildx build --platform linux/amd64 \
+  --build-arg BUILDKIT_INLINE_CACHE=1 \
+  --cache-from=type=registry,ref="${REGISTRY_REPO}:latest" \
+  -t "${REGISTRY_REPO}:${IMAGE_TAG}" \
+  -t "${REGISTRY_REPO}:latest" \
+  --push .

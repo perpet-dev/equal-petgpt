@@ -10,12 +10,13 @@ from pydantic.generics import GenericModel
 from typing import Generic, TypeVar, List, Optional
 from datetime import datetime
 import base64
-import openai
+import time
+import os
 from openai import OpenAI
 import aiohttp
 from pymongo import MongoClient
 from py_eureka_client import eureka_client
-from config import GPT4DEFAULT, PORT, EUREKA, MONGODB, PREFIXURL, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, OPENAI_API_KEY, GPT4VISIOMMODEL, PORT, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME, WEBSOCKET_URL
+from config import GPT4DEFAULT, EUREKA, MONGODB, PREFIXURL, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, OPENAI_API_KEY, GPT4VISIOMMODEL, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME, WEBSOCKET_URL
 from petprofile import PetProfile
 import asyncio
 from bookmark import bookmarks_get, bookmark_set, bookmark_delete, bookmark_check
@@ -25,6 +26,12 @@ from content_retriever import EqualContentRetriever, BREEDS_DOG_TAG, BREEDS_CAT_
 from config import LOG_NAME, LOG_FILE_NAME, LOGGING_LEVEL
 from log_util import LogUtil
 logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
+
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+from config import FETCH_URL_NOTIF
 
 app = FastAPI(root_path=PREFIXURL)
 #app = FastAPI()
@@ -57,15 +64,33 @@ gpt-4-1106-preview	$10.00 / 1M tokens	$30.00 / 1M tokens
 gpt-4-1106-vision-preview	$10.00 / 1M tokens	$30.00 / 1M tokens
 
 '''
-
+# Initialize the rate limiter
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
 # static files directory for web app
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+@app.get("/config")
+async def get_config():
+    return JSONResponse({"fetch_url_notif": FETCH_URL_NOTIF})
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exceeded_handler(request, exc):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Rate limit exceeded, try again later."}
+    )
+    
 @app.get("/petgpt", response_class=HTMLResponse)
 async def healthreport(request: Request):
     websocket_url = WEBSOCKET_URL
     return templates.TemplateResponse("chat.html", {"request": request, "websocket_url": websocket_url, "query_params": request.query_params})
+
+@app.get("/notif", response_class=HTMLResponse)
+async def notif(request: Request):
+    return templates.TemplateResponse("notif.html", {"request": request, "query_params": request.query_params})
+
 
 # Models for input validation and serialization
 class ContentItem(BaseModel):
@@ -151,7 +176,9 @@ from petprofile import PetProfileRetriever
 petProfileRetriever = PetProfileRetriever()
 
 @app.get("/version")
-async def version(platform:str, version:str, build_no:int):
+@limiter.limit("5/minute")
+async def version(request: Request,
+                  platform:str, version:str, build_no:int):
     versions = []
     platform = platform.lower()
     try:
@@ -178,13 +205,61 @@ async def version(platform:str, version:str, build_no:int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+from PIL import Image
+import io
+import logging
+from PIL import Image
+import io
+
+# Set up basic configuration for logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def resize_image(image_bytes: bytes, max_size_kb=500, max_resolution=(2048, 2048), quality_step=5) -> bytes:
+    try:
+        img = Image.open(io.BytesIO(image_bytes))
+        
+        # Log the original size and resolution
+        original_size_kb = len(image_bytes) / 1024
+        original_resolution = img.size
+        logger.info(f"Original image size: {original_size_kb:.2f} KB, resolution: {original_resolution}")
+
+        # Resize image to fit within the max resolution while maintaining aspect ratio
+        img.thumbnail(max_resolution, Image.ANTIALIAS)
+
+        # Log the new resolution after initial resizing
+        resized_resolution = img.size
+        logger.info(f"Resized image resolution: {resized_resolution}")
+
+        output_io = io.BytesIO()
+        quality = 95
+        
+        while quality > 5:  # Reduce the minimum quality to 5
+            output_io.seek(0)
+            img.save(output_io, format="JPEG", quality=quality)
+            size_kb = len(output_io.getvalue()) / 1024
+            logger.info(f"Trying quality {quality}: {size_kb:.2f} KB")  # Log size after each quality step
+            if size_kb <= max_size_kb:
+                break
+            quality -= quality_step
+
+        final_size_kb = len(output_io.getvalue()) / 1024
+        final_resolution = img.size
+        logger.info(f"Final image size: {final_size_kb:.2f} KB, resolution: {final_resolution}")
+        
+        return output_io.getvalue()
+    except Exception as e:
+        logger.error("Failed to resize image", exc_info=True)
+        return None
+
 @app.post("/process-pet-image")
 async def process_pet_images(
     pet_name: str = Form(...),  # Mandatory form field
     petImages: List[UploadFile] = File(...),  # List of images as multipart form data
     user_id: Optional[int] = Query(default=None)  # Optional query parameter
 ):
-    logger.debug('process_pet_images : {}'.format(pet_name))
+    start = time.time()
+    logger.info(f'process_pet_images : {user_id}_{pet_name}')
     from pet_image_prompt import petgpt_system_imagemessage
     # Prepare response content
     messages = [
@@ -205,7 +280,14 @@ async def process_pet_images(
     image_data = []
     for upload_file in petImages:
         contents = await upload_file.read()
-        img_base64 = base64.b64encode(contents).decode("utf-8")
+        
+        # Resize the image
+        try:
+            resized_image_bytes = resize_image(contents)
+        except ValueError as e:
+            return {"error": str(e)}
+        
+        img_base64 = base64.b64encode(resized_image_bytes).decode("utf-8")
         # Format the base64 string as a data URL
         if not img_base64.startswith('data:image'):
             img_base64 = f"data:image/jpeg;base64,{img_base64}"
@@ -217,8 +299,13 @@ async def process_pet_images(
             "image_url": {"url" : img_base64}
         })
     if user_id is not None:
+        start_db_time = time.time()
         save_to_database(user_id, pet_name, image_data)
+        end_db_time = time.time()
+        db_time = end_db_time - start_db_time
+        logger.info(f"Time taken to save to database: {db_time:.2f} s")
     
+    start_api_time = time.time()
     url = "https://api.openai.com/v1/chat/completions"
     payload = {
         "model": GPT4VISIOMMODEL,#"gpt-4-vision-preview",
@@ -234,8 +321,14 @@ async def process_pet_images(
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as session:
         async with session.post(url, json=payload, headers=headers) as response:
             result = await response.json()
+            end_api_time = time.time()
+            api_time = end_api_time - start_api_time
+            logger.info(f"Time taken for OpenAI API call: {api_time:.2f} seconds")
             logger.debug(result)
             gpt4v = result['choices'][0]['message']['content']
+            end = time.time()
+            total_time = end - start
+            logger.info(f'process_pet_images : {user_id}_{pet_name} in {total_time:.2f} seconds => result:\n {gpt4v}')
             return {"message": gpt4v}
 
 def save_to_database(user_id: int, pet_name: str, image_data: List[str]):
@@ -265,7 +358,30 @@ def save_to_database(user_id: int, pet_name: str, image_data: List[str]):
     except Exception as e:
         logger.error(f"An error occurred: {e}")
         raise HTTPException(status_code=500, detail="Failed to save or update image data")
-    
+
+from pushmodel import PushDTO, PushDTOModel, send
+@app.post("/send-notification", response_model=dict)
+async def send_notification(push_dto: PushDTOModel):
+    try:
+        # Transform the incoming request data to match the expected format of PushDTO
+        base_push_dto = {
+            "notifName": push_dto.notifName,
+            "user_id": push_dto.user_id,
+            "pet_id": push_dto.pet_id,
+            "content_id": push_dto.content_id,
+            "examId": push_dto.examId,
+            "title": push_dto.title,
+            "message": push_dto.message,
+            "action": push_dto.action,
+            "link": push_dto.link,
+            "digest_words": push_dto.digest_words
+        }
+        # Send the notification using the send function
+        response = send(base_push_dto)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/extract-questions")
 async def extract_questions(request: ContentRequest):
     logger.debug("extract_questions")
@@ -537,31 +653,61 @@ async def create_vet_comment(pet_profile: PetProfile):
 
     return VetCommentResponse(vet_comment=formatted_string)
 
-async def register_with_eureka():
-    if PREFIXURL == "/petgpt-service":
-        # Asynchronously register service with Eureka
-        try:
-            logger.debug(f"Registering with Eureka at {EUREKA}...")
-            await eureka_client.init_async(eureka_server=EUREKA,
-                                        app_name="petgpt-service",
-                                        instance_port=PORT)
-            logger.info("Registration with Eureka successful.")
-        except Exception as e:
-            logger.error(f"Failed to register with Eureka: {e}")
-            raise HTTPException(status_code=500, detail="Failed to register with Eureka")
+# import socket
+# import requests
+# # Function to get the EC2 instance IP
+# # Function to get the EC2 instance IP using IMDSv2
+# def get_ec2_instance_ip():
+#     try:
+#         # Get the token
+#         token_response = requests.put(
+#             'http://169.254.169.254/latest/api/token',
+#             headers={'X-aws-ec2-metadata-token-ttl-seconds': '21600'}
+#         )
+#         token_response.raise_for_status()
+#         token = token_response.text
+
+#         # Use the token to get the instance IP
+#         ip_response = requests.get(
+#             'http://169.254.169.254/latest/meta-data/local-ipv4',
+#             headers={'X-aws-ec2-metadata-token': token}
+#         )
+#         ip_response.raise_for_status()
+#         return ip_response.text
+#     except requests.RequestException as e:
+#         logger.error(f"Error fetching EC2 instance IP: {e}")
+#         raise
+
+    
+# async def register_with_eureka():
+#     if PREFIXURL == "/petgpt-service":
+#         # Asynchronously register service with Eureka
+#         IP_ADDRESS = get_ec2_instance_ip()
+#         PORT = int(os.getenv('PORT', 10070))  # Read the port from the environment variable
+#         try:
+#             logger.debug(f"Registering with Eureka at {EUREKA}...")
+#             await eureka_client.init_async(eureka_server=EUREKA,
+#                                         app_name="petgpt-service",
+#                                         instance_host=IP_ADDRESS,
+#                                         instance_port=PORT)
+#             logger.info(f"Registration with Eureka successful with IP: {IP_ADDRESS} and port {PORT}")    
+#         except Exception as e:
+#             logger.error(f"Failed to register with Eureka: {e}")
+#             raise HTTPException(status_code=500, detail="Failed to register with Eureka")
         
 from generation import (
     generation_websocket_endpoint_chatgpt
 )
 app.websocket("/ws/generation/{pet_id}")(generation_websocket_endpoint_chatgpt)
 
-@app.on_event("startup")
-async def startup_event():
-    logger.setLevel(LOGGING_LEVEL)
-    # Register with Eureka when the FastAPI app starts
-    logger.info(f"Application startup: Registering PetGPT service on port {PORT} with Eureka at {EUREKA} and logging level: {LOGGING_LEVEL}")
-    await register_with_eureka()
-    logger.info(f"Application startup: Registering PetGPT done")
+# @app.on_event("startup")
+# async def startup_event():
+#     logger.setLevel(LOGGING_LEVEL)
+#     # Register with Eureka when the FastAPI app starts
+#     PORT = int(os.getenv('PORT', 10070))  # Read the port from the environment variable
+#     logger.info(f"Application startup: Registering PetGPT service on port {PORT} with Eureka at {EUREKA} and logging level: {LOGGING_LEVEL}")
+#     await register_with_eureka()
+#     logger.info(f"Application startup: Registering PetGPT done")
 
 @app.get("/categories/", response_model=ApiResponse[List[dict]])
 async def get_categories(pet_id: int, page: int = Query(0, ge=0), size: int = Query(3, ge=1)):
@@ -803,5 +949,6 @@ async def get_pet_profile(pet_id: int):
 
 if __name__ == "__main__":
     import uvicorn
+    PORT = 9090
     logger.info(f"Starting server on port {PORT} with Eureka server: {EUREKA}")
     uvicorn.run("server:app", host="0.0.0.0", port=PORT, workers=4, log_level="debug")
