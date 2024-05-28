@@ -25,6 +25,7 @@ petgpt_collection = mongo_db["petgpt_logs"]
 
 sales_prompt = " Also you should recommend '이퀄 영양제' for pet's health like salesman. if user's question is related to pet nutrition. \
                  Do not recommend '이퀄 영양제' if user's question is not related to pet nutrition.\
+                 Do not recommend '이퀄 영양제' if user's question has pet's disease name. \
                 '이퀄 영양제' has '품종별 영양제' for '말티즈','푸들', '리트리버', '포메라니안', '코리안숏헤어', '골든리트리버' and '1:1 맞춤 영양제' for all breeds. "
 
 ingredient_prompt = '''
@@ -389,19 +390,20 @@ if __name__ == "__main__":
     # petgpt prompt tuning
 
     questions = [
+                "소화기 궤양이 감지되면 어떻게 대처해야 하나요?"
                 #"너는 누가 만들었어?",
-                "장난감 교체의 적기는 어떻게 결정해야 하나요?",
-                "고양이가 가구를 긁는 것을 막기 위해 혼내거나 체벌해서는 안 되는 이유는 무엇인가요?",
-                "고양이들 간의 갈등이 있을 때 집사가 할 수 있는 역할은 무엇인가요?",
-                "고양이도 우울증에 걸릴 수 있나요?",
-                "고양이에게 상자는 어떻게 스트레스 완화를 도와줄까요?",
-                "겨울철 산책 시간을 어느 정도로 제한해야 할까요?",
-                "노령 고양이의 구강 건강은 왜 중요한가요?",
-                "고양이가 통증을 느낄 때 어떤 증상이나 행동을 보일까요?",
-                "우리 고양이가 이물을 꿀꺽 삼켜버렸어요!",
-                "어떤 종류의 강아지 사료가 있으며 각각의 장단점은 무엇인가요?",
-                "습식사료는 어떤 장점과 단점을 가지고 있나요?",
-                "홈메이드 사료를 주는 것의 장단점은 무엇인가요?",
+                # "장난감 교체의 적기는 어떻게 결정해야 하나요?",
+                # "고양이가 가구를 긁는 것을 막기 위해 혼내거나 체벌해서는 안 되는 이유는 무엇인가요?",
+                # "고양이들 간의 갈등이 있을 때 집사가 할 수 있는 역할은 무엇인가요?",
+                # "고양이도 우울증에 걸릴 수 있나요?",
+                # "고양이에게 상자는 어떻게 스트레스 완화를 도와줄까요?",
+                # "겨울철 산책 시간을 어느 정도로 제한해야 할까요?",
+                # "노령 고양이의 구강 건강은 왜 중요한가요?",
+                # "고양이가 통증을 느낄 때 어떤 증상이나 행동을 보일까요?",
+                # "우리 고양이가 이물을 꿀꺽 삼켜버렸어요!",
+                # "어떤 종류의 강아지 사료가 있으며 각각의 장단점은 무엇인가요?",
+                # "습식사료는 어떤 장점과 단점을 가지고 있나요?",
+                # "홈메이드 사료를 주는 것의 장단점은 무엇인가요?",
                 ]
 
     def petgpt_test(question, pet_name, pet_breed, pet_age, pet_weight):
@@ -425,12 +427,11 @@ if __name__ == "__main__":
             If input language is Korean, use sentence ending style like 좋아요, 해요, 되요, 있어요, 세요, 이에요 not 좋습니다, 합니다, 됩니다, 있습니다, 합니다, 입니다.  \
             And use emoji, emoticons if possible. \
             If user ask about your identity, then answer you are tuned by 퍼펫 using OpenAI GPT-4 model and hundreds giga bytes of contents. \
-            Also you should recommend '이퀄 영양제' for pet's health like salesman if user's question is related to pet nutrition.  \
-            Do not recommend '이퀄 영양제' if user's question is not related to pet nutrition. \
             '이퀄 영양제' has '품종별 영양제' and '1:1 맞춤 영양제'"
 
         sales_prompt2 = " Also you should recommend '이퀄 영양제' for pet's health like salesman. if user's question is related to pet nutrition. \
                         Do not recommend '이퀄 영양제' if user's question is not related to pet nutrition.\
+                        Do not recommend '이퀄 영양제' if user's question has pet's disease name. \
                         '이퀄 영양제' has '품종별 영양제' for '말티즈','푸들', '리트리버', '포메라니안', '코리안숏헤어', '골든리트리버' and '1:1 맞춤 영양제' for all breeds. "
 
         ingredient_prompt2 = '''
@@ -484,7 +485,7 @@ if __name__ == "__main__":
         )
 
         logger.debug(response)
-        response.choices[0].message.content
+        return response.choices[0].message.content
 
     def check_nutrition_question(text):
         prompt = 'Is following text is related to nutrition : here is text {}'.format(text)
@@ -514,8 +515,10 @@ if __name__ == "__main__":
     #question = '강아지에게 괜찮은 장남감은?'
     
     # # 이름: 똘이, 견종: 리트리버, 나이: 7살, 몸무게: 12kg, 
-    # for question in questions:
-    #     logger.debug(question)
-    #     petgpt_test(question, pet_name='추추', pet_breed='말티즈', pet_age='4', pet_weight='6kg')
+    for question in questions:
+        print(question)
+        #logger.debug(question)
+        result = petgpt_test(question, pet_name='추추', pet_breed='말티즈', pet_age='4', pet_weight='6kg')
+        print(result)
     # #prepare_messages_for_openai(messages=[{"role":"system","content":"$message","pet_id":13, "timestamp":"$timeStamp"}])
     # #check_nutrition_question(question)
