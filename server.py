@@ -16,9 +16,9 @@ from openai import OpenAI
 import aiohttp
 from pymongo import MongoClient
 from py_eureka_client import eureka_client
-from config import GPT4DEFAULT, EUREKA, MONGODB, PREFIXURL, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, OPENAI_API_KEY, GPT4VISIOMMODEL, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME, WEBSOCKET_URL
+from config import GPT4DEFAULT, EUREKA, MONGODB, PREFIXURL, OPENAI_API_KEY, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, GPT4VISIOMMODEL, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME, WEBSOCKET_URL
+
 from petprofile import PetProfile
-import asyncio
 from bookmark import bookmarks_get, bookmark_set, bookmark_delete, bookmark_check
 from packaging.version import Version
 from content_retriever import EqualContentRetriever, BREEDS_DOG_TAG, BREEDS_CAT_TAG

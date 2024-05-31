@@ -6,17 +6,20 @@ PORT = int(os.getenv('PORT', 9090))
 WEBSOCKET_URL = os.getenv('WEBSOCKET_URL', "ws://dev.promptinsight.ai:10002/petgpt-service/ws/generation/")
 EUREKA = os.getenv('EUREKA_CLIENT_SERVICEURL_DEFAULTZONE', "http://dev.promptinsight.ai:10001/eureka") 
 PREFIXURL= os.getenv('PREFIXURL', "/petgpt-service")
-#PREFIXURL= os.getenv('PREFIXURL', "/")
+# Load environment variables from .env file
+from dotenv import load_dotenv
+import os
+load_dotenv()
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 OPENAI_ORG = os.getenv('OPENAI_ORG', "org-oMDD9ptBReP4GSSW5lMD1wv6")
 OPENAI_PROJ = os.getenv('OPENAI_PROJ', "proj_cfKAM38EYeptw1DVgvQ1K3xm")
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', "sk-proj-IflClp49epIOSBVKlmcrT3BlbkFJNWifAmYTHOqV6Tw2wJjL") 
 GPT4VISIOMMODEL = os.getenv('GPT4VISIOMMODEL', "gpt-4-turbo") #gpt-4-vision-preview
 GPT4DEFAULT = os.getenv('GPT4DEFAULT', "pt-4-turbo") #gpt-4-turbo
 OPENAI_EMBEDDING_MODEL_NAME = 'text-embedding-3-small'
 OPENAI_EMBEDDING_DIMENSION = 1536
-PINECONE_API_KEY =  os.getenv('PINECONE_API_KEY', 'dcce7d00-5f7f-48bf-8b19-33480e74ad12')
 PINECONE_INDEX =  'test-index-0325'  
+PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
 
 # Set pymongo's OCSP support logger to INFO level
 ocsp_logger = logging.getLogger('pymongo.ocsp_support')
