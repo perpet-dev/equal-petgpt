@@ -11,8 +11,8 @@ OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 OPENAI_ORG = os.getenv('OPENAI_ORG', "org-oMDD9ptBReP4GSSW5lMD1wv6")
 OPENAI_PROJ = os.getenv('OPENAI_PROJ', "proj_cfKAM38EYeptw1DVgvQ1K3xm")
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', "sk-proj-IflClp49epIOSBVKlmcrT3BlbkFJNWifAmYTHOqV6Tw2wJjL") 
-GPT4VISIOMMODEL = os.getenv('GPT4VISIOMMODEL', "gpt-4o") #gpt-4-vision-preview
-GPT4DEFAULT = os.getenv('GPT4DEFAULT', "gpt-4o") #gpt-4-turbo
+GPT4VISIOMMODEL = os.getenv('GPT4VISIOMMODEL', "gpt-4-turbo") #gpt-4-vision-preview
+GPT4DEFAULT = os.getenv('GPT4DEFAULT', "pt-4-turbo") #gpt-4-turbo
 OPENAI_EMBEDDING_MODEL_NAME = 'text-embedding-3-small'
 OPENAI_EMBEDDING_DIMENSION = 1536
 PINECONE_API_KEY =  os.getenv('PINECONE_API_KEY', 'dcce7d00-5f7f-48bf-8b19-33480e74ad12')
@@ -49,4 +49,4 @@ import socket
 HOSTNAME = socket.gethostname()
 IP_ADDRESS = socket.gethostbyname(HOSTNAME)
 # Define the fetch URL for sending notifications
-FETCH_URL_NOTIF = "http://dev.promptinsight.ai:10002/petgpt-service/send-notification"
+FETCH_URL_NOTIF = "https://api2.equal.pet/petgpt-service/send-notification"
