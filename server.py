@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+# Load environment variables from .env file
+from dotenv import load_dotenv
+import os
+load_dotenv()
 from fastapi import FastAPI, Request, Query, HTTPException, File, UploadFile, status, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -17,7 +21,6 @@ import aiohttp
 from pymongo import MongoClient
 from py_eureka_client import eureka_client
 from config import GPT4DEFAULT, EUREKA, MONGODB, PREFIXURL, OPENAI_API_KEY, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, GPT4VISIOMMODEL, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME, WEBSOCKET_URL
-
 from petprofile import PetProfile
 from bookmark import bookmarks_get, bookmark_set, bookmark_delete, bookmark_check
 from packaging.version import Version
@@ -34,6 +37,7 @@ from slowapi.errors import RateLimitExceeded
 from config import FETCH_URL_NOTIF
 
 app = FastAPI(root_path=PREFIXURL)
+print(OPENAI_API_KEY)
 #app = FastAPI()
 # # Allow all origins
 # app.add_middleware(
@@ -556,6 +560,9 @@ async def pet_gpt_question_list(pet_id: int, page: int = Query(0, ge=0), size: i
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+
+
 class VetCommentResponse(BaseModel):
     vet_comment: str
 @app.post("/pet-gpt-vetcomment", response_model=VetCommentResponse, status_code=status.HTTP_201_CREATED)
@@ -579,7 +586,8 @@ async def create_vet_comment(pet_profile: PetProfile):
         "model": GPT4DEFAULT,#"gpt-4",  # or another model name as appropriate
         "messages": [
             {"role": "system", "content": systemquestion},
-            {"role": "user", "content": f"The pet's name is {pet_profile.pet_name}, type is {pet_profile.pet_type}, breed is {pet_profile.breed}, age is {pet_profile.age}."}
+            {"role": "user", "content": f"The pet's name is {pet_profile.pet_name}. It is {pet_profile.pet_type}, breed is {pet_profile.breed}, age is {pet_profile.age}. {pet_profile.diagnoses} 내용 요약해줘요."
+            }
         ]
     }
     headers = {
@@ -588,9 +596,9 @@ async def create_vet_comment(pet_profile: PetProfile):
         "Authorization": f"Bearer {OPENAI_API_KEY}",
         "OpenAI-Project": f"{OPENAI_PROJ}"
     }
-    
-    logger.debug(f"payload:{payload}")
-    logger.debug(f"headers:{headers}")
+    logger.info(f"OPENAI KEY:{OPENAI_API_KEY}")
+    logger.info(f"payload:{payload}")
+    logger.info(f"headers:{headers}")
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as session:
         async with session.post(OPENAI_API_URL, json=payload, headers=headers) as response:
             if response.status != 200:
@@ -631,7 +639,7 @@ async def create_vet_comment(pet_profile: PetProfile):
         "model": GPT4DEFAULT,#"gpt-3.5-turbo-0125", #"gpt-4",  # Specify the correct model
         "messages": [
             {"role": "system", "content": systemquestion},
-            {"role": "user", "content": f"The pet's name is {pet_profile.pet_name}, type is {pet_profile.pet_type}, breed is {pet_profile.breed}, age is {pet_profile.age}."}
+            {"role": "user", "content": f"The pet's name is {pet_profile.pet_name}, type is {pet_profile.pet_type}, breed is {pet_profile.breed}, age is {pet_profile.age}. {pet_profile.supplements} 내용 요약해줘요."}
         ]
     }
     headers = {
