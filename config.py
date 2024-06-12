@@ -7,8 +7,8 @@ LOGGING_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG')
 PORT = int(os.getenv('PORT', 9090))
 WEBSOCKET_URL = os.getenv('WEBSOCKET_URL', "ws://dev.promptinsight.ai:10002/petgpt-service/ws/generation/")
 EUREKA = os.getenv('EUREKA_CLIENT_SERVICEURL_DEFAULTZONE', "http://dev.promptinsight.ai:10001/eureka") 
-#PREFIXURL= os.getenv('PREFIXURL', "/petgpt-service")
-PREFIXURL= os.getenv('PREFIXURL', "/")
+PREFIXURL= os.getenv('PREFIXURL', "/petgpt-service")
+
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 OPENAI_ORG = os.getenv('OPENAI_ORG', "org-oMDD9ptBReP4GSSW5lMD1wv6")

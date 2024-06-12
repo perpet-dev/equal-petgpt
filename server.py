@@ -37,7 +37,6 @@ from slowapi.errors import RateLimitExceeded
 from config import FETCH_URL_NOTIF
 
 app = FastAPI(root_path=PREFIXURL)
-print(OPENAI_API_KEY)
 #app = FastAPI()
 # # Allow all origins
 # app.add_middleware(
@@ -596,7 +595,7 @@ async def create_vet_comment(pet_profile: PetProfile):
         "Authorization": f"Bearer {OPENAI_API_KEY}",
         "OpenAI-Project": f"{OPENAI_PROJ}"
     }
-    logger.info(f"OPENAI KEY:{OPENAI_API_KEY}")
+
     logger.info(f"payload:{payload}")
     logger.info(f"headers:{headers}")
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as session:
