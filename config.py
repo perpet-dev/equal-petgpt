@@ -17,7 +17,7 @@ GPT4VISIOMMODEL = os.getenv('GPT4VISIOMMODEL', "gpt-4-turbo") #gpt-4-vision-prev
 GPT4DEFAULT = os.getenv('GPT4DEFAULT', "gpt-4-turbo") #gpt-4-turbo
 OPENAI_EMBEDDING_MODEL_NAME = 'text-embedding-3-small'
 OPENAI_EMBEDDING_DIMENSION = 1536
-PINECONE_INDEX =  'test-index-0325'  
+PINECONE_INDEX =  'equalapp-240514'  
 PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
 
 # Set pymongo's OCSP support logger to INFO level
