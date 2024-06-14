@@ -52,10 +52,16 @@ class EqualContentRetriever():
             self.index_name = index_name
             self.contents_cache = []
             # MongoDB setup
-            client = MongoClient(MONGODB)
-            mongo_db = client.perpet_healthcheck
+            mclient = MongoClient(MONGODB)
+            mongo_db = mclient.perpet_healthcheck
             self.subjects_collection = mongo_db["knowlege_subject"]
             self.questions_collection = mongo_db["questions"]
+
+            ###### OPEN AI ########
+            self.openai_client = OpenAI(
+                api_key = OPENAI_API_KEY,
+                organization=OPENAI_ORG,
+            )
             
             #self.category_dict = json.loads(SUBJECT_JSON)
             #self.__put_subjects_to_mongo()
@@ -130,12 +136,12 @@ class EqualContentRetriever():
 
     def __generate_questions(self, system_question:str, content_to_analyze:str):
         logger.debug('EqualContentRetriever::__generate_questions')
-        client = OpenAI(
-            api_key = OPENAI_API_KEY,
-            organization=OPENAI_ORG,
-        )
+        #client = OpenAI(
+        #    api_key = OPENAI_API_KEY,
+        #    organization=OPENAI_ORG,
+        #)
         
-        completion = client.chat.completions.create(
+        completion = self.openai_client.chat.completions.create(
             model="gpt-3.5-turbo",#,"gpt-4", 
             messages=[
                 {"role": "system", "content": f"{system_question}"},
@@ -231,7 +237,7 @@ class EqualContentRetriever():
             tags_batch = text_dataset['tag'][i:i+batch_size]
             titles_batch = text_dataset['title'][i:i+batch_size]
             categories_batch = text_dataset['category'][i:i+batch_size]
-            res = client.embeddings.create(input=lines_batch, model=OPENAI_EMBEDDING_MODEL_NAME) # create embeddings
+            res = self.openai_client.embeddings.create(input=lines_batch, model=OPENAI_EMBEDDING_MODEL_NAME) # create embeddings
             embeds = [record.embedding for record in res.data]
             meta = [{'category': categories_batch[n], 'title':titles_batch[n], 'tag':tags_batch[n], 'content': lines_batch[n], 'source_url':source_batch[n], 'link_url':link_batch[n],'image_url':images_batch[n]} for n in range(0, len(categories_batch))] # prep metadata and upsert batch
             to_upsert = zip(ids_batch, embeds, meta)
@@ -246,7 +252,7 @@ class EqualContentRetriever():
             query = ' '
             filter_only = True
 
-        xq = client.embeddings.create(input=query, model=OPENAI_EMBEDDING_MODEL_NAME).data[0].embedding
+        xq = self.openai_client.embeddings.create(input=query, model=OPENAI_EMBEDDING_MODEL_NAME).data[0].embedding
         index = pc.Index(index_name)
         
         ret = index.query(
