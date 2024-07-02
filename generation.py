@@ -205,7 +205,7 @@ async def send_message_to_openai(model, pet_id, query, conversation, websocket):
         await websocket.send_json({"id": message_stream_id, "finished": True})
 
     except Exception as e:
-        logger.error(f"Error processing text message: {e}", exc_info=True)
+        logger.exception(f"Error processing text message:", exc_info=True)
         await websocket.send_json({"error": "Error processing your request"})
 
 async def openai_chat_api_request(model: str, messages: List[dict]):
@@ -291,7 +291,8 @@ async def handle_websocket_messages(websocket: WebSocket, data: dict):
                         })
         await websocket.send_json({"finished": True})
     except Exception as e:
-        logger.error(f"Error during message processing: {e}", exc_info=True)
+        logger.exception(f"Error during message processing:", exc_info=True)
+        
         await websocket.send_json({"error": "Error processing your request"})
 
 #@app.websocket("/ws/generation")
