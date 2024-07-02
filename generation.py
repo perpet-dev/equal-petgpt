@@ -379,7 +379,7 @@ async def generation_websocket_endpoint_chatgpt(websocket: WebSocket, pet_id: st
     except WebSocketDisconnect:
         logger.info("WebSocket client disconnected")
     except Exception as e:
-        logger.error(f"Unexpected error: {e}", exc_info=True)
+        logger.exception(f"Unexpected error: {e}", exc_info=True)
         await websocket.send_json({"error": "An unexpected error occurred while processing your request."})
 
 
