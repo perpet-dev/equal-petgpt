@@ -121,8 +121,6 @@ class PetProfileRetriever:
             logger.error("Failed to execute query: {}".format(e))
             self.reconnect()  # Attempt to reconnect
             return None
-        finally:
-            self.close()
 
     def close(self):
         if self.cursor:
