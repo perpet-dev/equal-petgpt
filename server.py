@@ -20,7 +20,7 @@ from openai import OpenAI
 import aiohttp
 from pymongo import MongoClient
 from py_eureka_client import eureka_client
-from config import GPT4DEFAULT, EUREKA, MONGODB, PREFIXURL, OPENAI_API_KEY, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, GPT4VISIOMMODEL, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME, WEBSOCKET_URL
+from config import GPT4DEFAULT, EUREKA, MONGODB, MONGODB_DBNAME, PREFIXURL, OPENAI_API_KEY, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, GPT4VISIOMMODEL, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME, WEBSOCKET_URL
 from petprofile import PetProfile
 from bookmark import bookmarks_get, bookmark_set, bookmark_delete, bookmark_check
 from packaging.version import Version
@@ -167,8 +167,10 @@ class PetGPTQuestionListResponse(BaseModel):
     list: List[QuestionItem]
 
 # MongoDB setup
-client = MongoClient(MONGODB)
-mongo_db = client.perpet_healthcheck
+mongodb_connection_string = MONGODB
+database_name = MONGODB_DBNAME 
+client = MongoClient(mongodb_connection_string)
+mongo_db = client[database_name]
 collection = mongo_db["pet_images"]
 banner_collection = mongo_db["banners"]
 version_collection = mongo_db["versions"]

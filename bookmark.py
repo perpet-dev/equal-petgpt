@@ -3,14 +3,17 @@
 # by Albert 
 from pymongo import MongoClient
 from datetime import datetime
-from config import MONGODB
+from config import MONGODB, MONGODB_DBNAME
 from config import LOG_NAME, LOG_FILE_NAME, LOGGING_LEVEL
 from log_util import LogUtil
 logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 
+
 # MongoDB setup
-client = MongoClient(MONGODB)
-mongo_db = client.perpet_healthcheck
+mongodb_connection_string = MONGODB
+database_name = MONGODB_DBNAME 
+client = MongoClient(mongodb_connection_string)
+mongo_db = client[database_name]
 bookmark_collection = mongo_db["bookmarks"]
 
 def bookmark_set(user_id:int, doc_id:int, title:str, content:str, image_url:str, source_url:str, link_url:str):

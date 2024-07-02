@@ -25,9 +25,8 @@ ocsp_logger = logging.getLogger('pymongo.ocsp_support')
 ocsp_logger.setLevel(logging.INFO)
 
 # MongoDB connection string
-# MONGODB = "mongodb+srv://ivanberlocher:P4XZZRTkgbG6iRcX@perpet.uhcs1fw.mongodb.net/?retryWrites=true&w=majority"
-#MONGODB = "mongodb+srv://ivanberlocher:P4XZZRTkgbG6iRcX@perpet.uhcs1fw.mongodb.net/?retryWrites=true&w=majority"
-MONGODB = os.getenv('MONGODB', "mongodb+srv://perpetcloud:NsIgvcQ5E7OQ2JSW@equalpet.tt45urw.mongodb.net/") 
+MONGODB = os.getenv('MONGODB', "mongodb://root:example@dev.promptinsight.ai:27017/perpet_petgpt?authSource=admin&readPreference=primary&ssl=false")
+MONGODB_DBNAME = os.getenv('MONGODB_DBNAME', 'perpet_petgpt')
 #MariaDB connection info
 DB_URI = os.getenv('DB_URI', "jdbc:mariadb://dev.promptinsight.ai:3306/perpet?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Seoul")
 DB_HOST = os.getenv('DB_HOST', 'dev.promptinsight.ai') #"dev.promptinsight.ai" # "127.0.0.1" # 
@@ -42,6 +41,9 @@ DB_PORT = int(os.getenv('DB_PORT', 3306))
 #DB_PASSWORD="O7dOQFXQ1PYY"
 #DB_DATABASE="perpet"
 #DB_PORT=3306
+# Production MongoDB
+# MONGODB = os.getenv('MONGODB', "mongodb+srv://perpetcloud:NsIgvcQ5E7OQ2JSW@equalpet.tt45urw.mongodb.net/") 
+
 LOG_NAME = 'EqualPetGPT'
 LOG_FILE_NAME = './log/petgpt.log'
 USE_SALES_PROMPT = True

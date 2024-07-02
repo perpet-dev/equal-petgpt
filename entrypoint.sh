@@ -92,9 +92,7 @@ while True:
         # Additional check to ensure registration is alive
         # For example, we can fetch the registry and check our instance
         response = requests.get(f'{EUREKA}/apps/petgpt-service')
-        if response.status_code == 200:
-            logger.info('Service is registered and healthy')
-        else:
+        if response.status_code != 200:
             logger.warning('Service not registered, retrying registration...')
             register()
     except Exception as e:

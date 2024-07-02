@@ -20,7 +20,7 @@ from datetime import datetime
 
 from subject_json import SUBJECT_JSON
 from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE, OPENAI_API_KEY, OPENAI_EMBEDDING_MODEL_NAME, OPENAI_EMBEDDING_DIMENSION, OPENAI_ORG, PINECONE_INDEX, PINECONE_API_KEY
-from config import MONGODB
+from config import MONGODB, MONGODB_DBNAME
 
 INDEX_NAME = 'equalapp-240514'
 BREEDS_DOG_TAG = '62'
@@ -52,8 +52,11 @@ class EqualContentRetriever():
             self.index_name = index_name
             self.contents_cache = []
             # MongoDB setup
-            mclient = MongoClient(MONGODB)
-            mongo_db = mclient.perpet_healthcheck
+            
+            mongodb_connection_string = MONGODB
+            database_name = MONGODB_DBNAME 
+            mclient = MongoClient(mongodb_connection_string)
+            mongo_db = mclient[database_name]
             self.subjects_collection = mongo_db["knowlege_subject"]
             self.questions_collection = mongo_db["questions"]
 

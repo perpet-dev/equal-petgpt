@@ -13,10 +13,12 @@ from config import GPT4DEFAULT, GPT4VISIOMMODEL, LOG_NAME, LOGGING_LEVEL, LOG_FI
 from log_util import LogUtil
 logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 from petprofile import PetProfileRetriever
-from config import OPENAI_API_KEY, OPENAI_API_URL, OPENAI_PROJ, OPENAI_ORG, MONGODB, USE_SALES_PROMPT
+from config import OPENAI_API_KEY, OPENAI_API_URL, OPENAI_PROJ, OPENAI_ORG, MONGODB, MONGODB_DBNAME, USE_SALES_PROMPT
 
-client = MongoClient(MONGODB)
-mongo_db = client.perpet_healthcheck
+mongodb_connection_string = MONGODB
+database_name = MONGODB_DBNAME 
+client = MongoClient(mongodb_connection_string)
+mongo_db = client[database_name]
 petgpt_collection = mongo_db["petgpt_logs"]
 
 sales_prompt = " Also you should recommend '이퀄 영양제' for pet's health like salesman. if user's question is related to pet nutrition. \

@@ -24,3 +24,4 @@ asyncio==3.4.3
 slowapi==0.1.9
 Pillow==9.4.0
 python-dotenv==1.0.1
+nest_asyncio
