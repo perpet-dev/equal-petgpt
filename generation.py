@@ -205,7 +205,7 @@ async def send_message_to_openai(model, pet_id, query, conversation, websocket):
         await websocket.send_json({"id": message_stream_id, "finished": True})
 
     except Exception as e:
-        logger.exception(f"Error processing text message:", exc_info=True)
+        logger.error(f"Error processing text message:")
         await websocket.send_json({"error": "Error processing your request"})
 
 async def openai_chat_api_request(model: str, messages: List[dict]):
@@ -379,7 +379,7 @@ async def generation_websocket_endpoint_chatgpt(websocket: WebSocket, pet_id: st
     except WebSocketDisconnect:
         logger.info("WebSocket client disconnected")
     except Exception as e:
-        logger.exception(f"Unexpected error: {e}", exc_info=True)
+        logger.error(f"Unexpected error: {e}")
         await websocket.send_json({"error": "An unexpected error occurred while processing your request."})
 
 
