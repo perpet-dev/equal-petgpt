@@ -432,9 +432,7 @@ async def pet_knowledge_list(pet_id: int, page: int = Query(0, ge=0), items_per_
             pet_type = 'dog'
             pet_tag_id = '-1'
         else:
-            retriever = PetProfileRetriever()
-            pet_profile = retriever.get_pet_profile(pet_id)
-            retriever.close()
+            pet_profile = petProfileRetriever.get_pet_profile(pet_id)
             pet_name = pet_profile.pet_name
             pet_type = pet_profile.pet_type
             pet_tag_id = pet_profile.tag_id
@@ -521,10 +519,7 @@ async def pet_gpt_question_list(pet_id: int, page: int = Query(0, ge=0), size: i
             pet_type = 'dog'
             pet_breed = ''
         else:
-            retriever = PetProfileRetriever()
-            pet_profile = retriever.get_pet_profile(pet_id)
-            retriever.close()
-
+            pet_profile = petProfileRetriever.get_pet_profile(pet_id)
             pet_type = pet_profile.pet_type
             pet_breed = pet_profile.breed
 
@@ -726,9 +721,7 @@ async def get_categories(pet_id: int, page: int = Query(0, ge=0), size: int = Qu
             pet_name = 'no_name'
             pet_type = 'dog'
         else:
-            retriever = PetProfileRetriever()
-            pet_profile = retriever.get_pet_profile(pet_id)
-            retriever.close()
+            pet_profile = petProfileRetriever.get_pet_profile(pet_id)
 
             pet_name = pet_profile.pet_name
             pet_type = pet_profile.pet_type
@@ -784,10 +777,7 @@ async def get_contents(query: str, pet_id: int, tags: Optional[List[str]] = Quer
         if pet_id == -1:
             pet_type = 'dog'
         else:
-            retriever = PetProfileRetriever()
-            pet_profile = retriever.get_pet_profile(pet_id)
-            retriever.close()
-
+            pet_profile = petProfileRetriever.get_pet_profile(pet_id)
             pet_type = pet_profile.pet_type
 
             if tags:
@@ -945,9 +935,7 @@ async def delete_bookmark(user_id: str, content_id:str):
 
 @app.get("/get-pet-profile/{pet_id}", response_model=PetProfile)
 async def get_pet_profile(pet_id: int):
-    retriever = PetProfileRetriever()
-    pet_profile = retriever.get_pet_profile(pet_id)
-    retriever.close()
+    pet_profile = petProfileRetriever.get_pet_profile(pet_id)
 
     if pet_profile:
         # Create and return a PetProfile instance

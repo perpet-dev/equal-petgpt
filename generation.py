@@ -6,7 +6,6 @@ from typing import List
 import aiohttp
 import uuid
 from fastapi import WebSocket, WebSocketDisconnect
-from petprofile import PetProfileRetriever
 
 from config import GPT4DEFAULT, GPT4VISIOMMODEL, LOG_NAME, LOGGING_LEVEL, LOG_FILE_NAME
 
@@ -155,7 +154,6 @@ async def handle_text_messages(websocket: WebSocket, model, conversation, pet_id
 
     retriever = PetProfileRetriever()
     pet_profile = retriever.get_pet_profile(pet_id)
-    retriever.close()
         
     logger.info(f"handle_text_messages for Pet profile: {pet_profile}")
     

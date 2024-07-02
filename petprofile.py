@@ -1,16 +1,12 @@
-from ipaddress import summarize_address_range
-from os import name
-import mysql.connector
+import traceback
 from mysql.connector import Error
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 from typing import Generic, TypeVar, List, Optional
-
 from config import LOG_FILE_NAME, LOGGING_LEVEL, LOG_NAME
 from log_util import LogUtil
 logger = LogUtil(logname=LOG_NAME, logfile_name=LOG_FILE_NAME, loglevel=LOGGING_LEVEL)
 import logging
 logger = logging.getLogger(__name__)
-
 
 class Supplement(BaseModel):
     supplement_id : str
@@ -21,7 +17,8 @@ class Diagnosis(BaseModel):
     diagnosis_id: str
     name: str
     health_info: str
-
+    
+from threading import Lock
 class PetProfile(BaseModel):
     pet_id: int
     owner_id: int
@@ -39,32 +36,46 @@ class PetProfile(BaseModel):
     diagnoses: Optional[List[Diagnosis]] = [] # Adding diagnoses to the pet profile
     supplements: Optional[List[Supplement]] = [] # Adding supplements to the pet profile
     
-from config import DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_DATABASE
-class PetProfileRetriever():
-    def __init__(self, db_host=DB_HOST, db_port=DB_PORT, db_user=DB_USER, db_password = DB_PASSWORD, db_database=DB_DATABASE):
-        logger.debug('Initializing PetProfileRetriever')
-        try:
-            # Establishing a connection to MariaDB
-            self.connection = mysql.connector.connect(
-                host=db_host,
-                user=db_user,
-                password=db_password,
-                database=db_database,
-                port=db_port
-            )
-            # Creating a cursor object
+from db_connection import get_connection, close_connection
+
+class PetProfileRetriever:
+    _instance = None
+    _lock = Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            with cls._lock:
+                if not cls._instance:
+                    cls._instance = super(PetProfileRetriever, cls).__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        if not hasattr(self, 'initialized'):  # Ensure __init__ runs only once
+            self.connection = get_connection()
+            if self.connection:
+                self.cursor = self.connection.cursor()
+                logger.info("Cursor created successfully.")
+            else:
+                self.cursor = None
+                logger.error("Failed to obtain database connection from pool.")
+            self.initialized = True
+    
+    def reconnect(self):
+        """Reconnect to the database if the connection is lost."""
+        self.connection = get_connection()
+        if self.connection:
             self.cursor = self.connection.cursor()
-            logger.debug('Database connection successfully established.')
-        except Error as e:
-            logger.debug(f"Error connecting to MariaDB Platform: {e}")
-            self.connection = None
+            logger.info("Reconnected and cursor created successfully.")
+        else:
             self.cursor = None
+            logger.error("Failed to re-establish database connection.")
 
     def get_pet_profile(self, pet_id):
         if not self.cursor:
-            logger.debug("Connection was not established.")
-            return None
-        
+            self.reconnect()
+            if not self.cursor:
+                return None
+
         sql = """
             SELECT 
                 p.id AS pet_id,
@@ -96,7 +107,7 @@ class PetProfileRetriever():
                 p.use_yn = 'Y' AND p.id = %s
             GROUP BY p.id;
         """
-        
+
         try:
             self.cursor.execute(sql, (pet_id,))
             result = self.cursor.fetchone()
@@ -105,16 +116,25 @@ class PetProfileRetriever():
                 return self.process_pet_body_form(result)
             else:
                 logger.error("No profile found for pet_id: {}".format(pet_id))
-                return {"error": "Pet profile not found"}
+                return None
         except Exception as e:
             logger.error("Failed to execute query: {}".format(e))
-            return {"error": str(e)}
-        
+            self.reconnect()  # Attempt to reconnect
+            return None
+
     def close(self):
+        if self.cursor:
+            try:
+                self.cursor.close()
+                logger.info("Cursor closed successfully.")
+            except Error as e:
+                logger.error(f"Error closing cursor: {e}")
+
         if self.connection:
-            self.cursor.close()
-            self.connection.close()
-            logger.debug("Database connection closed.")
+            try:
+                close_connection(self.connection)
+            except Error as e:
+                logger.error(f"Error closing connection: {e}")
 
     def process_pet_body_form(self, pet_profile):
         body_form_codes = {
@@ -124,11 +144,9 @@ class PetProfileRetriever():
             '3': "준비만",
             '4': "고도비만"
         }
-        # Directly fetch the body form code from the tuple
-        body_form_code = pet_profile[9]  
+        body_form_code = pet_profile[9]
         body_weight = body_form_codes.get(body_form_code, "Unknown condition")
 
-        # Directly return the new instance without modifying the original tuple
         return PetProfile(
             pet_id=pet_profile[0],
             owner_id=pet_profile[1],

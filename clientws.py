@@ -13,11 +13,7 @@ def on_message(ws, pet_id, message):
     #print("on_message\n")
     global accumulated_message
     data = json.loads(message) 
-    
-    retriever = PetProfileRetriever()
-    pet_profile = retriever.get_pet_profile(pet_id)
-    retriever.close()
-
+    pet_profile = petProfileRetriever.get_pet_profile(pet_id)
     pet_type = pet_profile.pet_type # 고양이 . 강아지
     pet_name = pet_profile.pet_name # 이름
     pet_age = pet_profile.age # 나이

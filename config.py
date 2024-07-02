@@ -48,6 +48,7 @@ LOG_NAME = 'EqualPetGPT'
 LOG_FILE_NAME = './log/petgpt.log'
 USE_SALES_PROMPT = True
 EQUALAPIURL = os.getenv('EQUALAPIURL', "https://api2.equal.pet")
+#http://dev.promptinsight.ai:10002 for dev
 
 import socket
 HOSTNAME = socket.gethostname()

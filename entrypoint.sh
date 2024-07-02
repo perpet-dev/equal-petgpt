@@ -7,9 +7,9 @@ is_port_available() {
 }
 
 # Dynamically assign a port within the range 10070-10080
-PORT=$(shuf -i 10070-10080 -n 1)
+PORT=$(shuf -i 10076-10076 -n 1)
 while ! is_port_available $PORT; do
-  PORT=$(shuf -i 10070-10080 -n 1)
+  PORT=$(shuf -i 10076-10076 -n 1)
 done
 
 # Function to register with Eureka
