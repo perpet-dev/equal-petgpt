@@ -373,7 +373,7 @@ async def generation_websocket_endpoint_chatgpt(websocket: WebSocket, pet_id: st
                     await handle_text_messages(websocket, model, messages, pet_id)
                 
             except Exception as e:
-                logger.error(f"Error while calling OpenAI API: {e}", exc_info=True)
+                logger.exception(f"Error while calling OpenAI API: {e}", exc_info=True)
                 await websocket.send_json({"error": "Failed to process the request."})
 
     except WebSocketDisconnect:
