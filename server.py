@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Load environment variables from .env file
+import traceback
 from dotenv import load_dotenv
-import os
 load_dotenv()
 from fastapi import FastAPI, Request, Query, HTTPException, File, UploadFile, status, Form
 from fastapi.staticfiles import StaticFiles
@@ -559,6 +559,7 @@ async def pet_gpt_question_list(pet_id: int, page: int = Query(0, ge=0), size: i
             )
         )
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
