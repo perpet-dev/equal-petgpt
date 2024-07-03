@@ -111,7 +111,6 @@ class PetProfileRetriever:
         try:
             self.cursor.execute(sql, (pet_id,))
             result = self.cursor.fetchone()
-            self.cursor.close()
             if result:
                 logger.debug("Pet profile retrieved successfully: {}".format(result))
                 return self.process_pet_body_form(result)
@@ -163,5 +162,5 @@ class PetProfileRetriever:
             allergy=pet_profile[11],
             tag=pet_profile[12]
         )
-        pet_profile.close()
+
         return pettprofile
