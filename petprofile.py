@@ -121,6 +121,8 @@ class PetProfileRetriever:
             logger.error("Failed to execute query: {}".format(e))
             self.reconnect()  # Attempt to reconnect
             return None
+        finally:
+            self.close()
 
     def close(self):
         if self.cursor:
@@ -129,12 +131,16 @@ class PetProfileRetriever:
                 logger.info("Cursor closed successfully.")
             except Error as e:
                 logger.error(f"Error closing cursor: {e}")
+            finally:
+                self.cursor = None  # Ensure cursor is set to None after closing
 
         if self.connection:
             try:
                 close_connection(self.connection)
             except Error as e:
                 logger.error(f"Error closing connection: {e}")
+            finally:
+                self.connection = None  # Ensure connection is set to None after closing
 
     def process_pet_body_form(self, pet_profile):
         body_form_codes = {
