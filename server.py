@@ -658,61 +658,61 @@ async def create_vet_comment(pet_profile: PetProfile):
 
     return VetCommentResponse(vet_comment=formatted_string)
 
-# import socket
-# import requests
-# # Function to get the EC2 instance IP
-# # Function to get the EC2 instance IP using IMDSv2
-# def get_ec2_instance_ip():
-#     try:
-#         # Get the token
-#         token_response = requests.put(
-#             'http://169.254.169.254/latest/api/token',
-#             headers={'X-aws-ec2-metadata-token-ttl-seconds': '21600'}
-#         )
-#         token_response.raise_for_status()
-#         token = token_response.text
+import socket
+import requests
+# Function to get the EC2 instance IP
+# Function to get the EC2 instance IP using IMDSv2
+def get_ec2_instance_ip():
+    try:
+        # Get the token
+        token_response = requests.put(
+            'http://169.254.169.254/latest/api/token',
+            headers={'X-aws-ec2-metadata-token-ttl-seconds': '21600'}
+        )
+        token_response.raise_for_status()
+        token = token_response.text
 
-#         # Use the token to get the instance IP
-#         ip_response = requests.get(
-#             'http://169.254.169.254/latest/meta-data/local-ipv4',
-#             headers={'X-aws-ec2-metadata-token': token}
-#         )
-#         ip_response.raise_for_status()
-#         return ip_response.text
-#     except requests.RequestException as e:
-#         logger.error(f"Error fetching EC2 instance IP: {e}")
-#         raise
+        # Use the token to get the instance IP
+        ip_response = requests.get(
+            'http://169.254.169.254/latest/meta-data/local-ipv4',
+            headers={'X-aws-ec2-metadata-token': token}
+        )
+        ip_response.raise_for_status()
+        return ip_response.text
+    except requests.RequestException as e:
+        logger.error(f"Error fetching EC2 instance IP: {e}")
+        raise
 
     
-# async def register_with_eureka():
-#     if PREFIXURL == "/petgpt-service":
-#         # Asynchronously register service with Eureka
-#         IP_ADDRESS = get_ec2_instance_ip()
-#         PORT = int(os.getenv('PORT', 10070))  # Read the port from the environment variable
-#         try:
-#             logger.debug(f"Registering with Eureka at {EUREKA}...")
-#             await eureka_client.init_async(eureka_server=EUREKA,
-#                                         app_name="petgpt-service",
-#                                         instance_host=IP_ADDRESS,
-#                                         instance_port=PORT)
-#             logger.info(f"Registration with Eureka successful with IP: {IP_ADDRESS} and port {PORT}")    
-#         except Exception as e:
-#             logger.error(f"Failed to register with Eureka: {e}")
-#             raise HTTPException(status_code=500, detail="Failed to register with Eureka")
+async def register_with_eureka():
+    if PREFIXURL == "/petgpt-service":
+        # Asynchronously register service with Eureka
+        IP_ADDRESS = get_ec2_instance_ip()
+        PORT = int(os.getenv('PORT', 10070))  # Read the port from the environment variable
+        try:
+            logger.debug(f"Registering with Eureka at {EUREKA}...")
+            await eureka_client.init_async(eureka_server=EUREKA,
+                                        app_name="petgpt-service",
+                                        instance_host=IP_ADDRESS,
+                                        instance_port=PORT)
+            logger.info(f"Registration with Eureka successful with IP: {IP_ADDRESS} and port {PORT}")    
+        except Exception as e:
+            logger.error(f"Failed to register with Eureka: {e}")
+            raise HTTPException(status_code=500, detail="Failed to register with Eureka")
         
 from generation import (
     generation_websocket_endpoint_chatgpt
 )
 app.websocket("/ws/generation/{pet_id}")(generation_websocket_endpoint_chatgpt)
 
-# @app.on_event("startup")
-# async def startup_event():
-#     logger.setLevel(LOGGING_LEVEL)
-#     # Register with Eureka when the FastAPI app starts
-#     PORT = int(os.getenv('PORT', 10070))  # Read the port from the environment variable
-#     logger.info(f"Application startup: Registering PetGPT service on port {PORT} with Eureka at {EUREKA} and logging level: {LOGGING_LEVEL}")
-#     await register_with_eureka()
-#     logger.info(f"Application startup: Registering PetGPT done")
+@app.on_event("startup")
+async def startup_event():
+    logger.setLevel(LOGGING_LEVEL)
+    # Register with Eureka when the FastAPI app starts
+    PORT = int(os.getenv('PORT', 10070))  # Read the port from the environment variable
+    logger.info(f"Application startup: Registering PetGPT service on port {PORT} with Eureka at {EUREKA} and logging level: {LOGGING_LEVEL}")
+    await register_with_eureka()
+    logger.info(f"Application startup: Registering PetGPT done")
 
 @app.get("/categories/", response_model=ApiResponse[List[dict]])
 async def get_categories(pet_id: int, page: int = Query(0, ge=0), size: int = Query(3, ge=1)):

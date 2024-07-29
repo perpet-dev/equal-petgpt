@@ -55,3 +55,5 @@ HOSTNAME = socket.gethostname()
 IP_ADDRESS = socket.gethostbyname(HOSTNAME)
 # Define the fetch URL for sending notifications
 FETCH_URL_NOTIF = "https://api2.equal.pet/petgpt-service/send-notification"
+
+EUREKA = os.getenv('EUREKA_CLIENT_SERVICEURL_DEFAULTZONE', "http://dev.promptinsight.ai:10001/eureka") 

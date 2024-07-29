@@ -15,17 +15,18 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 # Copy the current directory contents into the container at /app
 COPY . .
-# Copy entrypoint script
-COPY entrypoint.sh /app/entrypoint.sh
-# Make the entrypoint script executable
-RUN chmod +x /app/entrypoint.sh
-# Make port available to the world outside this container
-# Copy the Eureka registration script
-COPY register_with_eureka.py /app/register_with_eureka.py
+# # Copy entrypoint script
+# COPY entrypoint.sh /app/entrypoint.sh
+# # Make the entrypoint script executable
+# RUN chmod +x /app/entrypoint.sh
+# # Make port available to the world outside this container
+# # Copy the Eureka registration script
+# COPY register_with_eureka.py /app/register_with_eureka.py
 
-EXPOSE 10070
-# Define environment variable
 ENV PORT 10070
 
-# CMD uvicorn server:app --host 0.0.0.0 --port $PORT --workers 5 --limit-concurrency 100 --timeout-keep-alive 5
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Expose the port the app runs on
+EXPOSE $PORT
+
+CMD uvicorn server:app --host 0.0.0.0 --port $PORT --workers 4
+# ENTRYPOINT ["/app/entrypoint.sh"]
