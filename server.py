@@ -20,7 +20,7 @@ from openai import OpenAI
 import aiohttp
 from pymongo import MongoClient
 from py_eureka_client import eureka_client
-from config import GPT4DEFAULT, EUREKA, MONGODB, MONGODB_DBNAME, PREFIXURL, OPENAI_API_KEY, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, GPT4VISIOMMODEL, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME, WEBSOCKET_URL
+from config import GPT4DEFAULT, EUREKA, MONGODB, MONGODB_DBNAME, PREFIXURL, OPENAI_API_KEY, OPENAI_API_URL, OPENAI_ORG, OPENAI_PROJ, GPT4VISIOMMODEL, EUREKA, LOGGING_LEVEL, LOG_NAME, LOG_FILE_NAME, WEBSOCKET_URL, PORT
 from petprofile import PetProfile
 from bookmark import bookmarks_get, bookmark_set, bookmark_delete, bookmark_check
 from packaging.version import Version
@@ -687,18 +687,27 @@ def get_ec2_instance_ip():
 async def register_with_eureka():
     if PREFIXURL == "/petgpt-service":
         # Asynchronously register service with Eureka
-        IP_ADDRESS = get_ec2_instance_ip()
-        PORT = int(os.getenv('PORT', 10070))  # Read the port from the environment variable
+        # IP_ADDRESS = get_ec2_instance_ip()
+        # PORT = int(os.getenv('PORT', 10070))  # Read the port from the environment variable
+        # try:
+        #     logger.debug(f"Registering with Eureka at {EUREKA}...")
+        #     await eureka_client.init_async(eureka_server=EUREKA,
+        #                                 app_name="petgpt-service",
+        #                                 instance_host=IP_ADDRESS,
+        #                                 instance_port=PORT)
+        #     logger.info(f"Registration with Eureka successful with IP: {IP_ADDRESS} and port {PORT}")    
+        # except Exception as e:
+        #     logger.error(f"Failed to register with Eureka: {e}")
+        #     raise HTTPException(status_code=500, detail="Failed to register with Eureka")
+        # Asynchronously register service with Eureka
         try:
             logger.debug(f"Registering with Eureka at {EUREKA}...")
             await eureka_client.init_async(eureka_server=EUREKA,
                                         app_name="petgpt-service",
-                                        instance_host=IP_ADDRESS,
                                         instance_port=PORT)
-            logger.info(f"Registration with Eureka successful with IP: {IP_ADDRESS} and port {PORT}")    
+            logger.info("Registration with Eureka successful.")
         except Exception as e:
             logger.error(f"Failed to register with Eureka: {e}")
-            raise HTTPException(status_code=500, detail="Failed to register with Eureka")
         
 from generation import (
     generation_websocket_endpoint_chatgpt
